@@ -1,0 +1,10 @@
+# Ephemeral runtime files (not version-controlled)
+.auto-decisions-staging.md
+autopilot.json
+chain-events.log
+STATE.md.backup
+continue-here.md
+parallel/
+parallel-merge/
+research/
+auto-unknown-provenance.jsonl
