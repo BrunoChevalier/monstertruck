@@ -163,7 +163,9 @@ pub trait App: Sized + 'static {
             }
         };
         #[cfg(not(target_arch = "wasm32"))]
-        event_loop.run(routine).ok();
+        if let Err(e) = event_loop.run(routine) {
+            eprintln!("Event loop exited: {e}");
+        }
         #[cfg(target_arch = "wasm32")]
         {
             use winit::platform::web::EventLoopExtWebSys;
