@@ -76,17 +76,23 @@ impl From<IntersectionCurve<BsplineCurve<Point3>, Surface, Surface>> for Curve {
 
 impl ToSameGeometry<Curve> for Line<Point3> {
     #[inline]
-    fn to_same_geometry(&self) -> Curve { Curve::from(*self) }
+    fn to_same_geometry(&self) -> Curve {
+        Curve::from(*self)
+    }
 }
 
 impl ToSameGeometry<Curve> for Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4> {
     #[inline]
-    fn to_same_geometry(&self) -> Curve { Curve::NurbsCurve(self.to_same_geometry()) }
+    fn to_same_geometry(&self) -> Curve {
+        Curve::NurbsCurve(self.to_same_geometry())
+    }
 }
 
 impl ToSameGeometry<Curve> for BsplineCurve<Point3> {
     #[inline]
-    fn to_same_geometry(&self) -> Curve { Curve::from(self.clone()) }
+    fn to_same_geometry(&self) -> Curve {
+        Curve::from(self.clone())
+    }
 }
 
 impl Curve {
@@ -103,9 +109,7 @@ impl Curve {
                     .collect(),
             ),
             Curve::NurbsCurve(curve) => curve.non_rationalized().clone(),
-            Curve::IntersectionCurve(_) => {
-                unimplemented!("intersection curve cannot connect by homotopy")
-            }
+            Curve::IntersectionCurve(ic) => ic.leader().lift_up(),
         }
     }
 }
@@ -205,19 +209,31 @@ impl IncludeCurve<Curve> for Surface {
                 &Curve::Line(curve) => surface.include(&BsplineCurve::from(curve)),
                 Curve::BsplineCurve(curve) => surface.include(curve),
                 Curve::NurbsCurve(curve) => surface.include(curve),
-                Curve::IntersectionCurve(_) => unimplemented!(),
+                Curve::IntersectionCurve(_) => {
+                    let lifted = curve.lift_up();
+                    let nurbs = NurbsCurve::new(lifted);
+                    surface.include(&nurbs)
+                }
             },
             Surface::NurbsSurface(surface) => match curve {
                 &Curve::Line(curve) => surface.include(&BsplineCurve::from(curve)),
                 Curve::BsplineCurve(curve) => surface.include(curve),
                 Curve::NurbsCurve(curve) => surface.include(curve),
-                Curve::IntersectionCurve(_) => unimplemented!(),
+                Curve::IntersectionCurve(_) => {
+                    let lifted = curve.lift_up();
+                    let nurbs = NurbsCurve::new(lifted);
+                    surface.include(&nurbs)
+                }
             },
             Surface::Plane(surface) => match curve {
                 &Curve::Line(curve) => surface.include(&BsplineCurve::from(curve)),
                 Curve::BsplineCurve(curve) => surface.include(curve),
                 Curve::NurbsCurve(curve) => surface.include(curve),
-                Curve::IntersectionCurve(_) => unimplemented!(),
+                Curve::IntersectionCurve(_) => {
+                    let lifted = curve.lift_up();
+                    let nurbs = NurbsCurve::new(lifted);
+                    surface.include(&nurbs)
+                }
             },
             Surface::TSplineSurface(surface) => curve.lift_up().control_points().iter().all(|v| {
                 let p = v.to_point();
@@ -235,7 +251,11 @@ impl IncludeCurve<Curve> for Surface {
                         &Curve::Line(curve) => surface.include(&BsplineCurve::from(curve)),
                         Curve::BsplineCurve(curve) => surface.include(curve),
                         Curve::NurbsCurve(curve) => surface.include(curve),
-                        Curve::IntersectionCurve(_) => unimplemented!(),
+                        Curve::IntersectionCurve(_) => {
+                            let lifted = curve.lift_up();
+                            let nurbs = NurbsCurve::new(lifted);
+                            surface.include(&nurbs)
+                        }
                     }
                 }
                 Curve::BsplineCurve(entity_curve) => {
@@ -248,7 +268,11 @@ impl IncludeCurve<Curve> for Surface {
                         &Curve::Line(curve) => surface.include(&BsplineCurve::from(curve)),
                         Curve::BsplineCurve(curve) => surface.include(curve),
                         Curve::NurbsCurve(curve) => surface.include(curve),
-                        Curve::IntersectionCurve(_) => unimplemented!(),
+                        Curve::IntersectionCurve(_) => {
+                            let lifted = curve.lift_up();
+                            let nurbs = NurbsCurve::new(lifted);
+                            surface.include(&nurbs)
+                        }
                     }
                 }
                 Curve::NurbsCurve(entity_curve) => {
@@ -261,10 +285,35 @@ impl IncludeCurve<Curve> for Surface {
                         &Curve::Line(curve) => surface.include(&BsplineCurve::from(curve)),
                         Curve::BsplineCurve(curve) => surface.include(curve),
                         Curve::NurbsCurve(curve) => surface.include(curve),
-                        Curve::IntersectionCurve(_) => unimplemented!(),
+                        Curve::IntersectionCurve(_) => {
+                            let lifted = curve.lift_up();
+                            let nurbs = NurbsCurve::new(lifted);
+                            surface.include(&nurbs)
+                        }
                     }
                 }
-                Curve::IntersectionCurve(_) => unimplemented!(),
+                Curve::IntersectionCurve(_) => {
+                    let lifted = curve.lift_up();
+                    let (knots, _) = lifted.knot_vec().to_single_multi();
+                    let degree = lifted.degree() * 6;
+                    let pt = lifted.subs(knots[0]).to_point();
+                    let mut hint = match surface.search_parameter(pt, None, 1) {
+                        Some(h) => h,
+                        None => return false,
+                    };
+                    for i in 1..knots.len() {
+                        for j in 1..=degree {
+                            let p = j as f64 / degree as f64;
+                            let t = knots[i - 1] * (1.0 - p) + knots[i] * p;
+                            let pt = ParametricCurve::subs(&lifted, t).to_point();
+                            hint = match surface.search_parameter(pt, Some(hint), 1) {
+                                Some(h) => h,
+                                None => return false,
+                            };
+                        }
+                    }
+                    true
+                }
             },
         }
     }
@@ -280,11 +329,15 @@ impl IncludeCurve<Curve> for Plane {
 }
 
 impl ToSameGeometry<Surface> for Plane {
-    fn to_same_geometry(&self) -> Surface { (*self).into() }
+    fn to_same_geometry(&self) -> Surface {
+        (*self).into()
+    }
 }
 
 impl ToSameGeometry<Surface> for RevolutedCurve<Curve> {
-    fn to_same_geometry(&self) -> Surface { Surface::RevolutedCurve(Processor::new(self.clone())) }
+    fn to_same_geometry(&self) -> Surface {
+        Surface::RevolutedCurve(Processor::new(self.clone()))
+    }
 }
 
 impl SearchNearestParameter<D2> for Surface {
@@ -354,7 +407,11 @@ impl ToSameGeometry<Surface> for ExtrudedCurve<Curve, Vector3> {
                 ))
                 .into()
             }
-            (Curve::IntersectionCurve(_), Curve::IntersectionCurve(_)) => unimplemented!(),
+            (Curve::IntersectionCurve(ic0), Curve::IntersectionCurve(ic1)) => {
+                let c0 = ic0.leader().lift_up();
+                let c1 = ic1.leader().lift_up();
+                NurbsSurface::new(BsplineSurface::homotopy(c0, c1)).into()
+            }
             _ => unreachable!(),
         }
     }
