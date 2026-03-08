@@ -21,3 +21,5 @@ node_modules/
 
 /.vscode
 /.DS_store
+
+profiling_data/
