@@ -25,6 +25,24 @@ cargo clippy --all-targets -- -W warnings
 # IMPORTANT: NEVER use --release flag unless the user EXPLICITLY requests it.
 ```
 
+## Coverage
+
+```bash
+# Run full coverage (clean, build with instrumentation, test, report)
+./scripts/get_coverage.sh
+
+# Individual steps
+./scripts/get_coverage.sh clean     # Remove profiling_data/
+./scripts/get_coverage.sh profile   # Build + test with coverage instrumentation
+./scripts/get_coverage.sh summary   # Print summary from existing profile data
+
+# Exclude packages (monstertruck-wasm excluded by default)
+EXCLUDE_PACKAGES='monstertruck-wasm monstertruck-gpu monstertruck-render' ./scripts/get_coverage.sh
+```
+
+Requires `llvm-tools-preview`: `rustup component add llvm-tools-preview`.
+Reports are written to `profiling_data/`, including per-package HTML reports in `profiling_data/html/`.
+
 ## Coding Style & Naming Conventions
 
 - Follow standard Rust style: four-space indentation, `snake_case` for modules/functions, `CamelCase` for types.
