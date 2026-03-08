@@ -8,8 +8,24 @@ MERGED_PROFDATA_FILE="$PROFILING_DATA_DIR/all_merged_profdata"
 
 cd "$APP_DIR"
 
+# Add rustup's llvm-tools to PATH if not already available
+ensure_llvm_tools_on_path() {
+    if type llvm-profdata >/dev/null 2>&1 && type llvm-cov >/dev/null 2>&1; then
+        return
+    fi
+    # llvm-tools-preview installs binaries under the active toolchain's sysroot
+    local sysroot
+    sysroot="$(rustc --print sysroot 2>/dev/null)" || return
+    local tools_dir="${sysroot}/lib/rustlib/$(rustc -vV | awk '/^host:/ {print $2}')/bin"
+    if [ -d "$tools_dir" ]; then
+        export PATH="${tools_dir}:${PATH}"
+    fi
+}
+
 # Function to check for required tools
 check_tools() {
+    ensure_llvm_tools_on_path
+
     all_tools_present="yes"
     if ! type cargo >/dev/null 2>&1; then
         echo "Error: cargo not found in PATH"
@@ -18,17 +34,15 @@ check_tools() {
 
     if ! type llvm-profdata >/dev/null 2>&1; then
         echo "Error: llvm-profdata not found in PATH"
-        echo "Please install LLVM coverage tools. If using rustup:"
+        echo "Please install LLVM coverage tools:"
         echo "  rustup component add llvm-tools-preview"
-        echo "Then ensure the tools are in PATH or install llvm package."
         all_tools_present="no"
     fi
 
     if ! type llvm-cov >/dev/null 2>&1; then
         echo "Error: llvm-cov not found in PATH"
-        echo "Please install LLVM coverage tools. If using rustup:"
+        echo "Please install LLVM coverage tools:"
         echo "  rustup component add llvm-tools-preview"
-        echo "Then ensure the tools are in PATH or install llvm package."
         all_tools_present="no"
     fi
 
