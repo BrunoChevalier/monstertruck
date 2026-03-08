@@ -340,7 +340,9 @@ async fn run(event_loop: EventLoop<()>, window: winit::window::Window) {
         target.set_control_flow(control_flow);
     };
     #[cfg(not(target_arch = "wasm32"))]
-    event_loop.run(routine).unwrap();
+    if let Err(e) = event_loop.run(routine) {
+        eprintln!("Event loop exited: {e}");
+    }
     #[cfg(target_arch = "wasm32")]
     {
         use winit::platform::web::EventLoopExtWebSys;
