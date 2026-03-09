@@ -78,6 +78,32 @@ The `monstertruck` kernel is split into independent crates so you only need to p
 - [`monstertruck-step`](monstertruck-step/) – STEP file import and export.
 - [`monstertruck-wasm`](monstertruck-wasm/) – WebAssembly/JavaScript bindings.
 
+## Development
+
+### Running Tests
+
+This project uses [cargo-nextest](https://nexte.st/) for test execution with per-test timeouts:
+
+```bash
+cargo nextest run -p monstertruck-geometry --lib
+```
+
+### Benchmarks
+
+Criterion benchmarks are available for the core crates:
+
+```bash
+cargo bench -p monstertruck-geometry
+cargo bench -p monstertruck-meshing
+cargo bench -p monstertruck-solid
+```
+
+To verify benchmarks compile without running them:
+
+```bash
+cargo test --benches
+```
+
 ## Dependency Graph
 
 ![dependencies](./dependencies.svg)
