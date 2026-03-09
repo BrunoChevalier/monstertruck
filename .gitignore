@@ -22,4 +22,6 @@ node_modules/
 /.vscode
 /.DS_store
 
-profiling_data/
+profiling_data/monstertruck-geometry/fuzz/target/
+monstertruck-step/fuzz/target/
+monstertruck-step/fuzz/corpus/
