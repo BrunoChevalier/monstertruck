@@ -21,8 +21,13 @@ monstertruck-traits = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+criterion = { workspace = true }
 proptest = { workspace = true, features = ["attr-macro"] }
 monstertruck-traits = { workspace = true, features = ["derive", "polynomial"] }
+
+[[bench]]
+name = "nurbs_eval"
+harness = false
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 getrandom = { workspace = true }

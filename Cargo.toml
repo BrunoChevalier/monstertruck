@@ -23,6 +23,7 @@ members = [
 [workspace.dependencies]
 
 # External dependencies
+criterion = { version = "0.5", features = ["html_reports"] }
 anyhow = "1"
 array-macro = "2"
 async-trait = "0.1"
