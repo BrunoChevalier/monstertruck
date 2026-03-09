@@ -15,6 +15,8 @@
 
 mod healing;
 pub use healing::{RobustSplitClosedEdgesAndFaces, SplitClosedEdgesAndFaces, extract_healed};
+pub mod shell_ops;
+pub use shell_ops::{OffsetCurve, OffsetSurface, offset_shell, shell_solid};
 mod transversal;
 pub use transversal::{
     ShapeOpsCurve, ShapeOpsError, ShapeOpsSurface, and, difference, or, symmetric_difference,
