@@ -229,48 +229,26 @@ Ensure all added dev-dependencies also include any needed internal crates (e.g.,
 
 <task type="auto">
   <name>Task 3: Add CI workflow step for benchmark compilation</name>
-  <files>.github/workflows/ci.yml</files>
+  <files>.gitlab-ci.yml</files>
   <action>
 Add a CI step that compiles and test-runs benchmarks to detect compilation regressions. This does NOT run full benchmarks (which would be slow), but verifies benchmarks compile and can execute in test mode.
 
-**Step 1:** Check if `.github/workflows/ci.yml` exists. If not, check for other CI workflow files.
+**Step 1:** Check if `.gitlab-ci.yml` exists. The repo uses GitLab CI, NOT GitHub Actions.
 
-**Step 2:** Add a step to the CI workflow that runs:
+**Step 2:** Add a stage/job to `.gitlab-ci.yml` that runs:
 ```yaml
-- name: Check benchmarks compile
-  run: cargo test --benches
+bench-check:
+  stage: test
+  script:
+    - cargo test --benches
 ```
 
-This compiles all benchmark targets and runs them in test mode (criterion benchmarks in test mode execute once without timing, which is fast). This catches:
-- Benchmark compilation failures
-- API changes that break benchmarks
-- Missing dependencies
-
-**Step 3:** Ensure the step runs AFTER the regular test step and uses the same toolchain/cache configuration.
-
-If no CI workflow exists at all, create a minimal `.github/workflows/ci.yml`:
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Run tests
-        run: cargo test
-      - name: Check clippy
-        run: cargo clippy --all-targets -- -W warnings
-      - name: Check benchmarks compile
-        run: cargo test --benches
-```
+If `.gitlab-ci.yml` does not exist, create a minimal one with the benchmark check job.
 
 **Verification commands per repo policy:** Use `cargo test --benches` (not `cargo bench`) for CI. For local regression detection, developers can use `cargo bench` manually. The CI step only verifies compilation, not performance.
   </action>
-  <verify>Verify the CI workflow file exists and contains a `cargo test --benches` step. If the repo has a way to validate workflow syntax locally (e.g., `actionlint`), run it. Otherwise, verify the YAML is well-formed.</verify>
-  <done>CI workflow updated with benchmark compilation check step. Benchmark regressions (compilation failures, API breaks) will be caught in CI.</done>
+  <verify>Verify the CI file exists and contains a `cargo test --benches` step. Verify YAML is well-formed.</verify>
+  <done>GitLab CI updated with benchmark compilation check step. Benchmark regressions (compilation failures, API breaks) will be caught in CI.</done>
 </task>
 
 </tasks>
