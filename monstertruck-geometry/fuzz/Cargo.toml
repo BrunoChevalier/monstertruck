@@ -1,0 +1,28 @@
+[package]
+name = "monstertruck-geometry-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+
+[dependencies.monstertruck-geometry]
+path = ".."
+
+[[bin]]
+name = "nurbs_eval"
+path = "fuzz_targets/nurbs_eval.rs"
+doc = false
+
+[[bin]]
+name = "knot_vector"
+path = "fuzz_targets/knot_vector.rs"
+doc = false
+
+[workspace]
+members = ["."]

@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use monstertruck_geometry::prelude::*;
 
 /// Creates a degree-3 B-spline curve with `n` control points arranged in a helix.
@@ -30,7 +30,11 @@ fn make_test_surface(n: usize) -> BsplineSurface<Point3> {
             (0..n)
                 .map(|j| {
                     let v = j as f64 / (n - 1) as f64;
-                    Point3::new(u, v, (u * std::f64::consts::PI).sin() * (v * std::f64::consts::PI).sin() * 0.3)
+                    Point3::new(
+                        u,
+                        v,
+                        (u * std::f64::consts::PI).sin() * (v * std::f64::consts::PI).sin() * 0.3,
+                    )
                 })
                 .collect()
         })

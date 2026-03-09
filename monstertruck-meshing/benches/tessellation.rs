@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use monstertruck_meshing::prelude::*;
 use monstertruck_modeling::*;
 
@@ -26,5 +26,9 @@ fn bench_translated_cube_triangulation(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_cube_triangulation, bench_translated_cube_triangulation);
+criterion_group!(
+    benches,
+    bench_cube_triangulation,
+    bench_translated_cube_triangulation
+);
 criterion_main!(benches);
