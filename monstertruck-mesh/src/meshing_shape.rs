@@ -10,7 +10,9 @@ const PAR_THRESHOLD: usize = 8;
 impl<P> PolylineCurve<P> {
     /// Meshes the curve.
     pub fn from_curve<C>(curve: C, range: (f64, f64), tol: f64) -> Self
-    where C: ParameterDivision1D<Point = P> {
+    where
+        C: ParameterDivision1D<Point = P>,
+    {
         PolylineCurve(curve.parameter_division(range, tol).1)
     }
 }
@@ -31,11 +33,7 @@ impl StructuredMesh {
     /// * `surface` - surface to be meshed.
     /// * `range` - parameter range.
     /// * `tol` - standard tolerance for meshing.
-    pub fn from_surface<S>(
-        surface: &S,
-        range: ((f64, f64), (f64, f64)),
-        tol: f64,
-    ) -> StructuredMesh
+    pub fn from_surface<S>(surface: &S, range: ((f64, f64), (f64, f64)), tol: f64) -> StructuredMesh
     where
         S: ParametricSurface3D + ParameterDivision2D,
     {

@@ -261,7 +261,9 @@ fn endpoint_test_surface() -> BsplineSurface<Point3> {
     BsplineSurface::new((knot_vector_u, knot_vector_v), control_points)
 }
 
-fn seam_samples() -> impl Iterator<Item = f64> { (0..=20).map(|i| i as f64 / 20.0) }
+fn seam_samples() -> impl Iterator<Item = f64> {
+    (0..=20).map(|i| i as f64 / 20.0)
+}
 
 fn assert_u_seam_matches(surface: &BsplineSurface<Point3>, cut: f64, check_higher_order: bool) {
     let mut left = surface.clone();

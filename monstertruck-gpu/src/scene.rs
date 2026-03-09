@@ -7,7 +7,9 @@ static MAXID: AtomicUsize = AtomicUsize::new(0);
 impl RenderId {
     /// Generate the unique `RenderId`.
     #[inline(always)]
-    pub fn generate() -> Self { RenderId(MAXID.fetch_add(1, Ordering::SeqCst)) }
+    pub fn generate() -> Self {
+        RenderId(MAXID.fetch_add(1, Ordering::SeqCst))
+    }
 }
 
 async fn init_default_device(
@@ -75,16 +77,24 @@ impl DeviceHandler {
     }
     /// Returns the reference of the adapter.
     #[inline(always)]
-    pub const fn adapter(&self) -> &Adapter { &self.adapter }
+    pub const fn adapter(&self) -> &Adapter {
+        &self.adapter
+    }
     /// Returns the reference of the device.
     #[inline(always)]
-    pub const fn device(&self) -> &Device { &self.device }
+    pub const fn device(&self) -> &Device {
+        &self.device
+    }
     /// Returns the reference of the queue.
     #[inline(always)]
-    pub const fn queue(&self) -> &Queue { &self.queue }
+    pub const fn queue(&self) -> &Queue {
+        &self.queue
+    }
 
     /// Creates default device handler.
-    pub async fn default_device() -> Self { init_default_device(None).await.0 }
+    pub async fn default_device() -> Self {
+        init_default_device(None).await.0
+    }
 }
 
 impl Default for StudioConfig {
@@ -249,12 +259,16 @@ pub struct SceneDescriptorMut<'a>(&'a mut Scene);
 impl std::ops::Deref for SceneDescriptorMut<'_> {
     type Target = SceneDescriptor;
     #[inline(always)]
-    fn deref(&self) -> &SceneDescriptor { &self.0.scene_desc }
+    fn deref(&self) -> &SceneDescriptor {
+        &self.0.scene_desc
+    }
 }
 
 impl std::ops::DerefMut for SceneDescriptorMut<'_> {
     #[inline(always)]
-    fn deref_mut(&mut self) -> &mut SceneDescriptor { &mut self.0.scene_desc }
+    fn deref_mut(&mut self) -> &mut SceneDescriptor {
+        &mut self.0.scene_desc
+    }
 }
 
 impl Drop for SceneDescriptorMut<'_> {
@@ -368,27 +382,39 @@ impl Scene {
 
     /// Returns the reference of its own `DeviceHandler`.
     #[inline(always)]
-    pub const fn device_handler(&self) -> &DeviceHandler { &self.device_handler }
+    pub const fn device_handler(&self) -> &DeviceHandler {
+        &self.device_handler
+    }
 
     /// Returns the reference of the adapter.
     #[inline(always)]
-    pub const fn dapter(&self) -> &Adapter { &self.device_handler.adapter }
+    pub const fn dapter(&self) -> &Adapter {
+        &self.device_handler.adapter
+    }
 
     /// Returns the reference of the device.
     #[inline(always)]
-    pub const fn device(&self) -> &Device { &self.device_handler.device }
+    pub const fn device(&self) -> &Device {
+        &self.device_handler.device
+    }
 
     /// Returns the reference of the queue.
     #[inline(always)]
-    pub const fn queue(&self) -> &Queue { &self.device_handler.queue }
+    pub const fn queue(&self) -> &Queue {
+        &self.device_handler.queue
+    }
 
     /// Returns the elapsed time since the scene was created.
     #[inline(always)]
-    pub fn elapsed(&self) -> std::time::Duration { self.clock.elapsed() }
+    pub fn elapsed(&self) -> std::time::Duration {
+        self.clock.elapsed()
+    }
 
     /// Returns the reference of the descriptor.
     #[inline(always)]
-    pub const fn descriptor(&self) -> &SceneDescriptor { &self.scene_desc }
+    pub const fn descriptor(&self) -> &SceneDescriptor {
+        &self.scene_desc
+    }
 
     /// Returns the mutable reference of the descriptor.
     ///
@@ -397,19 +423,27 @@ impl Scene {
     /// When the return value is dropped, the depth buffer and sampling buffer are automatically updated.
     /// Use `studio_config_mut` if you only want to update the colors of the camera, lights, and background.
     #[inline(always)]
-    pub fn descriptor_mut(&mut self) -> SceneDescriptorMut<'_> { SceneDescriptorMut(self) }
+    pub fn descriptor_mut(&mut self) -> SceneDescriptorMut<'_> {
+        SceneDescriptorMut(self)
+    }
 
     /// Returns the reference of the studio configuration.
     #[inline(always)]
-    pub const fn studio_config(&self) -> &StudioConfig { &self.scene_desc.studio }
+    pub const fn studio_config(&self) -> &StudioConfig {
+        &self.scene_desc.studio
+    }
 
     /// Returns the mutable reference of the studio configuration.
     #[inline(always)]
-    pub fn studio_config_mut(&mut self) -> &mut StudioConfig { &mut self.scene_desc.studio }
+    pub fn studio_config_mut(&mut self) -> &mut StudioConfig {
+        &mut self.scene_desc.studio
+    }
 
     /// Returns the bind group layout in the scene.
     #[inline(always)]
-    pub const fn bind_group_layout(&self) -> &BindGroupLayout { &self.bind_group_layout }
+    pub const fn bind_group_layout(&self) -> &BindGroupLayout {
+        &self.bind_group_layout
+    }
 
     /// Creates a `UNIFORM` buffer of the camera.
     ///
@@ -423,7 +457,9 @@ impl Scene {
     /// };
     /// ```
     #[inline(always)]
-    pub fn camera_buffer(&self) -> BufferHandler { self.scene_desc.camera_buffer(self.device()) }
+    pub fn camera_buffer(&self) -> BufferHandler {
+        self.scene_desc.camera_buffer(self.device())
+    }
 
     /// Creates a `STORAGE` buffer of all lights.
     ///
@@ -442,7 +478,9 @@ impl Scene {
     /// };
     /// ```
     #[inline(always)]
-    pub fn lights_buffer(&self) -> BufferHandler { self.scene_desc.lights_buffer(self.device()) }
+    pub fn lights_buffer(&self) -> BufferHandler {
+        self.scene_desc.lights_buffer(self.device())
+    }
 
     /// Creates a `UNIFORM` buffer of the scene status.
     ///
@@ -535,7 +573,8 @@ impl Scene {
     pub fn add_objects<'a, R, I>(&mut self, objects: I) -> bool
     where
         R: 'a + Rendered,
-        I: IntoIterator<Item = &'a R>, {
+        I: IntoIterator<Item = &'a R>,
+    {
         let closure = move |flag, object| flag && self.add_object(object);
         objects.into_iter().fold(true, closure)
     }
@@ -553,18 +592,23 @@ impl Scene {
     pub fn remove_objects<'a, R, I>(&mut self, objects: I) -> bool
     where
         R: 'a + Rendered,
-        I: IntoIterator<Item = &'a R>, {
+        I: IntoIterator<Item = &'a R>,
+    {
         let closure = move |flag, object| flag && self.remove_object(object);
         objects.into_iter().fold(true, closure)
     }
 
     /// Removes all render objects from the scene.
     #[inline(always)]
-    pub fn clear_objects(&mut self) { self.objects.clear() }
+    pub fn clear_objects(&mut self) {
+        self.objects.clear()
+    }
 
     /// Returns the number of the render objects in the scene.
     #[inline(always)]
-    pub fn number_of_objects(&self) -> usize { self.objects.len() }
+    pub fn number_of_objects(&self) -> usize {
+        self.objects.len()
+    }
 
     /// Synchronizes the information of vertices of `object` in the CPU memory
     /// and that in the GPU memory.
@@ -592,7 +636,8 @@ impl Scene {
     pub fn update_vertex_buffers<'a, R, I>(&mut self, objects: I) -> bool
     where
         R: 'a + Rendered,
-        I: IntoIterator<Item = &'a R>, {
+        I: IntoIterator<Item = &'a R>,
+    {
         let closure = move |flag, object: &R| flag && self.update_vertex_buffer(object);
         objects.into_iter().fold(true, closure)
     }
@@ -621,7 +666,8 @@ impl Scene {
     pub fn update_bind_groups<'a, R, I>(&mut self, objects: I) -> bool
     where
         R: 'a + Rendered,
-        I: IntoIterator<Item = &'a R>, {
+        I: IntoIterator<Item = &'a R>,
+    {
         let closure = move |flag, object: &R| flag && self.update_bind_group(object);
         objects.into_iter().fold(true, closure)
     }
@@ -657,7 +703,8 @@ impl Scene {
     pub fn update_pipelines<'a, R, I>(&mut self, objects: I) -> bool
     where
         R: 'a + Rendered,
-        I: IntoIterator<Item = &'a R>, {
+        I: IntoIterator<Item = &'a R>,
+    {
         let closure = move |flag, object: &R| flag && self.update_pipeline(object);
         objects.into_iter().fold(true, closure)
     }
@@ -818,10 +865,14 @@ impl WindowScene {
     }
     /// Get the reference of initializing window.
     #[inline(always)]
-    pub const fn window(&self) -> &Arc<Window> { &self.window_handler.window }
+    pub const fn window(&self) -> &Arc<Window> {
+        &self.window_handler.window
+    }
     /// Get the reference of surface.
     #[inline(always)]
-    pub const fn surface(&self) -> &Arc<Surface<'_>> { &self.window_handler.surface }
+    pub const fn surface(&self) -> &Arc<Surface<'_>> {
+        &self.window_handler.surface
+    }
     /// Adjusts the size of the backend buffers (depth or sampling buffer) to the size of the window.
     pub fn size_alignment(&mut self) {
         let size = self.window().inner_size();

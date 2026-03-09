@@ -9,17 +9,23 @@ impl From<IntersectionCurve<BsplineCurve<Point3>, Surface, Surface>> for Curve3D
 
 impl ToSameGeometry<Curve3D> for Line<Point3> {
     #[inline]
-    fn to_same_geometry(&self) -> Curve3D { Curve3D::Line(*self) }
+    fn to_same_geometry(&self) -> Curve3D {
+        Curve3D::Line(*self)
+    }
 }
 
 impl ToSameGeometry<Curve3D> for Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4> {
     #[inline]
-    fn to_same_geometry(&self) -> Curve3D { Curve3D::Conic(Conic3D::Ellipse(*self)) }
+    fn to_same_geometry(&self) -> Curve3D {
+        Curve3D::Conic(Conic3D::Ellipse(*self))
+    }
 }
 
 impl ToSameGeometry<Curve3D> for BsplineCurve<Point3> {
     #[inline]
-    fn to_same_geometry(&self) -> Curve3D { Curve3D::BsplineCurve(self.clone()) }
+    fn to_same_geometry(&self) -> Curve3D {
+        Curve3D::BsplineCurve(self.clone())
+    }
 }
 
 impl Conic3D {

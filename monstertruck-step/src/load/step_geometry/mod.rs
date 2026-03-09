@@ -243,7 +243,9 @@ pub struct Sphere(pub monstertruck_geometry::prelude::Sphere);
 
 impl save::StepSurface for Processor<Sphere, Matrix4> {
     #[inline(always)]
-    fn same_sense(&self) -> bool { self.orientation() }
+    fn same_sense(&self) -> bool {
+        self.orientation()
+    }
 }
 
 mod sphere;

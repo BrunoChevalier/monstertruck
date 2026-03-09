@@ -38,7 +38,9 @@ impl ParametricCurve for Segment {
         (self.ends.1 - self.ends.0) / (self.range.1 - self.range.0)
     }
     #[inline(always)]
-    fn derivative_2(&self, _: f64) -> Vector3 { Vector3::zero() }
+    fn derivative_2(&self, _: f64) -> Vector3 {
+        Vector3::zero()
+    }
     #[inline(always)]
     fn parameter_range(&self) -> ParameterRange {
         (Bound::Included(self.range.0), Bound::Included(self.range.1))

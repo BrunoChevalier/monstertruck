@@ -37,22 +37,34 @@ pub trait ParametricSurface: Clone {
     }
     /// Deprecated: use [`evaluate`](ParametricSurface::evaluate).
     #[inline(always)]
-    fn subs(&self, u: f64, v: f64) -> Self::Point { self.evaluate(u, v) }
+    fn subs(&self, u: f64, v: f64) -> Self::Point {
+        self.evaluate(u, v)
+    }
     /// Deprecated: use [`derivative_u`](ParametricSurface::derivative_u).
     #[inline(always)]
-    fn uder(&self, u: f64, v: f64) -> Self::Vector { self.derivative_u(u, v) }
+    fn uder(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_u(u, v)
+    }
     /// Deprecated: use [`derivative_v`](ParametricSurface::derivative_v).
     #[inline(always)]
-    fn vder(&self, u: f64, v: f64) -> Self::Vector { self.derivative_v(u, v) }
+    fn vder(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_v(u, v)
+    }
     /// Deprecated: use [`derivative_uu`](ParametricSurface::derivative_uu).
     #[inline(always)]
-    fn uuder(&self, u: f64, v: f64) -> Self::Vector { self.derivative_uu(u, v) }
+    fn uuder(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_uu(u, v)
+    }
     /// Deprecated: use [`derivative_uv`](ParametricSurface::derivative_uv).
     #[inline(always)]
-    fn uvder(&self, u: f64, v: f64) -> Self::Vector { self.derivative_uv(u, v) }
+    fn uvder(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_uv(u, v)
+    }
     /// Deprecated: use [`derivative_vv`](ParametricSurface::derivative_vv).
     #[inline(always)]
-    fn vvder(&self, u: f64, v: f64) -> Self::Vector { self.derivative_vv(u, v) }
+    fn vvder(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_vv(u, v)
+    }
     /// Deprecated: use [`derivative_mn`](ParametricSurface::derivative_mn).
     #[inline(always)]
     fn der_mn(&self, m: usize, n: usize, u: f64, v: f64) -> Self::Vector {
@@ -81,27 +93,43 @@ pub trait ParametricSurface: Clone {
     }
     /// `None` in default; `Some(period)` if periodic w.r.t. parameter u.
     #[inline(always)]
-    fn u_period(&self) -> Option<f64> { None }
+    fn u_period(&self) -> Option<f64> {
+        None
+    }
     /// `None` in default; `Some(period)` if periodic w.r.t. parameter v.
     #[inline(always)]
-    fn v_period(&self) -> Option<f64> { None }
+    fn v_period(&self) -> Option<f64> {
+        None
+    }
 }
 
 impl<S: ParametricSurface> ParametricSurface for &S {
     type Point = S::Point;
     type Vector = S::Vector;
     #[inline(always)]
-    fn evaluate(&self, u: f64, v: f64) -> Self::Point { (*self).evaluate(u, v) }
+    fn evaluate(&self, u: f64, v: f64) -> Self::Point {
+        (*self).evaluate(u, v)
+    }
     #[inline(always)]
-    fn derivative_u(&self, u: f64, v: f64) -> Self::Vector { (*self).derivative_u(u, v) }
+    fn derivative_u(&self, u: f64, v: f64) -> Self::Vector {
+        (*self).derivative_u(u, v)
+    }
     #[inline(always)]
-    fn derivative_v(&self, u: f64, v: f64) -> Self::Vector { (*self).derivative_v(u, v) }
+    fn derivative_v(&self, u: f64, v: f64) -> Self::Vector {
+        (*self).derivative_v(u, v)
+    }
     #[inline(always)]
-    fn derivative_uu(&self, u: f64, v: f64) -> Self::Vector { (*self).derivative_uu(u, v) }
+    fn derivative_uu(&self, u: f64, v: f64) -> Self::Vector {
+        (*self).derivative_uu(u, v)
+    }
     #[inline(always)]
-    fn derivative_uv(&self, u: f64, v: f64) -> Self::Vector { (*self).derivative_uv(u, v) }
+    fn derivative_uv(&self, u: f64, v: f64) -> Self::Vector {
+        (*self).derivative_uv(u, v)
+    }
     #[inline(always)]
-    fn derivative_vv(&self, u: f64, v: f64) -> Self::Vector { (*self).derivative_vv(u, v) }
+    fn derivative_vv(&self, u: f64, v: f64) -> Self::Vector {
+        (*self).derivative_vv(u, v)
+    }
     #[inline(always)]
     fn derivative_mn(&self, m: usize, n: usize, u: f64, v: f64) -> Self::Vector {
         (*self).derivative_mn(m, n, u, v)
@@ -111,28 +139,46 @@ impl<S: ParametricSurface> ParametricSurface for &S {
         (*self).derivatives(max_order, u, v)
     }
     #[inline(always)]
-    fn parameter_range(&self) -> (ParameterRange, ParameterRange) { (*self).parameter_range() }
+    fn parameter_range(&self) -> (ParameterRange, ParameterRange) {
+        (*self).parameter_range()
+    }
     #[inline(always)]
-    fn u_period(&self) -> Option<f64> { (*self).u_period() }
+    fn u_period(&self) -> Option<f64> {
+        (*self).u_period()
+    }
     #[inline(always)]
-    fn v_period(&self) -> Option<f64> { (*self).v_period() }
+    fn v_period(&self) -> Option<f64> {
+        (*self).v_period()
+    }
 }
 
 impl<S: ParametricSurface> ParametricSurface for Box<S> {
     type Point = S::Point;
     type Vector = S::Vector;
     #[inline(always)]
-    fn evaluate(&self, u: f64, v: f64) -> Self::Point { (**self).evaluate(u, v) }
+    fn evaluate(&self, u: f64, v: f64) -> Self::Point {
+        (**self).evaluate(u, v)
+    }
     #[inline(always)]
-    fn derivative_u(&self, u: f64, v: f64) -> Self::Vector { (**self).derivative_u(u, v) }
+    fn derivative_u(&self, u: f64, v: f64) -> Self::Vector {
+        (**self).derivative_u(u, v)
+    }
     #[inline(always)]
-    fn derivative_v(&self, u: f64, v: f64) -> Self::Vector { (**self).derivative_v(u, v) }
+    fn derivative_v(&self, u: f64, v: f64) -> Self::Vector {
+        (**self).derivative_v(u, v)
+    }
     #[inline(always)]
-    fn derivative_uu(&self, u: f64, v: f64) -> Self::Vector { (**self).derivative_uu(u, v) }
+    fn derivative_uu(&self, u: f64, v: f64) -> Self::Vector {
+        (**self).derivative_uu(u, v)
+    }
     #[inline(always)]
-    fn derivative_uv(&self, u: f64, v: f64) -> Self::Vector { (**self).derivative_uv(u, v) }
+    fn derivative_uv(&self, u: f64, v: f64) -> Self::Vector {
+        (**self).derivative_uv(u, v)
+    }
     #[inline(always)]
-    fn derivative_vv(&self, u: f64, v: f64) -> Self::Vector { (**self).derivative_vv(u, v) }
+    fn derivative_vv(&self, u: f64, v: f64) -> Self::Vector {
+        (**self).derivative_vv(u, v)
+    }
     #[inline(always)]
     fn derivative_mn(&self, m: usize, n: usize, u: f64, v: f64) -> Self::Vector {
         (**self).derivative_mn(m, n, u, v)
@@ -142,11 +188,17 @@ impl<S: ParametricSurface> ParametricSurface for Box<S> {
         (**self).derivatives(max_order, u, v)
     }
     #[inline(always)]
-    fn parameter_range(&self) -> (ParameterRange, ParameterRange) { (**self).parameter_range() }
+    fn parameter_range(&self) -> (ParameterRange, ParameterRange) {
+        (**self).parameter_range()
+    }
     #[inline(always)]
-    fn u_period(&self) -> Option<f64> { (**self).u_period() }
+    fn u_period(&self) -> Option<f64> {
+        (**self).u_period()
+    }
     #[inline(always)]
-    fn v_period(&self) -> Option<f64> { (**self).v_period() }
+    fn v_period(&self) -> Option<f64> {
+        (**self).v_period()
+    }
 }
 
 /// 2D parametric surface
@@ -190,12 +242,16 @@ pub trait ParametricSurface3D: ParametricSurface<Point = Point3, Vector = Vector
 
 impl<S: ParametricSurface3D> ParametricSurface3D for &S {
     #[inline(always)]
-    fn normal(&self, u: f64, v: f64) -> Vector3 { (*self).normal(u, v) }
+    fn normal(&self, u: f64, v: f64) -> Vector3 {
+        (*self).normal(u, v)
+    }
 }
 
 impl<S: ParametricSurface3D> ParametricSurface3D for Box<S> {
     #[inline(always)]
-    fn normal(&self, u: f64, v: f64) -> Vector3 { (**self).normal(u, v) }
+    fn normal(&self, u: f64, v: f64) -> Vector3 {
+        (**self).normal(u, v)
+    }
 }
 
 /// Bounded surface with parametric range i.e. it is guaranteed that the return value of `parameter_range` is not `Bound::Unbounded`.

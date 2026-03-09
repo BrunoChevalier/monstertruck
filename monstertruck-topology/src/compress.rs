@@ -40,7 +40,9 @@ pub struct CompressedEdgeIndex {
 }
 
 impl From<(usize, bool)> for CompressedEdgeIndex {
-    fn from((index, orientation): (usize, bool)) -> Self { Self { index, orientation } }
+    fn from((index, orientation): (usize, bool)) -> Self {
+        Self { index, orientation }
+    }
 }
 
 /// Serialized compressed face
@@ -321,7 +323,9 @@ where
     S: Clone + Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where D: serde::Deserializer<'de> {
+    where
+        D: serde::Deserializer<'de>,
+    {
         use serde::de::Error;
         let compressed = CompressedShell::<P, C, S>::deserialize(deserializer)?;
         Shell::extract(compressed).map_err(D::Error::custom)
@@ -352,7 +356,9 @@ where
     S: Clone + Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where D: serde::Deserializer<'de> {
+    where
+        D: serde::Deserializer<'de>,
+    {
         use serde::de::Error;
         let compressed = CompressedSolid::<P, C, S>::deserialize(deserializer)?;
         Solid::extract(compressed).map_err(D::Error::custom)
@@ -383,7 +389,9 @@ where
     S: Clone + Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where D: serde::Deserializer<'de> {
+    where
+        D: serde::Deserializer<'de>,
+    {
         Shell::deserialize(deserializer).map(|mut shell| {
             // SAFETY: a serialized Face round-trips through a single-element Shell, so pop always succeeds.
             shell.pop().unwrap()

@@ -10,16 +10,22 @@ impl Revolution {
         }
     }
     #[inline(always)]
-    fn rotation_matrix(self, v: f64) -> Matrix3 { Matrix3::from_axis_angle(self.axis, Rad(v)) }
+    fn rotation_matrix(self, v: f64) -> Matrix3 {
+        Matrix3::from_axis_angle(self.axis, Rad(v))
+    }
     #[inline(always)]
-    fn invert(&mut self) { self.axis *= -1.0; }
+    fn invert(&mut self) {
+        self.axis *= -1.0;
+    }
     #[inline(always)]
     fn inverse(mut self) -> Self {
         self.axis *= -1.0;
         self
     }
     #[inline(always)]
-    fn contains(self, p: Point3) -> bool { (p - self.origin).cross(self.axis).so_small() }
+    fn contains(self, p: Point3) -> bool {
+        (p - self.origin).cross(self.axis).so_small()
+    }
     #[inline(always)]
     fn proj_point(&self, p: Point3) -> Point2 {
         let r = p - self.origin;
@@ -115,9 +121,13 @@ impl<C: ParametricCurve3D> ParametricSurface for RevolutedCurve<C> {
         )
     }
     #[inline(always)]
-    fn u_period(&self) -> Option<f64> { self.curve.period() }
+    fn u_period(&self) -> Option<f64> {
+        self.curve.period()
+    }
     #[inline(always)]
-    fn v_period(&self) -> Option<f64> { Some(2.0 * PI) }
+    fn v_period(&self) -> Option<f64> {
+        Some(2.0 * PI)
+    }
 }
 
 impl<C: ParametricCurve3D + BoundedCurve> ParametricSurface3D for RevolutedCurve<C> {
@@ -153,7 +163,9 @@ impl<C: ParametricCurve3D + BoundedCurve> BoundedSurface for RevolutedCurve<C> {
 
 impl<C: Clone> Invertible for RevolutedCurve<C> {
     #[inline(always)]
-    fn invert(&mut self) { self.revolution.invert() }
+    fn invert(&mut self) {
+        self.revolution.invert()
+    }
     #[inline(always)]
     fn inverse(&self) -> Self {
         RevolutedCurve {
@@ -182,7 +194,9 @@ impl<C: ParametricCurve3D> PcurveTrait for ProjectedCurve<C> {
         }
     }
     #[inline(always)]
-    fn evaluate(&self, t: f64) -> Self::Point { self.revolution.proj_point(self.curve.evaluate(t)) }
+    fn evaluate(&self, t: f64) -> Self::Point {
+        self.revolution.proj_point(self.curve.evaluate(t))
+    }
     #[inline(always)]
     fn derivative(&self, t: f64) -> Self::Vector {
         self.revolution
@@ -197,9 +211,13 @@ impl<C: ParametricCurve3D> PcurveTrait for ProjectedCurve<C> {
         )
     }
     #[inline(always)]
-    fn parameter_range(&self) -> ParameterRange { self.curve.parameter_range() }
+    fn parameter_range(&self) -> ParameterRange {
+        self.curve.parameter_range()
+    }
     #[inline(always)]
-    fn period(&self) -> Option<f64> { self.curve.period() }
+    fn period(&self) -> Option<f64> {
+        self.curve.period()
+    }
 }
 
 impl<C: ParametricCurve3D + BoundedCurve> BoundedCurve for ProjectedCurve<C> {}
@@ -257,16 +275,24 @@ impl<C> RevolutedCurve<C> {
     }
     /// Returns the curve before revoluted.
     #[inline(always)]
-    pub const fn entity_curve(&self) -> &C { &self.curve }
+    pub const fn entity_curve(&self) -> &C {
+        &self.curve
+    }
     /// Into the curve before revoluted.
     #[inline(always)]
-    pub fn into_entity_curve(self) -> C { self.curve }
+    pub fn into_entity_curve(self) -> C {
+        self.curve
+    }
     /// Returns origin of revolution
     #[inline(always)]
-    pub const fn origin(&self) -> Point3 { self.revolution.origin }
+    pub const fn origin(&self) -> Point3 {
+        self.revolution.origin
+    }
     /// Returns axis of revolution
     #[inline(always)]
-    pub const fn axis(&self) -> Vector3 { self.revolution.axis }
+    pub const fn axis(&self) -> Vector3 {
+        self.revolution.axis
+    }
 }
 
 impl<C: ParametricCurve3D + BoundedCurve> RevolutedCurve<C> {
@@ -284,7 +310,9 @@ impl<C: ParametricCurve3D + BoundedCurve> RevolutedCurve<C> {
     /// assert!(!surface1.is_front_fixed());
     /// ```
     #[inline(always)]
-    pub fn is_front_fixed(&self) -> bool { self.revolution.contains(self.curve.front()) }
+    pub fn is_front_fixed(&self) -> bool {
+        self.revolution.contains(self.curve.front())
+    }
     /// Returns true if the back point of the curve is on the axis of rotation.
     /// # Examples
     /// ```
@@ -299,7 +327,9 @@ impl<C: ParametricCurve3D + BoundedCurve> RevolutedCurve<C> {
     /// assert!(!surface1.is_back_fixed());
     /// ```
     #[inline(always)]
-    pub fn is_back_fixed(&self) -> bool { self.revolution.contains(self.curve.back()) }
+    pub fn is_back_fixed(&self) -> bool {
+        self.revolution.contains(self.curve.back())
+    }
 }
 
 impl<C: ParametricCurve3D + BoundedCurve> SearchParameter<D2> for RevolutedCurve<C> {
@@ -490,7 +520,8 @@ impl IncludeCurve<NurbsCurve<Vector4>> for RevolutedCurve<NurbsCurve<Vector4>> {
 }
 
 impl<C> ParameterDivision2D for RevolutedCurve<C>
-where C: ParametricCurve3D + ParameterDivision1D<Point = Point3>
+where
+    C: ParametricCurve3D + ParameterDivision1D<Point = Point3>,
 {
     fn parameter_division(
         &self,

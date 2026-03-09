@@ -20,7 +20,8 @@ pub trait FilletableSurface:
     Clone
     + ParametricSurface<Point = Point3>
     + TryInto<NurbsSurface<Vector4>>
-    + From<NurbsSurface<Vector4>> {
+    + From<NurbsSurface<Vector4>>
+{
     /// Converts this surface to a NURBS surface used by internal fillet logic.
     fn to_nurbs_surface(&self) -> Option<NurbsSurface<Vector4>> {
         self.clone()
@@ -30,7 +31,8 @@ pub trait FilletableSurface:
     }
 }
 
-impl<T> FilletableSurface for T where T: Clone
+impl<T> FilletableSurface for T where
+    T: Clone
         + ParametricSurface<Point = Point3>
         + TryInto<NurbsSurface<Vector4>>
         + From<NurbsSurface<Vector4>>
@@ -47,7 +49,8 @@ pub trait FilletableCurve:
     + TryInto<NurbsCurve<Vector4>>
     + From<NurbsCurve<Vector4>>
     + From<ParameterCurveLinear>
-    + From<FilletIntersectionCurve> {
+    + From<FilletIntersectionCurve>
+{
     /// Converts this curve to a NURBS curve used by internal fillet logic.
     fn to_nurbs_curve(&self) -> NurbsCurve<Vector4> {
         self.clone().try_into().ok().unwrap_or_else(|| {
@@ -56,7 +59,8 @@ pub trait FilletableCurve:
     }
 }
 
-impl<T> FilletableCurve for T where T: Clone
+impl<T> FilletableCurve for T where
+    T: Clone
         + ParametricCurve<Point = Point3>
         + BoundedCurve
         + TryInto<NurbsCurve<Vector4>>

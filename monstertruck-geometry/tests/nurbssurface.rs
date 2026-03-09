@@ -103,7 +103,9 @@ fn endpoint_test_surface() -> NurbsSurface<Vector4> {
     ))
 }
 
-fn seam_samples() -> impl Iterator<Item = f64> { (0..=20).map(|i| i as f64 / 20.0) }
+fn seam_samples() -> impl Iterator<Item = f64> {
+    (0..=20).map(|i| i as f64 / 20.0)
+}
 
 fn assert_u_seam_matches(surface: &NurbsSurface<Vector4>, cut: f64, check_higher_order: bool) {
     let mut left = surface.clone();

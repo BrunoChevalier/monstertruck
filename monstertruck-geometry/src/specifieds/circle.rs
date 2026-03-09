@@ -4,7 +4,9 @@ use std::f64::consts::PI;
 impl<P> UnitCircle<P> {
     /// constructor
     #[inline]
-    pub const fn new() -> Self { Self(std::marker::PhantomData) }
+    pub const fn new() -> Self {
+        Self(std::marker::PhantomData)
+    }
 }
 
 impl ParametricCurve for UnitCircle<Point2> {
@@ -20,11 +22,17 @@ impl ParametricCurve for UnitCircle<Point2> {
         }
     }
     #[inline]
-    fn evaluate(&self, t: f64) -> Point2 { Point2::from_vec(self.derivative_n(0, t)) }
+    fn evaluate(&self, t: f64) -> Point2 {
+        Point2::from_vec(self.derivative_n(0, t))
+    }
     #[inline]
-    fn derivative(&self, t: f64) -> Vector2 { self.derivative_n(1, t) }
+    fn derivative(&self, t: f64) -> Vector2 {
+        self.derivative_n(1, t)
+    }
     #[inline]
-    fn derivative_2(&self, t: f64) -> Vector2 { self.derivative_n(2, t) }
+    fn derivative_2(&self, t: f64) -> Vector2 {
+        self.derivative_n(2, t)
+    }
     #[inline]
     fn parameter_range(&self) -> ParameterRange {
         (Bound::Included(0.0), Bound::Excluded(2.0 * PI))
@@ -46,13 +54,21 @@ impl ParametricCurve for UnitCircle<Point3> {
         }
     }
     #[inline]
-    fn evaluate(&self, t: f64) -> Point3 { Point3::from_vec(self.derivative_n(0, t)) }
+    fn evaluate(&self, t: f64) -> Point3 {
+        Point3::from_vec(self.derivative_n(0, t))
+    }
     #[inline]
-    fn derivative(&self, t: f64) -> Vector3 { self.derivative_n(1, t) }
+    fn derivative(&self, t: f64) -> Vector3 {
+        self.derivative_n(1, t)
+    }
     #[inline]
-    fn derivative_2(&self, t: f64) -> Vector3 { self.derivative_n(2, t) }
+    fn derivative_2(&self, t: f64) -> Vector3 {
+        self.derivative_n(2, t)
+    }
     #[inline]
-    fn period(&self) -> Option<f64> { Some(2.0 * PI) }
+    fn period(&self) -> Option<f64> {
+        Some(2.0 * PI)
+    }
     #[inline]
     fn parameter_range(&self) -> ParameterRange {
         (Bound::Included(0.0), Bound::Excluded(2.0 * PI))
@@ -62,7 +78,8 @@ impl ParametricCurve for UnitCircle<Point3> {
 impl BoundedCurve for UnitCircle<Point3> {}
 
 impl<P> ParameterDivision1D for UnitCircle<P>
-where UnitCircle<P>: ParametricCurve<Point = P>
+where
+    UnitCircle<P>: ParametricCurve<Point = P>,
 {
     type Point = P;
     fn parameter_division(&self, range: (f64, f64), tol: f64) -> (Vec<f64>, Vec<P>) {

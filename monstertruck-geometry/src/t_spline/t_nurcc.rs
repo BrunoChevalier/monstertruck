@@ -2,7 +2,8 @@ use super::*;
 use crate::errors::Error;
 
 impl<P> Tnurcc<P>
-where P: Debug
+where
+    P: Debug,
 {
     /// Creates a new `Tnurcc` instance. `points` is a vector containing the control points in the mesh, and `faces`
     /// describes the connections of the mesh. `faces` must describe every face in the mesh, as no `faces` will be
@@ -254,7 +255,8 @@ where P: Debug
 }
 
 impl<P> Tnurcc<P>
-where P: ControlPoint<f64>
+where
+    P: ControlPoint<f64>,
 {
     /// Performs the global subdivide algorithm required by \[Sederberg et al. 2003\] and described
     /// in \[Sederberg et al. 1998\], dubbed "refinement".
@@ -751,7 +753,8 @@ where P: ControlPoint<f64>
 }
 
 impl<P> Clone for Tnurcc<P>
-where P: Clone
+where
+    P: Clone,
 {
     fn clone(&self) -> Self {
         let mut new_control_points = Vec::new();
@@ -894,7 +897,8 @@ impl<P> Drop for Tnurcc<P> {
 }
 
 impl<P> Tnurcc<P>
-where P: ControlPoint<f64> + Debug + Clone
+where
+    P: ControlPoint<f64> + Debug + Clone,
 {
     /// Converts the T-NURCC to a T-mesh by applying CC subdivision and extracting
     /// a parametric surface patch. The patch is constructed by unfolding the mesh

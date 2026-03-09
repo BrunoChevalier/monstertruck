@@ -18,7 +18,9 @@ fn rect_wire(x0: f64, y0: f64, x1: f64, y1: f64) -> Wire {
 }
 
 /// Helper: builds a CW rectangular wire.
-fn rect_wire_cw(x0: f64, y0: f64, x1: f64, y1: f64) -> Wire { rect_wire(x0, y0, x1, y1).inverse() }
+fn rect_wire_cw(x0: f64, y0: f64, x1: f64, y1: f64) -> Wire {
+    rect_wire(x0, y0, x1, y1).inverse()
+}
 
 /// Helper: builds a triangular wire in the XY plane.
 fn triangle_wire(p0: Point3, p1: Point3, p2: Point3) -> Wire {

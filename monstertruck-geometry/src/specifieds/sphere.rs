@@ -4,16 +4,24 @@ use std::f64::consts::PI;
 impl Sphere {
     /// Creates a sphere
     #[inline(always)]
-    pub const fn new(center: Point3, radius: f64) -> Sphere { Sphere { center, radius } }
+    pub const fn new(center: Point3, radius: f64) -> Sphere {
+        Sphere { center, radius }
+    }
     /// Returns the center
     #[inline(always)]
-    pub const fn center(&self) -> Point3 { self.center }
+    pub const fn center(&self) -> Point3 {
+        self.center
+    }
     /// Returns the radius
     #[inline(always)]
-    pub const fn radius(&self) -> f64 { self.radius }
+    pub const fn radius(&self) -> f64 {
+        self.radius
+    }
     /// Returns whether the point `pt` is on sphere
     #[inline(always)]
-    pub fn include(&self, pt: Point3) -> bool { self.center.distance(pt).near(&self.radius) }
+    pub fn include(&self, pt: Point3) -> bool {
+        self.center.distance(pt).near(&self.radius)
+    }
 }
 
 impl ParametricSurface for Sphere {
@@ -42,7 +50,9 @@ impl ParametricSurface for Sphere {
         center + self.radius * u_part.mul_element_wise(v_part)
     }
     #[inline(always)]
-    fn evaluate(&self, u: f64, v: f64) -> Point3 { self.center() + self.radius * self.normal(u, v) }
+    fn evaluate(&self, u: f64, v: f64) -> Point3 {
+        self.center() + self.radius * self.normal(u, v)
+    }
     #[inline(always)]
     fn derivative_u(&self, u: f64, v: f64) -> Vector3 {
         self.radius
@@ -57,7 +67,9 @@ impl ParametricSurface for Sphere {
         self.radius * f64::sin(u) * Vector3::new(-f64::sin(v), f64::cos(v), 0.0)
     }
     #[inline(always)]
-    fn derivative_uu(&self, u: f64, v: f64) -> Vector3 { -self.radius * self.normal(u, v) }
+    fn derivative_uu(&self, u: f64, v: f64) -> Vector3 {
+        -self.radius * self.normal(u, v)
+    }
     #[inline(always)]
     fn derivative_uv(&self, u: f64, v: f64) -> Vector3 {
         self.radius * f64::cos(u) * Vector3::new(-f64::sin(v), f64::cos(v), 0.0)
@@ -74,7 +86,9 @@ impl ParametricSurface for Sphere {
         )
     }
     #[inline(always)]
-    fn v_period(&self) -> Option<f64> { Some(2.0 * PI) }
+    fn v_period(&self) -> Option<f64> {
+        Some(2.0 * PI)
+    }
 }
 
 impl ParametricSurface3D for Sphere {

@@ -68,25 +68,39 @@ impl<C, S0, S1> IntersectionCurve<C, S0, S1> {
     }
     /// This curve is a part of intersection of `self.surface0()` and `self.surface1()`.
     #[inline(always)]
-    pub fn surface0(&self) -> &S0 { &self.surface0 }
+    pub fn surface0(&self) -> &S0 {
+        &self.surface0
+    }
     /// This curve is a part of intersection of `self.surface0()` and `self.surface1()`.
     #[inline(always)]
-    pub fn surface1(&self) -> &S1 { &self.surface1 }
+    pub fn surface1(&self) -> &S1 {
+        &self.surface1
+    }
     /// Returns the polyline leading this curve.
     #[inline(always)]
-    pub fn leader(&self) -> &C { &self.leader }
+    pub fn leader(&self) -> &C {
+        &self.leader
+    }
     /// This curve is a part of intersection of `self.surface0()` and `self.surface1()`.
     #[inline(always)]
-    pub fn surface0_mut(&mut self) -> &mut S0 { &mut self.surface0 }
+    pub fn surface0_mut(&mut self) -> &mut S0 {
+        &mut self.surface0
+    }
     /// This curve is a part of intersection of `self.surface0()` and `self.surface1()`.
     #[inline(always)]
-    pub fn surface1_mut(&mut self) -> &mut S1 { &mut self.surface1 }
+    pub fn surface1_mut(&mut self) -> &mut S1 {
+        &mut self.surface1
+    }
     /// Returns the curve leading this curve.
     #[inline(always)]
-    pub fn leader_mut(&mut self) -> &mut C { &mut self.leader }
+    pub fn leader_mut(&mut self) -> &mut C {
+        &mut self.leader
+    }
     /// destruct `self`.
     #[inline(always)]
-    pub fn destruct(self) -> (S0, S1, C) { (self.surface0, self.surface1, self.leader) }
+    pub fn destruct(self) -> (S0, S1, C) {
+        (self.surface0, self.surface1, self.leader)
+    }
 }
 
 impl<C, S0, S1> IntersectionCurve<C, S0, S1>
@@ -265,7 +279,9 @@ where
         n * k
     }
     #[inline(always)]
-    fn derivative_2(&self, t: f64) -> Vector3 { self.derivative_n(2, t) }
+    fn derivative_2(&self, t: f64) -> Vector3 {
+        self.derivative_n(2, t)
+    }
     #[inline(always)]
     fn derivative_n(&self, n: usize, t: f64) -> Vector3 {
         match n {
@@ -308,7 +324,9 @@ where
         cders
     }
     #[inline(always)]
-    fn parameter_range(&self) -> ParameterRange { self.leader.parameter_range() }
+    fn parameter_range(&self) -> ParameterRange {
+        self.leader.parameter_range()
+    }
 }
 
 impl<C, S0, S1> BoundedCurve for IntersectionCurve<C, S0, S1>
@@ -349,7 +367,9 @@ where
 }
 
 impl<C: Invertible, S0: Clone, S1: Clone> Invertible for IntersectionCurve<C, S0, S1> {
-    fn invert(&mut self) { self.leader.invert(); }
+    fn invert(&mut self) {
+        self.leader.invert();
+    }
 }
 
 impl<C, S0, S1> SearchParameter<D1> for IntersectionCurve<C, S0, S1>

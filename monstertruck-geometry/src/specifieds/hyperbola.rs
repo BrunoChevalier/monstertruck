@@ -3,7 +3,9 @@ use super::*;
 impl<P> UnitHyperbola<P> {
     /// constructor
     #[inline]
-    pub const fn new() -> UnitHyperbola<P> { UnitHyperbola(std::marker::PhantomData) }
+    pub const fn new() -> UnitHyperbola<P> {
+        UnitHyperbola(std::marker::PhantomData)
+    }
 }
 
 impl ParametricCurve for UnitHyperbola<Point2> {
@@ -17,11 +19,17 @@ impl ParametricCurve for UnitHyperbola<Point2> {
         }
     }
     #[inline]
-    fn evaluate(&self, t: f64) -> Self::Point { Point2::from_vec(self.derivative_n(0, t)) }
+    fn evaluate(&self, t: f64) -> Self::Point {
+        Point2::from_vec(self.derivative_n(0, t))
+    }
     #[inline]
-    fn derivative(&self, t: f64) -> Self::Vector { self.derivative_n(1, t) }
+    fn derivative(&self, t: f64) -> Self::Vector {
+        self.derivative_n(1, t)
+    }
     #[inline]
-    fn derivative_2(&self, t: f64) -> Self::Vector { self.derivative_n(2, t) }
+    fn derivative_2(&self, t: f64) -> Self::Vector {
+        self.derivative_n(2, t)
+    }
 }
 
 impl ParametricCurve for UnitHyperbola<Point3> {
@@ -35,11 +43,17 @@ impl ParametricCurve for UnitHyperbola<Point3> {
         }
     }
     #[inline]
-    fn evaluate(&self, t: f64) -> Self::Point { Point3::from_vec(self.derivative_n(0, t)) }
+    fn evaluate(&self, t: f64) -> Self::Point {
+        Point3::from_vec(self.derivative_n(0, t))
+    }
     #[inline]
-    fn derivative(&self, t: f64) -> Self::Vector { self.derivative_n(1, t) }
+    fn derivative(&self, t: f64) -> Self::Vector {
+        self.derivative_n(1, t)
+    }
     #[inline]
-    fn derivative_2(&self, t: f64) -> Self::Vector { self.derivative_n(2, t) }
+    fn derivative_2(&self, t: f64) -> Self::Vector {
+        self.derivative_n(2, t)
+    }
 }
 
 impl<P> ParameterDivision1D for UnitHyperbola<P>

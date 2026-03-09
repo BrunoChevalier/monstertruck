@@ -9,17 +9,29 @@ impl ParametricSurface for Sphere {
         self.0.derivative_mn(m, n, PI / 2.0 - v, u) * (-1f64).powi(m as i32)
     }
     #[inline]
-    fn evaluate(&self, u: f64, v: f64) -> Point3 { self.0.evaluate(PI / 2.0 - v, u) }
+    fn evaluate(&self, u: f64, v: f64) -> Point3 {
+        self.0.evaluate(PI / 2.0 - v, u)
+    }
     #[inline]
-    fn derivative_u(&self, u: f64, v: f64) -> Vector3 { self.0.derivative_v(PI / 2.0 - v, u) }
+    fn derivative_u(&self, u: f64, v: f64) -> Vector3 {
+        self.0.derivative_v(PI / 2.0 - v, u)
+    }
     #[inline]
-    fn derivative_v(&self, u: f64, v: f64) -> Vector3 { -self.0.derivative_u(PI / 2.0 - v, u) }
+    fn derivative_v(&self, u: f64, v: f64) -> Vector3 {
+        -self.0.derivative_u(PI / 2.0 - v, u)
+    }
     #[inline]
-    fn derivative_uu(&self, u: f64, v: f64) -> Vector3 { self.0.derivative_vv(PI / 2.0 - v, u) }
+    fn derivative_uu(&self, u: f64, v: f64) -> Vector3 {
+        self.0.derivative_vv(PI / 2.0 - v, u)
+    }
     #[inline]
-    fn derivative_uv(&self, u: f64, v: f64) -> Vector3 { -self.0.derivative_uv(PI / 2.0 - v, u) }
+    fn derivative_uv(&self, u: f64, v: f64) -> Vector3 {
+        -self.0.derivative_uv(PI / 2.0 - v, u)
+    }
     #[inline]
-    fn derivative_vv(&self, u: f64, v: f64) -> Vector3 { self.0.derivative_uu(PI / 2.0 - v, u) }
+    fn derivative_vv(&self, u: f64, v: f64) -> Vector3 {
+        self.0.derivative_uu(PI / 2.0 - v, u)
+    }
     #[inline]
     fn parameter_range(&self) -> (ParameterRange, ParameterRange) {
         (
@@ -28,11 +40,15 @@ impl ParametricSurface for Sphere {
         )
     }
     #[inline]
-    fn u_period(&self) -> Option<f64> { Some(2.0 * PI) }
+    fn u_period(&self) -> Option<f64> {
+        Some(2.0 * PI)
+    }
 }
 impl ParametricSurface3D for Sphere {
     #[inline]
-    fn normal(&self, u: f64, v: f64) -> Vector3 { self.0.normal(PI / 2.0 - v, u) }
+    fn normal(&self, u: f64, v: f64) -> Vector3 {
+        self.0.normal(PI / 2.0 - v, u)
+    }
 }
 impl SearchNearestParameter<D2> for Sphere {
     type Point = Point3;

@@ -14,7 +14,9 @@ type Face<C, S> = monstertruck_topology::Face<Point3, C, S>;
 /// Uses the same sampling strategy as [`builder::try_attach_plane`]:
 /// vertex point + curve midpoint per edge.
 fn project_wire_to_2d<C>(wire: &Wire<C>, u_axis: Vector3, v_axis: Vector3) -> Vec<Point2>
-where C: ParametricCurve3D + BoundedCurve + Clone {
+where
+    C: ParametricCurve3D + BoundedCurve + Clone,
+{
     wire.edge_iter()
         .flat_map(|edge| {
             let p0 = edge.front().point();
@@ -77,7 +79,9 @@ fn point_in_polygon(pts: &[Point2], c: Point2) -> bool {
 /// Computes the average normal of a set of wires by accumulating cross products
 /// of consecutive sample points around a common centroid.
 fn compute_plane_normal<C>(wires: &[Wire<C>]) -> Option<Vector3>
-where C: ParametricCurve3D + BoundedCurve + Clone {
+where
+    C: ParametricCurve3D + BoundedCurve + Clone,
+{
     let all_pts: Vec<Point3> = wires
         .iter()
         .flat_map(|w| {
@@ -131,7 +135,9 @@ fn axes_from_normal(n: Vector3) -> (Vector3, Vector3) {
 ///
 /// The returned `Vec` has the outer wire first, followed by hole wires.
 fn classify_and_normalize<C>(mut wires: Vec<Wire<C>>) -> Result<Vec<Wire<C>>>
-where C: ParametricCurve3D + BoundedCurve + Clone + Invertible {
+where
+    C: ParametricCurve3D + BoundedCurve + Clone + Invertible,
+{
     if wires.is_empty() {
         return Err(Error::FromTopology(
             monstertruck_topology::errors::Error::EmptyWire,
@@ -219,7 +225,8 @@ where C: ParametricCurve3D + BoundedCurve + Clone + Invertible {
 pub fn attach_plane_normalized<C, S>(wires: Vec<Wire<C>>) -> Result<Face<C, S>>
 where
     C: ParametricCurve3D + BoundedCurve + Clone + Invertible,
-    Plane: IncludeCurve<C> + ToSameGeometry<S>, {
+    Plane: IncludeCurve<C> + ToSameGeometry<S>,
+{
     let normalized = classify_and_normalize(wires)?;
     crate::builder::try_attach_plane(normalized)
 }

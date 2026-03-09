@@ -136,7 +136,9 @@ impl App for MyApp {
             thread,
         }
     }
-    fn app_title<'a>() -> Option<&'a str> { Some("Bspline Benchmark Animation") }
+    fn app_title<'a>() -> Option<&'a str> {
+        Some("Bspline Benchmark Animation")
+    }
 
     fn render(&mut self) {
         if self.updated.load(Ordering::SeqCst) {
@@ -157,4 +159,6 @@ impl App for MyApp {
     }
 }
 
-fn main() { MyApp::run(); }
+fn main() {
+    MyApp::run();
+}

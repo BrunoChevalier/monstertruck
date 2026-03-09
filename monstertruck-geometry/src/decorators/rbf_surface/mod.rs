@@ -16,21 +16,31 @@ impl<C, S0, S1, R> RbfSurface<C, S0, S1, R> {
 
     /// returns edge curve
     #[inline]
-    pub const fn edge_curve(&self) -> &C { &self.edge_curve }
+    pub const fn edge_curve(&self) -> &C {
+        &self.edge_curve
+    }
     /// returns first surface
     #[inline]
-    pub const fn surface0(&self) -> &S0 { &self.surface0 }
+    pub const fn surface0(&self) -> &S0 {
+        &self.surface0
+    }
     /// returns second surface
     #[inline]
-    pub const fn surface1(&self) -> &S1 { &self.surface1 }
+    pub const fn surface1(&self) -> &S1 {
+        &self.surface1
+    }
     /// returns radius function
     #[inline]
-    pub const fn radius(&self) -> &R { &self.radius }
+    pub const fn radius(&self) -> &R {
+        &self.radius
+    }
 
     /// returns the orbit curve of contact point with `surface0`.
     #[inline]
     pub fn contact_curve0(&self) -> RbfContactCurve<C, S0, S1, R>
-    where Self: Clone {
+    where
+        Self: Clone,
+    {
         RbfContactCurve {
             surface: self.clone(),
             index: 0,
@@ -39,7 +49,9 @@ impl<C, S0, S1, R> RbfSurface<C, S0, S1, R> {
     /// returns the orbit curve of contact point with `surface1`.
     #[inline]
     pub fn contact_curve1(&self) -> RbfContactCurve<C, S0, S1, R>
-    where Self: Clone {
+    where
+        Self: Clone,
+    {
         RbfContactCurve {
             surface: self.clone(),
             index: 1,
@@ -53,13 +65,19 @@ pub trait RadiusFunction: Clone {
     fn der_n(&self, n: usize, t: f64) -> f64;
     /// Substitutes the parameter `t`.
     #[inline]
-    fn subs(&self, t: f64) -> f64 { self.der_n(0, t) }
+    fn subs(&self, t: f64) -> f64 {
+        self.der_n(0, t)
+    }
     /// Returns the derivation.
     #[inline]
-    fn der(&self, t: f64) -> f64 { self.der_n(1, t) }
+    fn der(&self, t: f64) -> f64 {
+        self.der_n(1, t)
+    }
     /// Returns the 2nd-order derivation.
     #[inline]
-    fn der2(&self, t: f64) -> f64 { self.der_n(2, t) }
+    fn der2(&self, t: f64) -> f64 {
+        self.der_n(2, t)
+    }
     /// Substitutes the higher-order derivations to `out`.
     #[inline]
     fn ders(&self, max_order: usize, t: f64) -> CurveDers<f64> {
@@ -81,7 +99,9 @@ macro_rules! impl_radius_1dim {
     ($ty: ty) => {
         impl RadiusFunction for $ty {
             #[inline]
-            fn der_n(&self, n: usize, t: f64) -> f64 { PcurveTrait::der_n(self, n, t).x }
+            fn der_n(&self, n: usize, t: f64) -> f64 {
+                PcurveTrait::der_n(self, n, t).x
+            }
         }
     };
 }
@@ -99,12 +119,16 @@ pub struct ContactPoint {
 
 impl From<(Point3, Point2)> for ContactPoint {
     #[inline]
-    fn from((point, uv): (Point3, Point2)) -> Self { Self { point, uv } }
+    fn from((point, uv): (Point3, Point2)) -> Self {
+        Self { point, uv }
+    }
 }
 
 impl From<ContactPoint> for (Point3, (f64, f64)) {
     #[inline]
-    fn from(cp: ContactPoint) -> Self { (cp.point, (cp.uv.x, cp.uv.y)) }
+    fn from(cp: ContactPoint) -> Self {
+        (cp.point, (cp.uv.x, cp.uv.y))
+    }
 }
 
 /// Contact circle for rolling ball fillet.
@@ -164,8 +188,12 @@ where
     fn derivative_mn(&self, m: usize, n: usize, u: f64, v: f64) -> Vector3 {
         self.sub_der_mn(m, n, u, self.contact_circle(v).unwrap())
     }
-    fn evaluate(&self, u: f64, v: f64) -> Point3 { self.contact_circle(v).unwrap().evaluate(u) }
-    fn derivative_u(&self, u: f64, v: f64) -> Vector3 { self.contact_circle(v).unwrap().der(u) }
+    fn evaluate(&self, u: f64, v: f64) -> Point3 {
+        self.contact_circle(v).unwrap().evaluate(u)
+    }
+    fn derivative_u(&self, u: f64, v: f64) -> Vector3 {
+        self.contact_circle(v).unwrap().der(u)
+    }
     fn derivative_v(&self, u: f64, v: f64) -> Vector3 {
         self.vder_info(self.contact_circle(v).unwrap(), 1).vder(u)
     }
@@ -185,7 +213,9 @@ where
             self.edge_curve.parameter_range(),
         )
     }
-    fn v_period(&self) -> Option<f64> { self.edge_curve.period() }
+    fn v_period(&self) -> Option<f64> {
+        self.edge_curve.period()
+    }
 }
 
 impl<C, S0, S1, R> ParametricSurface3D for RbfSurface<C, S0, S1, R>
@@ -264,10 +294,14 @@ where
 impl<C, S0, S1, R> RbfContactCurve<C, S0, S1, R> {
     /// original fillet surface
     #[inline]
-    pub const fn fillet_surface(&self) -> &RbfSurface<C, S0, S1, R> { &self.surface }
+    pub const fn fillet_surface(&self) -> &RbfSurface<C, S0, S1, R> {
+        &self.surface
+    }
     /// curve index: curve on `surface0` => 0, curve on `surface1` => 1.
     #[inline]
-    pub const fn index(&self) -> usize { self.index }
+    pub const fn index(&self) -> usize {
+        self.index
+    }
 }
 
 impl<C, S0, S1, R> PcurveTrait for RbfContactCurve<C, S0, S1, R>
@@ -293,7 +327,9 @@ where
             _ => cc_ders.contact1_ders,
         }
     }
-    fn derivative_n(&self, n: usize, t: f64) -> Self::Vector { self.derivatives(n, t)[n] }
+    fn derivative_n(&self, n: usize, t: f64) -> Self::Vector {
+        self.derivatives(n, t)[n]
+    }
     fn evaluate(&self, t: f64) -> Self::Point {
         // SAFETY: `t` is within the edge curve parameter range, so `contact_circle` succeeds.
         let cc = self.surface.contact_circle(t).unwrap();
@@ -302,12 +338,20 @@ where
             _ => cc.contact_point1.point,
         }
     }
-    fn derivative(&self, t: f64) -> Self::Vector { self.derivative_n(1, t) }
-    fn derivative_2(&self, t: f64) -> Self::Vector { self.derivative_n(2, t) }
+    fn derivative(&self, t: f64) -> Self::Vector {
+        self.derivative_n(1, t)
+    }
+    fn derivative_2(&self, t: f64) -> Self::Vector {
+        self.derivative_n(2, t)
+    }
     #[inline]
-    fn parameter_range(&self) -> ParameterRange { self.surface.edge_curve.parameter_range() }
+    fn parameter_range(&self) -> ParameterRange {
+        self.surface.edge_curve.parameter_range()
+    }
     #[inline]
-    fn period(&self) -> Option<f64> { self.surface.edge_curve.period() }
+    fn period(&self) -> Option<f64> {
+        self.surface.edge_curve.period()
+    }
 }
 
 impl<C, S0, S1, R> BoundedCurve for RbfContactCurve<C, S0, S1, R>

@@ -298,7 +298,9 @@ where
     C: StepLength,
     S: StepLength,
 {
-    fn from(solid: &'a CompressedSolid<P, C, S>) -> Self { Self::Solid(StepSolid::new(solid, 16)) }
+    fn from(solid: &'a CompressedSolid<P, C, S>) -> Self {
+        Self::Solid(StepSolid::new(solid, 16))
+    }
 }
 
 impl<P, C, S> Display for PreStepModel<'_, P, C, S>
@@ -337,7 +339,9 @@ where
     C: StepLength,
     S: StepLength,
 {
-    fn from(shell: &'a CompressedShell<P, C, S>) -> Self { Self(shell.into()) }
+    fn from(shell: &'a CompressedShell<P, C, S>) -> Self {
+        Self(shell.into())
+    }
 }
 
 impl<'a, P, C, S> From<&'a CompressedSolid<P, C, S>> for StepModel<'a, P, C, S>
@@ -346,7 +350,9 @@ where
     C: StepLength,
     S: StepLength,
 {
-    fn from(solid: &'a CompressedSolid<P, C, S>) -> Self { Self(solid.into()) }
+    fn from(solid: &'a CompressedSolid<P, C, S>) -> Self {
+        Self(solid.into())
+    }
 }
 
 impl<P, C, S> Display for StepModel<'_, P, C, S>

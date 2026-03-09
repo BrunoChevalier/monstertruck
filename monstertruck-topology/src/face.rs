@@ -153,7 +153,9 @@ impl<P, C, S> Face<P, C, S> {
     /// assert_eq!(face.absolute_boundaries(), &boundaries);
     /// ```
     #[inline(always)]
-    pub const fn absolute_boundaries(&self) -> &Vec<Wire<P, C>> { &self.boundaries }
+    pub const fn absolute_boundaries(&self) -> &Vec<Wire<P, C>> {
+        &self.boundaries
+    }
 
     /// Returns a clone of the face without inversion.
     /// # Examples
@@ -213,7 +215,9 @@ impl<P, C, S> Face<P, C, S> {
 
     #[inline(always)]
     fn renew_pointer(&mut self)
-    where S: Clone {
+    where
+        S: Clone,
+    {
         let surface = self.surface();
         self.surface = Arc::new(Mutex::new(surface));
     }
@@ -311,7 +315,9 @@ impl<P, C, S> Face<P, C, S> {
     /// ```
     #[inline(always)]
     pub fn try_add_boundary(&mut self, mut wire: Wire<P, C>) -> Result<()>
-    where S: Clone {
+    where
+        S: Clone,
+    {
         if wire.is_empty() {
             return Err(Error::EmptyWire);
         } else if !wire.is_closed() {
@@ -403,7 +409,9 @@ impl<P, C, S> Face<P, C, S> {
     /// ```
     #[inline(always)]
     pub fn add_boundary(&mut self, wire: Wire<P, C>)
-    where S: Clone {
+    where
+        S: Clone,
+    {
         self.try_add_boundary(wire).remove_try()
     }
 
@@ -509,12 +517,16 @@ impl<P, C, S> Face<P, C, S> {
     /// The result of this method is the same with `self.boundaries() == self.absolute_boundaries().clone()`.
     /// Moreover, if this method returns false, `self.boundaries() == self.absolute_boundaries().inverse()`.
     #[inline(always)]
-    pub fn orientation(&self) -> bool { self.orientation }
+    pub fn orientation(&self) -> bool {
+        self.orientation
+    }
 
     /// Returns the clone of surface of face.
     #[inline(always)]
     pub fn surface(&self) -> S
-    where S: Clone {
+    where
+        S: Clone,
+    {
         self.surface.lock().clone()
     }
 
@@ -543,7 +555,9 @@ impl<P, C, S> Face<P, C, S> {
     /// assert_eq!(face1.surface(), 1);
     /// ```
     #[inline(always)]
-    pub fn set_surface(&self, surface: S) { *self.surface.lock() = surface; }
+    pub fn set_surface(&self, surface: S) {
+        *self.surface.lock() = surface;
+    }
 
     /// Inverts the direction of the face.
     /// # Examples
@@ -616,7 +630,9 @@ impl<P, C, S> Face<P, C, S> {
     /// assert_ne!(face0.id(), face2.id());
     /// ```
     #[inline(always)]
-    pub fn id(&self) -> FaceId<S> { Id::new(Arc::as_ptr(&self.surface)) }
+    pub fn id(&self) -> FaceId<S> {
+        Id::new(Arc::as_ptr(&self.surface))
+    }
 
     /// Returns how many same faces.
     ///
@@ -645,7 +661,9 @@ impl<P, C, S> Face<P, C, S> {
     /// assert_eq!(face0.count(), 1);
     /// ```
     #[inline(always)]
-    pub fn count(&self) -> usize { Arc::strong_count(&self.surface) }
+    pub fn count(&self) -> usize {
+        Arc::strong_count(&self.surface)
+    }
 
     /// Returns the inverse face.
     /// # Examples
@@ -842,7 +860,9 @@ impl<P, C, S> Face<P, C, S> {
     /// let face = Face::new(vec![wire], ());
     /// assert!(face.cut_by_edge(Edge::new(&v[1], &v[4], ())).is_none());
     pub fn cut_by_edge(&self, edge: Edge<P, C>) -> Option<(Self, Self)>
-    where S: Clone {
+    where
+        S: Clone,
+    {
         self.cut_by_wire([edge].into())
     }
 
@@ -878,7 +898,9 @@ impl<P, C, S> Face<P, C, S> {
     ///
     /// See also [`Face::cut_by_edge`].
     pub fn cut_by_wire(&self, wire: Wire<P, C>) -> Option<(Self, Self)>
-    where S: Clone {
+    where
+        S: Clone,
+    {
         if self.boundaries.len() != 1 {
             return None;
         }
@@ -961,7 +983,8 @@ impl<P, C, S> Face<P, C, S> {
     pub fn glue_at_boundaries(&self, other: &Self) -> Option<Self>
     where
         S: Clone + PartialEq,
-        Wire<P, C>: Debug, {
+        Wire<P, C>: Debug,
+    {
         let surface = self.surface();
         if surface != other.surface() || self.orientation() != other.orientation() {
             return None;
@@ -1177,10 +1200,14 @@ impl<P, C> Iterator for BoundaryIter<'_, P, C> {
     }
 
     #[inline(always)]
-    fn size_hint(&self) -> (usize, Option<usize>) { (self.len(), Some(self.len())) }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
 
     #[inline(always)]
-    fn last(mut self) -> Option<Edge<P, C>> { self.next_back() }
+    fn last(mut self) -> Option<Edge<P, C>> {
+        self.next_back()
+    }
 }
 
 impl<P, C> DoubleEndedIterator for BoundaryIter<'_, P, C> {
@@ -1195,7 +1222,9 @@ impl<P, C> DoubleEndedIterator for BoundaryIter<'_, P, C> {
 
 impl<P, C> ExactSizeIterator for BoundaryIter<'_, P, C> {
     #[inline(always)]
-    fn len(&self) -> usize { self.edge_iter.len() }
+    fn len(&self) -> usize {
+        self.edge_iter.len()
+    }
 }
 
 impl<P, C> std::iter::FusedIterator for BoundaryIter<'_, P, C> {}

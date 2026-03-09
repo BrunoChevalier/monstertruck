@@ -42,7 +42,8 @@ pub trait SearchNearestParameterVector: InnerSpace<Scalar = f64> + Tolerance {
     type Matrix: Jacobian<Self>;
     #[doc(hidden)]
     fn subs<S>(surface: &S, point: Self::Point, param: Self) -> CalcOutput<Self, Self::Matrix>
-    where S: ParametricSurface<Point = Self::Point, Vector = Self>;
+    where
+        S: ParametricSurface<Point = Self::Point, Vector = Self>;
     #[doc(hidden)]
     fn into_param(self) -> (f64, f64);
     #[doc(hidden)]
@@ -65,8 +66,12 @@ impl SearchNearestParameterVector for Vector2 {
             derivation: Matrix2::from_cols(surface.derivative_u(u, v), surface.derivative_v(u, v)),
         }
     }
-    fn into_param(self) -> (f64, f64) { self.into() }
-    fn from_param(param: (f64, f64)) -> Self { param.into() }
+    fn into_param(self) -> (f64, f64) {
+        self.into()
+    }
+    fn from_param(param: (f64, f64)) -> Self {
+        param.into()
+    }
 }
 
 impl SearchNearestParameterVector for Vector3 {
@@ -96,8 +101,12 @@ impl SearchNearestParameterVector for Vector3 {
             ),
         }
     }
-    fn into_param(self) -> (f64, f64) { self.truncate().into() }
-    fn from_param((u, v): (f64, f64)) -> Self { Self::new(u, v, 0.0) }
+    fn into_param(self) -> (f64, f64) {
+        self.truncate().into()
+    }
+    fn from_param((u, v): (f64, f64)) -> Self {
+        Self::new(u, v, 0.0)
+    }
 }
 
 /// Searches the parameter by Newton's method.
@@ -124,7 +133,8 @@ pub trait SearchParameterVector: InnerSpace<Scalar = f64> + Tolerance {
     type Point;
     #[doc(hidden)]
     fn subs<S>(surface: &S, point: Self::Point, param: Vector2) -> CalcOutput<Vector2, Matrix2>
-    where S: ParametricSurface<Point = Self::Point, Vector = Self>;
+    where
+        S: ParametricSurface<Point = Self::Point, Vector = Self>;
 }
 
 impl SearchParameterVector for Vector2 {
@@ -244,7 +254,8 @@ where
 fn sub_parameter_division<S>(surface: &S, (udiv, vdiv): (&mut Vec<f64>, &mut Vec<f64>), tol: f64)
 where
     S: ParametricSurface,
-    S::Point: EuclideanSpace<Scalar = f64> + MetricSpace<Metric = f64> + HashGen<f64>, {
+    S::Point: EuclideanSpace<Scalar = f64> + MetricSpace<Metric = f64> + HashGen<f64>,
+{
     let mut divide_flag0 = vec![false; udiv.len() - 1];
     let mut divide_flag1 = vec![false; vdiv.len() - 1];
 

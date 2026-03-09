@@ -23,7 +23,9 @@ type Shell<C, S> = monstertruck_topology::Shell<Point3, C, S>;
 /// # assert_eq!(vertex.point(), Point3::new(1.0, 2.0, 3.0));
 /// ```
 #[inline(always)]
-pub fn vertex<P: Into<Point3>>(p: P) -> Vertex { Vertex::new(p.into()) }
+pub fn vertex<P: Into<Point3>>(p: P) -> Vertex {
+    Vertex::new(p.into())
+}
 
 /// Creates and returns vertices by three dimensional points.
 /// # Examples
@@ -67,7 +69,9 @@ pub fn vertices<P: Into<Point3>>(points: impl IntoIterator<Item = P>) -> Vec<Ver
 /// # }
 /// ```
 pub fn line<C>(vertex0: &Vertex, vertex1: &Vertex) -> Edge<C>
-where Line<Point3>: ToSameGeometry<C> {
+where
+    Line<Point3>: ToSameGeometry<C>,
+{
     let pt0 = vertex0.point();
     let pt1 = vertex1.point();
     Edge::new(vertex0, vertex1, Line(pt0, pt1).to_same_geometry())
@@ -93,7 +97,9 @@ where Line<Point3>: ToSameGeometry<C> {
 /// # }
 /// ```
 pub fn circle_arc<C>(vertex0: &Vertex, vertex1: &Vertex, transit: Point3) -> Edge<C>
-where Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4>: ToSameGeometry<C> {
+where
+    Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4>: ToSameGeometry<C>,
+{
     let pt0 = vertex0.point();
     let pt1 = vertex1.point();
     let curve = geom_impls::circle_arc_by_three_points(pt0, pt1, transit);
@@ -119,7 +125,9 @@ where Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4>: ToSameGeometry<C> {
 /// # }
 /// ```
 pub fn bezier<C>(vertex0: &Vertex, vertex1: &Vertex, mut inter_points: Vec<Point3>) -> Edge<C>
-where BsplineCurve<Point3>: ToSameGeometry<C> {
+where
+    BsplineCurve<Point3>: ToSameGeometry<C>,
+{
     let pt0 = vertex0.point();
     let pt1 = vertex1.point();
     let mut control_points = vec![pt0];
@@ -158,7 +166,8 @@ pub fn homotopy<C, S>(edge0: &Edge<C>, edge1: &Edge<C>) -> Face<C, S>
 where
     C: Invertible,
     Line<Point3>: ToSameGeometry<C>,
-    HomotopySurface<C, C>: ToSameGeometry<S>, {
+    HomotopySurface<C, C>: ToSameGeometry<S>,
+{
     let wire = wire![
         edge0.clone(),
         line(edge0.back(), edge1.back()),
@@ -262,7 +271,8 @@ pub fn try_wire_homotopy<C, S>(wire0: &Wire<C>, wire1: &Wire<C>) -> Result<Shell
 where
     C: Invertible,
     Line<Point3>: ToSameGeometry<C>,
-    HomotopySurface<C, C>: ToSameGeometry<S>, {
+    HomotopySurface<C, C>: ToSameGeometry<S>,
+{
     if wire0.len() != wire1.len() {
         return Err(Error::NotSameNumberOfEdges);
     }
@@ -322,7 +332,8 @@ pub fn try_skin_wires<C, S>(wires: &[Wire<C>]) -> Result<Shell<C, S>>
 where
     C: Invertible,
     Line<Point3>: ToSameGeometry<C>,
-    HomotopySurface<C, C>: ToSameGeometry<S>, {
+    HomotopySurface<C, C>: ToSameGeometry<S>,
+{
     if wires.len() < 2 {
         return Err(Error::NotSameNumberOfEdges);
     }
@@ -410,7 +421,8 @@ where
 pub fn try_attach_plane<C, S>(wires: impl Into<Vec<Wire<C>>>) -> Result<Face<C, S>>
 where
     C: ParametricCurve3D + BoundedCurve,
-    Plane: IncludeCurve<C> + ToSameGeometry<S>, {
+    Plane: IncludeCurve<C> + ToSameGeometry<S>,
+{
     let wires = wires.into();
     let _ = Face::try_new(wires.clone(), ())?;
     let pts = wires
@@ -445,11 +457,15 @@ where
 /// assert_ne!(v0.id(), v.id());
 /// ```
 #[inline(always)]
-pub fn clone<T: Mapped<()>>(elem: &T) -> T { elem.mapped(()) }
+pub fn clone<T: Mapped<()>>(elem: &T) -> T {
+    elem.mapped(())
+}
 
 /// Returns a transformed vertex, edge, wire, face, shell or solid.
 #[inline(always)]
-pub fn transformed<T: Mapped<Matrix4>>(elem: &T, mat: Matrix4) -> T { elem.mapped(mat) }
+pub fn transformed<T: Mapped<Matrix4>>(elem: &T, mat: Matrix4) -> T {
+    elem.mapped(mat)
+}
 
 /// Returns a translated vertex, edge, wire, face, shell or solid.
 #[inline(always)]
@@ -521,7 +537,9 @@ pub fn scaled<T: Mapped<Matrix4>>(elem: &T, origin: Point3, scalars: Vector3) ->
 /// ExtrudedCurve<C, Vector3>: ToSameGeometry<S>
 /// ```
 pub fn extrude<T, Swept>(elem: &T, vector: Vector3) -> Swept
-where T: Sweep<Matrix4, LineConnector, ExtrudeConnector, Swept> {
+where
+    T: Sweep<Matrix4, LineConnector, ExtrudeConnector, Swept>,
+{
     let trsl = Matrix4::from_translation(vector);
     elem.sweep(trsl, LineConnector, ExtrudeConnector { vector })
 }
@@ -835,7 +853,8 @@ where
     S: Invertible,
     R: Into<Rad<f64>>,
     Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4>: ToSameGeometry<C>,
-    RevolutedCurve<C>: ToSameGeometry<S>, {
+    RevolutedCurve<C>: ToSameGeometry<S>,
+{
     let origin = wire.front_vertex().map_or(Point3::origin(), |v| v.point());
     revolve_wire(wire, origin, axis, angle, division)
 }

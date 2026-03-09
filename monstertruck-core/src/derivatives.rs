@@ -23,7 +23,9 @@ impl<V> CurveDerivatives<V> {
     /// Construct zeroed `CurveDerivatives` with maximum order = `max_order`.
     #[inline]
     pub fn new(max_order: usize) -> Self
-    where V: Zero + Copy {
+    where
+        V: Zero + Copy,
+    {
         Self {
             array: [V::zero(); MAX_DER_ORDER + 1],
             max_order,
@@ -31,7 +33,9 @@ impl<V> CurveDerivatives<V> {
     }
     /// Returns the maximum order
     #[inline]
-    pub const fn max_order(&self) -> usize { self.max_order }
+    pub const fn max_order(&self) -> usize {
+        self.max_order
+    }
     /// Appends an element to the back of a collection.
     #[inline]
     pub fn push(&mut self, value: V) {
@@ -51,7 +55,9 @@ impl<V> CurveDerivatives<V> {
     /// ```
     #[inline]
     pub fn derivative(&self) -> Self
-    where V: Zero + Copy {
+    where
+        V: Zero + Copy,
+    {
         let mut array = [V::zero(); MAX_DER_ORDER + 1];
         array[..MAX_DER_ORDER].copy_from_slice(&self.array[1..]);
         Self {
@@ -63,7 +69,9 @@ impl<V> CurveDerivatives<V> {
     /// Returns derivative values.
     #[inline]
     pub fn der(&self) -> Self
-    where V: Zero + Copy {
+    where
+        V: Zero + Copy,
+    {
         self.derivative()
     }
 
@@ -98,7 +106,9 @@ impl<V> CurveDerivatives<V> {
     /// # }
     /// ```
     pub fn rational_derivatives(&self) -> CurveDerivatives<<V::Point as EuclideanSpace>::Diff>
-    where V: Homogeneous {
+    where
+        V: Homogeneous,
+    {
         let from = <V::Scalar as NumCast>::from;
         let mut evals = [<V::Point as EuclideanSpace>::Diff::zero(); MAX_DER_ORDER + 1];
         for i in 0..=self.max_order {
@@ -119,7 +129,9 @@ impl<V> CurveDerivatives<V> {
     /// Returns rationalized derivatives.
     #[inline]
     pub fn rat_ders(&self) -> CurveDerivatives<<V::Point as EuclideanSpace>::Diff>
-    where V: Homogeneous {
+    where
+        V: Homogeneous,
+    {
         self.rational_derivatives()
     }
 
@@ -151,7 +163,8 @@ impl<V> CurveDerivatives<V> {
     pub fn absolute_derivatives(&self) -> CurveDerivatives<V::Scalar>
     where
         V: InnerSpace,
-        V::Scalar: BaseFloat, {
+        V::Scalar: BaseFloat,
+    {
         let mut evals = [V::Scalar::zero(); MAX_DER_ORDER + 1];
         evals[0] = self[0].magnitude();
         (1..=self.max_order).for_each(|m| {
@@ -178,7 +191,8 @@ impl<V> CurveDerivatives<V> {
     pub fn abs_ders(&self) -> CurveDerivatives<V::Scalar>
     where
         V: InnerSpace,
-        V::Scalar: BaseFloat, {
+        V::Scalar: BaseFloat,
+    {
         self.absolute_derivatives()
     }
 
@@ -377,7 +391,9 @@ impl<V> CurveDerivatives<V> {
     /// # }
     /// ```
     pub fn to_array<const LEN: usize>(&self) -> [V; LEN]
-    where V: Copy {
+    where
+        V: Copy,
+    {
         if self.max_order > LEN {
             panic!("length of the returned array is longer than given CurveDerivatives");
         }
@@ -389,12 +405,16 @@ impl<V> CurveDerivatives<V> {
 impl<V> std::ops::Deref for CurveDerivatives<V> {
     type Target = [V];
     #[inline]
-    fn deref(&self) -> &[V] { &self.array[..=self.max_order] }
+    fn deref(&self) -> &[V] {
+        &self.array[..=self.max_order]
+    }
 }
 
 impl<V> std::ops::DerefMut for CurveDerivatives<V> {
     #[inline]
-    fn deref_mut(&mut self) -> &mut [V] { &mut self.array[..=self.max_order] }
+    fn deref_mut(&mut self) -> &mut [V] {
+        &mut self.array[..=self.max_order]
+    }
 }
 
 impl<V: Zero + Copy, const N: usize> TryFrom<[V; N]> for CurveDerivatives<V> {
@@ -485,7 +505,9 @@ where
                 .zip(other.iter())
                 .all(|(v, w)| v.abs_diff_eq(w, epsilon))
     }
-    fn default_epsilon() -> Self::Epsilon { V::default_epsilon() }
+    fn default_epsilon() -> Self::Epsilon {
+        V::default_epsilon()
+    }
 }
 
 impl<V: Debug> Debug for CurveDerivatives<V> {
@@ -505,7 +527,9 @@ impl<V> SurfaceDerivatives<V> {
     /// Construct zeroed `SurfaceDerivatives` with maximum order = `max_order`.
     #[inline]
     pub fn new(max_order: usize) -> Self
-    where V: Zero + Copy {
+    where
+        V: Zero + Copy,
+    {
         Self {
             array: [[V::zero(); MAX_DER_ORDER + 1]; MAX_DER_ORDER + 1],
             max_order,
@@ -513,7 +537,9 @@ impl<V> SurfaceDerivatives<V> {
     }
     /// Returns maximum order
     #[inline]
-    pub const fn max_order(&self) -> usize { self.max_order }
+    pub const fn max_order(&self) -> usize {
+        self.max_order
+    }
 
     /// Returns the iterator of slices
     /// # Examples
@@ -586,7 +612,9 @@ impl<V> SurfaceDerivatives<V> {
     /// ```
     #[inline]
     pub fn derivative_u(&self) -> Self
-    where V: Zero + Copy {
+    where
+        V: Zero + Copy,
+    {
         let mut array = [[V::zero(); MAX_DER_ORDER + 1]; MAX_DER_ORDER + 1];
         array[..MAX_DER_ORDER].copy_from_slice(&self.array[1..]);
         Self {
@@ -598,7 +626,9 @@ impl<V> SurfaceDerivatives<V> {
     /// Returns derivatives in the `u` direction.
     #[inline]
     pub fn uder(&self) -> Self
-    where V: Zero + Copy {
+    where
+        V: Zero + Copy,
+    {
         self.derivative_u()
     }
 
@@ -629,7 +659,9 @@ impl<V> SurfaceDerivatives<V> {
     /// ```
     #[inline]
     pub fn derivative_v(&self) -> Self
-    where V: Zero + Copy {
+    where
+        V: Zero + Copy,
+    {
         let mut array = [[V::zero(); MAX_DER_ORDER + 1]; MAX_DER_ORDER + 1];
         array.iter_mut().zip(&self.array).for_each(|(arr, sarr)| {
             arr[..MAX_DER_ORDER].copy_from_slice(&sarr[1..]);
@@ -643,7 +675,9 @@ impl<V> SurfaceDerivatives<V> {
     /// Returns derivatives in the `v` direction.
     #[inline]
     pub fn vder(&self) -> Self
-    where V: Zero + Copy {
+    where
+        V: Zero + Copy,
+    {
         self.derivative_v()
     }
 
@@ -706,7 +740,9 @@ impl<V> SurfaceDerivatives<V> {
     /// # }
     /// ```
     pub fn rational_derivatives(&self) -> SurfaceDerivatives<<V::Point as EuclideanSpace>::Diff>
-    where V: Homogeneous {
+    where
+        V: Homogeneous,
+    {
         let zero = <V::Point as EuclideanSpace>::Diff::zero();
         let from = <V::Scalar as NumCast>::from;
         let mut evals = [[zero; MAX_DER_ORDER + 1]; MAX_DER_ORDER + 1];
@@ -738,7 +774,9 @@ impl<V> SurfaceDerivatives<V> {
     /// Returns rationalized derivatives.
     #[inline]
     pub fn rat_ders(&self) -> SurfaceDerivatives<<V::Point as EuclideanSpace>::Diff>
-    where V: Homogeneous {
+    where
+        V: Homogeneous,
+    {
         self.rational_derivatives()
     }
 
@@ -1021,7 +1059,9 @@ where
                         .all(|(v, w)| v.abs_diff_eq(w, epsilon))
                 })
     }
-    fn default_epsilon() -> Self::Epsilon { V::default_epsilon() }
+    fn default_epsilon() -> Self::Epsilon {
+        V::default_epsilon()
+    }
 }
 
 impl<V: Debug> Debug for SurfaceDerivatives<V> {
@@ -1044,7 +1084,9 @@ fn surface_ders_debug() {
     assert_eq!(string, "[[0.0, 0.0, 0.0], [0.0, 0.0], [0.0]]");
 }
 
-fn can_init(len: usize, n: usize, max: usize) -> bool { !(len > n || max * len < n) }
+fn can_init(len: usize, n: usize, max: usize) -> bool {
+    !(len > n || max * len < n)
+}
 
 fn init(array: &mut [usize], n: usize, max: usize) {
     if array.is_empty() {
@@ -1105,7 +1147,9 @@ impl<const MAX: usize> Iterator for CompositionIter<MAX> {
     }
 }
 
-fn factorial(n: usize) -> u128 { (2..=n).fold(1, |f, i| f * i as u128) }
+fn factorial(n: usize) -> u128 {
+    (2..=n).fold(1, |f, i| f * i as u128)
+}
 
 fn multiplicity(array: &[usize]) -> u128 {
     let n = array.iter().sum::<usize>();
@@ -1127,7 +1171,8 @@ fn tensor<S, V, A>(sder: &A, cder: &[Vector2<S>], idx: &[usize]) -> V
 where
     S: BaseFloat,
     V: VectorSpace<Scalar = S>,
-    A: std::ops::Index<usize, Output = [V]>, {
+    A: std::ops::Index<usize, Output = [V]>,
+{
     let n: u128 = 2u128.pow(idx.len() as u32);
     (0..n).fold(V::zero(), |sum, mut i| {
         let (t, mult) = idx.iter().fold((0, S::one()), |(t, mult), &j| {

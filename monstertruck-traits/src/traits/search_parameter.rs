@@ -42,7 +42,9 @@ pub enum SearchParameterHint1D {
 
 impl From<f64> for SearchParameterHint1D {
     #[inline(always)]
-    fn from(x: f64) -> SearchParameterHint1D { SearchParameterHint1D::Parameter(x) }
+    fn from(x: f64) -> SearchParameterHint1D {
+        SearchParameterHint1D::Parameter(x)
+    }
 }
 
 impl From<(f64, f64)> for SearchParameterHint1D {
@@ -79,12 +81,16 @@ pub enum SearchParameterHint2D {
 
 impl From<(f64, f64)> for SearchParameterHint2D {
     #[inline(always)]
-    fn from(x: (f64, f64)) -> Self { Self::Parameter(x.0, x.1) }
+    fn from(x: (f64, f64)) -> Self {
+        Self::Parameter(x.0, x.1)
+    }
 }
 
 impl From<((f64, f64), (f64, f64))> for SearchParameterHint2D {
     #[inline(always)]
-    fn from(ranges: ((f64, f64), (f64, f64))) -> Self { Self::Range(ranges.0, ranges.1) }
+    fn from(ranges: ((f64, f64), (f64, f64))) -> Self {
+        Self::Range(ranges.0, ranges.1)
+    }
 }
 
 impl From<Option<(f64, f64)>> for SearchParameterHint2D {

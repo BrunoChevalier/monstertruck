@@ -6,7 +6,8 @@ use surface::{SearchNearestParameterVector, SearchParameterVector};
 pub fn presearch<C>(curve: &C, point: C::Point, range: (f64, f64), division: usize) -> f64
 where
     C: ParametricCurve,
-    C::Point: MetricSpace<Metric = f64> + Copy, {
+    C::Point: MetricSpace<Metric = f64> + Copy,
+{
     let (t0, t1) = range;
     let mut res = t0;
     let mut min = f64::INFINITY;
@@ -51,7 +52,8 @@ pub fn search_parameter<C>(curve: &C, point: C::Point, hint: f64, trials: usize)
 where
     C: ParametricCurve,
     C::Point: EuclideanSpace<Scalar = f64, Diff = C::Vector>,
-    C::Vector: InnerSpace<Scalar = f64> + Tolerance, {
+    C::Vector: InnerSpace<Scalar = f64> + Tolerance,
+{
     let function = move |t: f64| {
         let diff = curve.evaluate(t) - point;
         let der = curve.derivative(t);
@@ -76,7 +78,8 @@ where
 pub fn parameter_division<C>(curve: &C, range: (f64, f64), tol: f64) -> (Vec<f64>, Vec<C::Point>)
 where
     C: ParametricCurve,
-    C::Point: EuclideanSpace<Scalar = f64> + MetricSpace<Metric = f64> + HashGen<f64>, {
+    C::Point: EuclideanSpace<Scalar = f64> + MetricSpace<Metric = f64> + HashGen<f64>,
+{
     nonpositive_tolerance!(tol);
     sub_parameter_division(
         curve,
@@ -158,23 +161,37 @@ where
         P::from_vec(self.derivative_mn(0, 0, u, v))
     }
     #[inline(always)]
-    fn derivative_u(&self, u: f64, _: f64) -> Self::Vector { self.curve0.derivative(u) }
+    fn derivative_u(&self, u: f64, _: f64) -> Self::Vector {
+        self.curve0.derivative(u)
+    }
     #[inline(always)]
-    fn derivative_v(&self, _: f64, v: f64) -> Self::Vector { self.curve1.derivative(v) * (-1.0) }
+    fn derivative_v(&self, _: f64, v: f64) -> Self::Vector {
+        self.curve1.derivative(v) * (-1.0)
+    }
     #[inline(always)]
-    fn derivative_uu(&self, u: f64, _: f64) -> Self::Vector { self.curve0.derivative_2(u) }
+    fn derivative_uu(&self, u: f64, _: f64) -> Self::Vector {
+        self.curve0.derivative_2(u)
+    }
     #[inline(always)]
-    fn derivative_vv(&self, _: f64, v: f64) -> Self::Vector { self.curve1.derivative_2(v) * (-1.0) }
+    fn derivative_vv(&self, _: f64, v: f64) -> Self::Vector {
+        self.curve1.derivative_2(v) * (-1.0)
+    }
     #[inline(always)]
-    fn derivative_uv(&self, _: f64, _: f64) -> Self::Vector { P::Diff::zero() }
+    fn derivative_uv(&self, _: f64, _: f64) -> Self::Vector {
+        P::Diff::zero()
+    }
     #[inline(always)]
     fn parameter_range(&self) -> (ParameterRange, ParameterRange) {
         (self.curve0.parameter_range(), self.curve1.parameter_range())
     }
     #[inline(always)]
-    fn u_period(&self) -> Option<f64> { self.curve0.period() }
+    fn u_period(&self) -> Option<f64> {
+        self.curve0.period()
+    }
     #[inline(always)]
-    fn v_period(&self) -> Option<f64> { self.curve1.period() }
+    fn v_period(&self) -> Option<f64> {
+        self.curve1.period()
+    }
 }
 
 impl<C0, C1> ParametricSurface3D for SubSurface<C0, C1>

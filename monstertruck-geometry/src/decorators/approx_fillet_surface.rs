@@ -3,28 +3,44 @@ use monstertruck_traits::ParametricCurve as PcurveTrait;
 
 impl<S0, S1> ApproxFilletSurface<S0, S1> {
     /// Returns the first surface.
-    pub const fn surface0(&self) -> &S0 { &self.surface0 }
+    pub const fn surface0(&self) -> &S0 {
+        &self.surface0
+    }
     /// Returns the second surface.
-    pub const fn surface1(&self) -> &S1 { &self.surface1 }
+    pub const fn surface1(&self) -> &S1 {
+        &self.surface1
+    }
     /// Returns the knot vector for the parameter `v`.
-    pub const fn knot_vector_v(&self) -> &KnotVector { &self.knot_vec }
+    pub const fn knot_vector_v(&self) -> &KnotVector {
+        &self.knot_vec
+    }
     /// Returns side curve on the first surface.
     pub fn side_pcurve0(&self) -> ParameterCurve<BsplineCurve<Point2>, S0>
-    where S0: Clone {
+    where
+        S0: Clone,
+    {
         let bsp = BsplineCurve::new(self.knot_vec.clone(), self.side_control_points0.clone());
         ParameterCurve::new(bsp, self.surface0.clone())
     }
     /// Returns side curve on the second surface.
     pub fn side_pcurve1(&self) -> ParameterCurve<BsplineCurve<Point2>, S1>
-    where S1: Clone {
+    where
+        S1: Clone,
+    {
         let bsp = BsplineCurve::new(self.knot_vec.clone(), self.side_control_points1.clone());
         ParameterCurve::new(bsp, self.surface1.clone())
     }
-    fn vdegree(&self) -> usize { self.knot_vec.len() - self.weights.len() - 1 }
+    fn vdegree(&self) -> usize {
+        self.knot_vec.len() - self.weights.len() - 1
+    }
 }
 
-fn pmul<P: EuclideanSpace>((b, p): (&P::Scalar, &P)) -> P::Diff { p.to_vec() * *b }
-fn tmul<S: Copy, T: Copy + Mul<S>>((b, v): (&S, &T)) -> <T as Mul<S>>::Output { *v * *b }
+fn pmul<P: EuclideanSpace>((b, p): (&P::Scalar, &P)) -> P::Diff {
+    p.to_vec() * *b
+}
+fn tmul<S: Copy, T: Copy + Mul<S>>((b, v): (&S, &T)) -> <T as Mul<S>>::Output {
+    *v * *b
+}
 
 type SurfaceTriple<'a, S> = (S, &'a Vec<Point2>, &'a Vec<Vector2>);
 fn u_control_points<S: ParametricSurface3D>(
@@ -186,11 +202,21 @@ where
         let b = bezier_3rd_basis(0, u);
         Point3::from_homogeneous(b[0] * pt0 + b[1] * pt1 + b[2] * pt2 + b[3] * pt3)
     }
-    fn derivative_u(&self, u: f64, v: f64) -> Self::Vector { self.derivative_mn(1, 0, u, v) }
-    fn derivative_v(&self, u: f64, v: f64) -> Self::Vector { self.derivative_mn(0, 1, u, v) }
-    fn derivative_uu(&self, u: f64, v: f64) -> Self::Vector { self.derivative_mn(2, 0, u, v) }
-    fn derivative_uv(&self, u: f64, v: f64) -> Self::Vector { self.derivative_mn(1, 1, u, v) }
-    fn derivative_vv(&self, u: f64, v: f64) -> Self::Vector { self.derivative_mn(0, 2, u, v) }
+    fn derivative_u(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_mn(1, 0, u, v)
+    }
+    fn derivative_v(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_mn(0, 1, u, v)
+    }
+    fn derivative_uu(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_mn(2, 0, u, v)
+    }
+    fn derivative_uv(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_mn(1, 1, u, v)
+    }
+    fn derivative_vv(&self, u: f64, v: f64) -> Self::Vector {
+        self.derivative_mn(0, 2, u, v)
+    }
     fn parameter_range(&self) -> (ParameterRange, ParameterRange) {
         use std::ops::Bound::*;
         // SAFETY: knot vector is always non-empty by construction.

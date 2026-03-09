@@ -33,7 +33,9 @@ macro_rules! impl_jacobian {
     ($matrix: ty, $vector: ty) => {
         impl Jacobian<$vector> for $matrix {
             #[inline(always)]
-            fn invert(self) -> Option<Self> { SquareMatrix::invert(&self) }
+            fn invert(self) -> Option<Self> {
+                SquareMatrix::invert(&self)
+            }
         }
     };
 }
@@ -109,7 +111,9 @@ mod newtonlog {
         }
         /// Returns `true` iff the Newton method terminates due to Jacobian degeneracy.
         #[inline(always)]
-        pub fn degenerate(&self) -> bool { self.degenerate }
+        pub fn degenerate(&self) -> bool {
+            self.degenerate
+        }
         #[inline(always)]
         pub(super) fn push(&mut self, log: T) {
             if let Some(vec) = &mut self.log {
@@ -117,7 +121,9 @@ mod newtonlog {
             }
         }
         #[inline(always)]
-        pub(super) fn set_degenerate(&mut self, degenerate: bool) { self.degenerate = degenerate }
+        pub(super) fn set_degenerate(&mut self, degenerate: bool) {
+            self.degenerate = degenerate
+        }
     }
 
     impl<T: Debug> Display for NewtonLog<T> {

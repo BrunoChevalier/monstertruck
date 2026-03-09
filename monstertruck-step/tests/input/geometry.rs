@@ -30,7 +30,8 @@ fn dir_from_array(arr: [f64; 2]) -> Vector3 {
 fn step_to_entity<THolder>(step_str: &str) -> THolder::Owned
 where
     THolder: Holder<Table = Table>,
-    Table: EntityTable<THolder>, {
+    Table: EntityTable<THolder>,
+{
     let data_section = DataSection::from_str(step_str).unwrap();
     let table = Table::from_data_section(&data_section);
     EntityTable::<THolder>::get_owned(&table, 1).unwrap()
@@ -40,7 +41,8 @@ fn exec_test_near<THolder, T>(ans: T, step_str: &str)
 where
     THolder: Holder<Table = Table>,
     Table: EntityTable<THolder>,
-    T: for<'a> From<&'a THolder::Owned> + std::fmt::Debug + Tolerance, {
+    T: for<'a> From<&'a THolder::Owned> + std::fmt::Debug + Tolerance,
+{
     let entity = step_to_entity(step_str);
     let res = T::from(&entity);
     assert_near!(res, ans);

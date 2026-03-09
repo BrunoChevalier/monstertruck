@@ -216,7 +216,9 @@ impl<P> Tmesh<P> {
     }
 
     /// Returns an immutable reference to the control points vector
-    pub fn control_points(&self) -> &Vec<Arc<RwLock<TmeshControlPoint<P>>>> { &self.control_points }
+    pub fn control_points(&self) -> &Vec<Arc<RwLock<TmeshControlPoint<P>>>> {
+        &self.control_points
+    }
 
     /// Inserts a control point with real space coordinates `p` on the side `connection_side`
     /// of `con`. The knot interval of the connection between con and the new control point
@@ -963,7 +965,8 @@ impl<P> Tmesh<P> {
 }
 
 impl<P> Tmesh<P>
-where P: PartialEq
+where
+    P: PartialEq,
 {
     /// Finds the first point that was added to a T-mesh with a specific cartesian coordinate
     ///
@@ -1001,7 +1004,8 @@ where P: PartialEq
 }
 
 impl<P> Tmesh<P>
-where P: ControlPoint<f64>
+where
+    P: ControlPoint<f64>,
 {
     /// Attempts to insert a new control point between two existing control points using the technique from \[Sederberg et al. 2003\]
     /// called local knot insertion (LKI), returning the added control point if successful. In order to do so, the knot vectors perpendicular
@@ -1656,7 +1660,8 @@ impl<P> fmt::Display for Tmesh<P> {
 }
 
 impl<P> Tmesh<P>
-where P: Clone
+where
+    P: Clone,
 {
     /// Subdivides a mesh by inserting a new control point parametrically halfway between every pair of connected control points
     /// already present in the mesh. This includes any implicit edges created during the subdivision of the mesh. Thus, a 2x2
@@ -1674,7 +1679,9 @@ where P: Clone
     /// # Borrows
     /// Mutably borrows every control point in `self.control_points`.
     pub fn subdivide<F>(&mut self, f: F) -> Result<()>
-    where F: Fn(P, P) -> P {
+    where
+        F: Fn(P, P) -> P,
+    {
         // Get all (pairs of) control points with horizontal point to point connections
         let righties: Vec<_> = self
             .control_points()
@@ -1727,7 +1734,8 @@ where P: Clone
 }
 
 impl<P> Clone for Tmesh<P>
-where P: Clone
+where
+    P: Clone,
 {
     fn clone(&self) -> Tmesh<P> {
         // Vector containing new point objects which have the same positions as the points in the original mesh
@@ -1878,7 +1886,8 @@ impl<T> Drop for Tmesh<T> {
 }
 
 impl<T> Tmesh<T>
-where T: Debug + Clone
+where
+    T: Debug + Clone,
 {
     /// Prints the knot vectors for every point in the mesh.
     ///
@@ -1920,7 +1929,8 @@ fn basis_function_der(u: f64, a: &[f64], der_order: usize) -> f64 {
 }
 
 impl<P> Tmesh<P>
-where P: ControlPoint<f64> + Debug + Clone
+where
+    P: ControlPoint<f64> + Debug + Clone,
 {
     /// Creates a T-mesh from a quad mesh by converting to a T-NURCC, applying
     /// CC subdivision, and extracting a parametric surface patch.
@@ -2323,11 +2333,21 @@ impl ParametricSurface for Tmesh<Point3> {
         Tmesh::subs(self, u, v).expect("T-mesh evaluation failed")
     }
 
-    fn derivative_u(&self, u: f64, v: f64) -> Vector3 { self.derivative_mn(1, 0, u, v) }
-    fn derivative_v(&self, u: f64, v: f64) -> Vector3 { self.derivative_mn(0, 1, u, v) }
-    fn derivative_uu(&self, u: f64, v: f64) -> Vector3 { self.derivative_mn(2, 0, u, v) }
-    fn derivative_uv(&self, u: f64, v: f64) -> Vector3 { self.derivative_mn(1, 1, u, v) }
-    fn derivative_vv(&self, u: f64, v: f64) -> Vector3 { self.derivative_mn(0, 2, u, v) }
+    fn derivative_u(&self, u: f64, v: f64) -> Vector3 {
+        self.derivative_mn(1, 0, u, v)
+    }
+    fn derivative_v(&self, u: f64, v: f64) -> Vector3 {
+        self.derivative_mn(0, 1, u, v)
+    }
+    fn derivative_uu(&self, u: f64, v: f64) -> Vector3 {
+        self.derivative_mn(2, 0, u, v)
+    }
+    fn derivative_uv(&self, u: f64, v: f64) -> Vector3 {
+        self.derivative_mn(1, 1, u, v)
+    }
+    fn derivative_vv(&self, u: f64, v: f64) -> Vector3 {
+        self.derivative_mn(0, 2, u, v)
+    }
 
     fn derivative_mn(&self, m: usize, n: usize, u: f64, v: f64) -> Vector3 {
         if m == 0 && n == 0 {
@@ -3609,7 +3629,9 @@ mod tests {
     }
 
     /// Returns a point half-way between `a` and `b`.
-    fn average_points(a: Point3, b: Point3) -> Point3 { 0.5 * (a + ControlPoint::to_vec(b)) }
+    fn average_points(a: Point3, b: Point3) -> Point3 {
+        0.5 * (a + ControlPoint::to_vec(b))
+    }
 
     /// Subdivides a T-mesh from a two by two into a three by three, checking that the connections and knot vectors
     /// are correct. Does not check if control points are correctly spaced in cartesian space, since that is calculated
@@ -3670,7 +3692,9 @@ mod tests {
     }
 
     /// Checks if two `Point3` instances are eqaul using tollerance.
-    fn points_eq(a: Point3, b: Point3) -> bool { (a.x + a.y + a.z - (b.x + b.y + b.z)).so_small() }
+    fn points_eq(a: Point3, b: Point3) -> bool {
+        (a.x + a.y + a.z - (b.x + b.y + b.z)).so_small()
+    }
 
     /// Test legal local knot insertion by creating two identical surfaces, then performing LKI on one of
     /// them and checking with `subs` if the surfaces differ. In order to maximize any differences between the

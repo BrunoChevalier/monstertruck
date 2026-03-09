@@ -2,7 +2,9 @@ use monstertruck_geometry::prelude::*;
 use monstertruck_step::save::*;
 
 fn step_test<T: StepLength>(x: T, ans: &str, length: usize)
-where for<'a> StepDisplay<&'a T>: std::fmt::Display {
+where
+    for<'a> StepDisplay<&'a T>: std::fmt::Display,
+{
     let display = StepDisplay::new(&x, 1);
     assert_eq!(&display.to_string(), ans);
     assert_eq!(x.step_length(), length);

@@ -4,28 +4,44 @@ use monstertruck_traits::ParametricCurve as PcurveTrait;
 impl<C> TrimmedCurve<C> {
     /// constructor
     #[inline(always)]
-    pub const fn new(curve: C, range: (f64, f64)) -> Self { Self { curve, range } }
+    pub const fn new(curve: C, range: (f64, f64)) -> Self {
+        Self { curve, range }
+    }
     /// Returns the reference of non-trimmed curve
     #[inline(always)]
-    pub const fn curve(&self) -> &C { &self.curve }
+    pub const fn curve(&self) -> &C {
+        &self.curve
+    }
     /// Returns the mutable reference of non-trimmed curve
     #[inline(always)]
-    pub fn curve_mut(&mut self) -> &mut C { &mut self.curve }
+    pub fn curve_mut(&mut self) -> &mut C {
+        &mut self.curve
+    }
 }
 
 impl<C: PcurveTrait> PcurveTrait for TrimmedCurve<C> {
     type Point = C::Point;
     type Vector = C::Vector;
     #[inline(always)]
-    fn derivative_n(&self, n: usize, t: f64) -> Self::Vector { self.curve.derivative_n(n, t) }
+    fn derivative_n(&self, n: usize, t: f64) -> Self::Vector {
+        self.curve.derivative_n(n, t)
+    }
     #[inline(always)]
-    fn evaluate(&self, t: f64) -> Self::Point { self.curve.evaluate(t) }
+    fn evaluate(&self, t: f64) -> Self::Point {
+        self.curve.evaluate(t)
+    }
     #[inline(always)]
-    fn derivative(&self, t: f64) -> Self::Vector { self.curve.derivative(t) }
+    fn derivative(&self, t: f64) -> Self::Vector {
+        self.curve.derivative(t)
+    }
     #[inline(always)]
-    fn derivative_2(&self, t: f64) -> Self::Vector { self.curve.derivative_2(t) }
+    fn derivative_2(&self, t: f64) -> Self::Vector {
+        self.curve.derivative_2(t)
+    }
     #[inline(always)]
-    fn period(&self) -> Option<f64> { self.curve.period() }
+    fn period(&self) -> Option<f64> {
+        self.curve.period()
+    }
     #[inline(always)]
     fn parameter_range(&self) -> ParameterRange {
         (Bound::Included(self.range.0), Bound::Included(self.range.1))

@@ -5,11 +5,15 @@ use std::slice::SliceIndex;
 use std::vec::Vec;
 
 #[inline(always)]
-fn inv_or_zero_strict(delta: f64) -> f64 { if delta == 0.0 { 0.0 } else { 1.0 / delta } }
+fn inv_or_zero_strict(delta: f64) -> f64 {
+    if delta == 0.0 { 0.0 } else { 1.0 / delta }
+}
 
 impl KnotVector {
     /// empty constructor
-    pub const fn new() -> KnotVector { KnotVector(Vec::new()) }
+    pub const fn new() -> KnotVector {
+        KnotVector(Vec::new())
+    }
 
     /// Returns the length of range.
     /// # Examples
@@ -52,7 +56,9 @@ impl KnotVector {
 
     /// Removes one item.
     #[inline(always)]
-    pub fn remove(&mut self, idx: usize) -> f64 { self.0.remove(idx) }
+    pub fn remove(&mut self, idx: usize) -> f64 {
+        self.0.remove(idx)
+    }
 
     /// Returns the maximum index `i` of `self[i] <= x`
     /// Return `None` if `x < self[0] or self.len() == 0`.
@@ -64,7 +70,9 @@ impl KnotVector {
     /// assert_eq!(idx, 2);
     /// ```
     #[inline(always)]
-    pub fn floor(&self, x: f64) -> Option<usize> { self.iter().rposition(|t| *t <= x) }
+    pub fn floor(&self, x: f64) -> Option<usize> {
+        self.iter().rposition(|t| *t <= x)
+    }
 
     /// Returns the multiplicity of the `i`th knot
     /// # Examples
@@ -405,7 +413,9 @@ impl KnotVector {
     /// let res : Vec<f64> = knot_vec.into();
     /// assert_eq!(res, vec![4.0, 4.0, 5.0, 6.0, 7.0, 8.0, 8.0]);
     /// ```
-    pub fn translate(&mut self, x: f64) -> &mut Self { self.transform(1.0, x) }
+    pub fn translate(&mut self, x: f64) -> &mut Self {
+        self.transform(1.0, x)
+    }
 
     /// Inverts the knot vector
     /// # Example
@@ -668,7 +678,9 @@ impl From<KnotVector> for Vec<f64> {
     /// assert_eq!(vec, vec0);
     /// ```
     #[inline(always)]
-    fn from(knotvec: KnotVector) -> Vec<f64> { knotvec.0 }
+    fn from(knotvec: KnotVector) -> Vec<f64> {
+        knotvec.0
+    }
 }
 
 impl FromIterator<f64> for KnotVector {
@@ -683,23 +695,31 @@ impl<'a> IntoIterator for &'a KnotVector {
     type Item = &'a f64;
     type IntoIter = std::slice::Iter<'a, f64>;
     #[inline(always)]
-    fn into_iter(self) -> Self::IntoIter { self.0.iter() }
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
 }
 
 impl std::ops::Deref for KnotVector {
     type Target = Vec<f64>;
     #[inline(always)]
-    fn deref(&self) -> &Vec<f64> { &self.0 }
+    fn deref(&self) -> &Vec<f64> {
+        &self.0
+    }
 }
 
 impl AsRef<[f64]> for KnotVector {
     #[inline(always)]
-    fn as_ref(&self) -> &[f64] { &self.0 }
+    fn as_ref(&self) -> &[f64] {
+        &self.0
+    }
 }
 
 impl<'de> Deserialize<'de> for KnotVector {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where D: serde::Deserializer<'de> {
+    where
+        D: serde::Deserializer<'de>,
+    {
         let vec = Vec::<f64>::deserialize(deserializer)?;
         Self::try_from(vec).map_err(serde::de::Error::custom)
     }

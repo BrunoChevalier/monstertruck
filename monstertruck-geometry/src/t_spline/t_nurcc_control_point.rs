@@ -61,5 +61,7 @@ impl<P> TnurccControlPoint<P> {
 }
 
 impl<P> Drop for TnurccControlPoint<P> {
-    fn drop(&mut self) { self.incoming_edge = None; }
+    fn drop(&mut self) {
+        self.incoming_edge = None;
+    }
 }

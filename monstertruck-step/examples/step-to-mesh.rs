@@ -128,7 +128,8 @@ fn step_to_mesh<'a>(table: &Table) -> Vec<MeshedCShell> {
 fn shell_bounding_box<C, S>(shell: &CompressedShell<Point3, C, S>) -> BoundingBox<Point3>
 where
     C: ParametricCurve3D + BoundedCurve,
-    S: ParametricSurface3D, {
+    S: ParametricSurface3D,
+{
     let mut bdd: BoundingBox<Point3> = shell.vertices.iter().collect();
     for edge in &shell.edges {
         let (t0, t1) = edge.curve.range_tuple();

@@ -7,19 +7,29 @@ use std::ops::RangeBounds;
 impl<C0, C1> HomotopySurface<C0, C1> {
     /// constructor
     #[inline(always)]
-    pub fn new(curve0: C0, curve1: C1) -> Self { Self { curve0, curve1 } }
+    pub fn new(curve0: C0, curve1: C1) -> Self {
+        Self { curve0, curve1 }
+    }
     /// Returns the first curve.
     #[inline(always)]
-    pub fn first_curve(&self) -> &C0 { &self.curve0 }
+    pub fn first_curve(&self) -> &C0 {
+        &self.curve0
+    }
     /// Returns the second curve.
     #[inline(always)]
-    pub fn second_curve(&self) -> &C1 { &self.curve1 }
+    pub fn second_curve(&self) -> &C1 {
+        &self.curve1
+    }
     /// Returns the first curve.
     #[inline(always)]
-    pub fn first_curve_mut(&mut self) -> &mut C0 { &mut self.curve0 }
+    pub fn first_curve_mut(&mut self) -> &mut C0 {
+        &mut self.curve0
+    }
     /// Returns the second curve.
     #[inline(always)]
-    pub fn second_curve_mut(&mut self) -> &mut C1 { &mut self.curve1 }
+    pub fn second_curve_mut(&mut self) -> &mut C1 {
+        &mut self.curve1
+    }
 }
 
 impl<C0, C1> ParametricSurface for HomotopySurface<C0, C1>
@@ -74,7 +84,9 @@ where
         self.curve1.der(u) - self.curve0.der(u)
     }
     #[inline(always)]
-    fn derivative_vv(&self, _: f64, _: f64) -> Self::Vector { Self::Vector::zero() }
+    fn derivative_vv(&self, _: f64, _: f64) -> Self::Vector {
+        Self::Vector::zero()
+    }
     #[inline(always)]
     fn parameter_range(&self) -> (ParameterRange, ParameterRange) {
         let range0 = self.curve0.parameter_range();
@@ -175,7 +187,8 @@ where
 }
 
 impl<P> From<HomotopySurface<BsplineCurve<P>, BsplineCurve<P>>> for BsplineSurface<P>
-where P: ControlPoint<f64> + Tolerance
+where
+    P: ControlPoint<f64> + Tolerance,
 {
     fn from(value: HomotopySurface<BsplineCurve<P>, BsplineCurve<P>>) -> Self {
         let HomotopySurface {
@@ -205,7 +218,8 @@ fn bound2opt<T>(x: Bound<T>) -> Option<T> {
 fn range_common_part<R0, R1>(range0: &R0, range1: &R1) -> ParameterRange
 where
     R0: RangeBounds<f64>,
-    R1: RangeBounds<f64>, {
+    R1: RangeBounds<f64>,
+{
     use std::cmp::Ordering;
     let (t00, t01) = (range0.start_bound(), range0.end_bound());
     let (t10, t11) = (range1.start_bound(), range1.end_bound());
@@ -247,7 +261,8 @@ fn test_range_common_part() {
     where
         R0: RangeBounds<f64>,
         R1: RangeBounds<f64>,
-        R2: RangeBounds<f64>, {
+        R2: RangeBounds<f64>,
+    {
         assert_eq!(
             range_common_part(&range0, &range1),
             to_parameter_range(&range2),

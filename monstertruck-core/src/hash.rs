@@ -3,7 +3,9 @@ use cgmath::num_traits::{Float, FromPrimitive};
 // SAFETY: Converts finite f64 constants to `S`. All constants used in this
 // module are well within the representable range of any `Float + FromPrimitive`
 // type (f32, f64), so `from_f64` will never return `None`.
-fn f64_to<S: Float + FromPrimitive>(val: f64) -> S { S::from_f64(val).unwrap() }
+fn f64_to<S: Float + FromPrimitive>(val: f64) -> S {
+    S::from_f64(val).unwrap()
+}
 
 /// Deterministic hash generator
 pub trait HashGen<S> {
@@ -336,19 +338,35 @@ impl<S: Float + FromPrimitive> HashGen<S> for [S; 4] {
 }
 
 impl<S: Float + FromPrimitive> HashGen<S> for [S; 1] {
-    fn hash1(seed: Self) -> S { S::hash1(seed[0]) }
-    fn hash2(seed: Self) -> [S; 2] { S::hash2(seed[0]) }
-    fn hash3(seed: Self) -> [S; 3] { S::hash3(seed[0]) }
-    fn hash4(seed: Self) -> [S; 4] { S::hash4(seed[0]) }
+    fn hash1(seed: Self) -> S {
+        S::hash1(seed[0])
+    }
+    fn hash2(seed: Self) -> [S; 2] {
+        S::hash2(seed[0])
+    }
+    fn hash3(seed: Self) -> [S; 3] {
+        S::hash3(seed[0])
+    }
+    fn hash4(seed: Self) -> [S; 4] {
+        S::hash4(seed[0])
+    }
 }
 
 macro_rules! derive_hashgen {
     ($from: ty, $into: ty) => {
         impl<S: Float + FromPrimitive> HashGen<S> for $from {
-            fn hash1(seed: Self) -> S { <$into>::hash1(seed.into()) }
-            fn hash2(seed: Self) -> [S; 2] { <$into>::hash2(seed.into()) }
-            fn hash3(seed: Self) -> [S; 3] { <$into>::hash3(seed.into()) }
-            fn hash4(seed: Self) -> [S; 4] { <$into>::hash4(seed.into()) }
+            fn hash1(seed: Self) -> S {
+                <$into>::hash1(seed.into())
+            }
+            fn hash2(seed: Self) -> [S; 2] {
+                <$into>::hash2(seed.into())
+            }
+            fn hash3(seed: Self) -> [S; 3] {
+                <$into>::hash3(seed.into())
+            }
+            fn hash4(seed: Self) -> [S; 4] {
+                <$into>::hash4(seed.into())
+            }
         }
     };
 }

@@ -43,7 +43,9 @@ use crate::errors::{Error, Result};
 /// assert_eq!(curves[0].knot_vec(), curves[1].knot_vec());
 /// ```
 pub fn make_curves_compatible<P>(curves: &mut [BsplineCurve<P>]) -> Result<()>
-where P: ControlPoint<f64> + Tolerance {
+where
+    P: ControlPoint<f64> + Tolerance,
+{
     if curves.is_empty() {
         return Err(Error::EmptyControlPoints);
     }
@@ -133,7 +135,9 @@ where P: ControlPoint<f64> + Tolerance {
 /// assert_eq!(surfaces[0].knot_vecs(), surfaces[1].knot_vecs());
 /// ```
 pub fn make_surfaces_compatible<P>(surfaces: &mut [BsplineSurface<P>]) -> Result<()>
-where P: ControlPoint<f64> + Tolerance {
+where
+    P: ControlPoint<f64> + Tolerance,
+{
     if surfaces.is_empty() {
         return Err(Error::EmptyControlPoints);
     }
@@ -188,7 +192,9 @@ where P: ControlPoint<f64> + Tolerance {
 
 /// Synchronizes u-direction knot vectors across all surfaces against the first.
 fn sync_surface_knots_u<P>(surfaces: &mut [BsplineSurface<P>])
-where P: ControlPoint<f64> + Tolerance {
+where
+    P: ControlPoint<f64> + Tolerance,
+{
     for i in 1..surfaces.len() {
         // Collect knots from surface[i] that surface[0] is missing.
         let knots_to_add: Vec<f64> =
@@ -208,7 +214,9 @@ where P: ControlPoint<f64> + Tolerance {
 
 /// Synchronizes v-direction knot vectors across all surfaces against the first.
 fn sync_surface_knots_v<P>(surfaces: &mut [BsplineSurface<P>])
-where P: ControlPoint<f64> + Tolerance {
+where
+    P: ControlPoint<f64> + Tolerance,
+{
     for i in 1..surfaces.len() {
         let knots_to_add: Vec<f64> =
             collect_missing_knots(surfaces[0].knot_vector_v(), surfaces[i].knot_vector_v());
@@ -264,7 +272,9 @@ fn collect_missing_knots(target: &KnotVector, source: &KnotVector) -> Vec<f64> {
 ///
 /// Returns [`Error::EmptyControlPoints`] if `curves` is empty.
 pub fn make_nurbs_curves_compatible<V>(curves: &mut [NurbsCurve<V>]) -> Result<()>
-where V: Homogeneous<Scalar = f64> + ControlPoint<f64, Diff = V> + Tolerance {
+where
+    V: Homogeneous<Scalar = f64> + ControlPoint<f64, Diff = V> + Tolerance,
+{
     if curves.is_empty() {
         return Err(Error::EmptyControlPoints);
     }

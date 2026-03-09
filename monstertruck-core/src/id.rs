@@ -8,24 +8,32 @@ pub struct Id<T>(usize, PhantomData<T>);
 impl<T> Id<T> {
     /// Creates the Id by a raw pointer.
     #[inline(always)]
-    pub fn new(ptr: *const T) -> Id<T> { Id(ptr as usize, PhantomData) }
+    pub fn new(ptr: *const T) -> Id<T> {
+        Id(ptr as usize, PhantomData)
+    }
 }
 
 impl<T> Clone for Id<T> {
     #[inline(always)]
-    fn clone(&self) -> Id<T> { *self }
+    fn clone(&self) -> Id<T> {
+        *self
+    }
 }
 
 impl<T> Copy for Id<T> {}
 
 impl<T> Hash for Id<T> {
     #[inline(always)]
-    fn hash<H: Hasher>(&self, state: &mut H) { self.0.hash(state) }
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state)
+    }
 }
 
 impl<T> PartialEq for Id<T> {
     #[inline(always)]
-    fn eq(&self, other: &Self) -> bool { self.0 == other.0 }
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
 }
 
 impl<T> Eq for Id<T> {}
