@@ -104,6 +104,25 @@ To verify benchmarks compile without running them:
 cargo test --benches
 ```
 
+### Fuzzing
+
+Fuzz targets are available for NURBS evaluation, knot vector manipulation, and STEP parsing using `cargo-fuzz` (requires nightly):
+
+```bash
+cd monstertruck-geometry && cargo +nightly fuzz run nurbs_eval -- -max_total_time=60
+cd monstertruck-geometry && cargo +nightly fuzz run knot_vector -- -max_total_time=60
+cd monstertruck-step && cargo +nightly fuzz run step_parse -- -max_total_time=60
+```
+
+### Numerical Robustness
+
+The `monstertruck-core` crate provides:
+
+- **`OperationTolerance`** -- per-operation tolerance propagation to track accumulated error across chained geometric operations.
+- **`solve_robust` / `solve_robust_1d`** -- Newton solver variants with Levenberg-Marquardt and bisection fallbacks for near-singular Jacobians.
+
+The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
+
 ## Dependency Graph
 
 ![dependencies](./dependencies.svg)
