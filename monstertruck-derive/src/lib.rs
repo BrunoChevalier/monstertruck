@@ -13,7 +13,7 @@
 )]
 
 use proc_macro::TokenStream;
-use proc_macro_error::proc_macro_error;
+use proc_macro_error2::proc_macro_error;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::*;
 use syn::*;
@@ -146,7 +146,8 @@ macro_rules! methods {
 }
 
 impl<'a, I> Method<I>
-where I: IntoIterator<Item = &'a Variant> + 'a + Copy
+where
+    I: IntoIterator<Item = &'a Variant> + 'a + Copy,
 {
     fn to_token_stream(&'a self) -> TokenStream2 {
         let method_name = &self.name;

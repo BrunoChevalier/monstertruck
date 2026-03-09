@@ -46,7 +46,7 @@ matext4cgmath = "0.1"
 naga = { version = "27", features = ["wgsl-in"] }
 parking_lot = "0.12"
 pollster = "0.4"
-proc-macro-error = "1"
+proc-macro-error2 = "2"
 proc-macro2 = "1"
 proptest = "1"
 quote = "1"

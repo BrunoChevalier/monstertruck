@@ -5,7 +5,7 @@
 
 ## Current Position
 **Phase:** 1 of 4 (Core Stabilization)
-**Plan:** 1 of 4
+**Plan:** 2 of 4
 **Progress:**
 [░░░░░░░░░░] 0/0 phases
 
@@ -21,7 +21,6 @@
 None
 
 ## Session
-**Chain:** active
 **Last Command:** /td:plan-phase
 **Next Action:** Run /td:execute to begin execution
 **Resume File:** None
