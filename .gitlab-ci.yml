@@ -64,6 +64,14 @@ page-build:
     paths:
       - public
 
+bench-check:
+  image: rust:latest
+  stage: test
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  script:
+    - cargo test --benches
+
 lint-check:
   image: rust:latest
   stage: test
