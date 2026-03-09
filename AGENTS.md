@@ -2,25 +2,33 @@
 
 ## Build, Test, and Development Commands
 
-**Only use `cargo test` and `cargo run`. NEVER use `cargo check` or `cargo build` for verification.**
+**Use `cargo nextest run` for all test execution. NEVER use plain `cargo test` for running tests.** Nextest enforces per-test timeouts (see `.config/nextest.toml`).
+
+**Only use `cargo nextest run` and `cargo run`. NEVER use `cargo check` or `cargo build` for verification.**
 
 **NEVER run `cargo clean` without asking the user first.**
 
 ```bash
-# Run tests (this also builds everything)
-cargo test -p monstertruck-geometry --lib
+# Run tests with nextest (enforces per-test timeouts)
+cargo nextest run -p monstertruck-geometry --lib
+
+# Run all tests excluding known timeouts
+cargo nextest run -p monstertruck-solid --lib --no-fail-fast
+
+# Run a specific test
+cargo nextest run -p monstertruck-geometry -E 'test(test_name)'
 
 # Run all core tests
 cargo make cpu-test
-
-# Run a specific test
-cargo test -p monstertruck-geometry test_name
 
 # Format code
 cargo fmt --all
 
 # Run clippy linter
 cargo clippy --all-targets -- -W warnings
+
+# Verify benchmarks compile (do NOT use cargo bench for verification)
+cargo test --benches -p monstertruck-geometry
 
 # IMPORTANT: NEVER use --release flag unless the user EXPLICITLY requests it.
 ```
@@ -93,7 +101,7 @@ Reports are written to `profiling_data/`, including per-package HTML reports in 
 
 ## Testing Guidelines
 
-- **CRITICAL: ALWAYS run `cargo test` and `cargo clippy --all-targets -- -W warnings` before committing!**
+- **CRITICAL: ALWAYS run `cargo nextest run` and `cargo clippy --all-targets -- -W warnings` before committing!**
 - **CRITICAL: Address ALL warnings before EVERY commit!** This includes unused imports, dead code, deprecated API usage, and clippy warnings.
 - Never use `#[allow(warnings)]` or similar suppressions without explicit user approval.
 - **CRITICAL: Never modify test files** -- tests encode human intent.
