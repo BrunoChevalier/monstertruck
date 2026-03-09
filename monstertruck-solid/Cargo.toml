@@ -25,11 +25,16 @@ monstertruck-meshing = { workspace = true }
 monstertruck-topology = { workspace = true }
 
 [dev-dependencies]
+criterion = { workspace = true }
 proptest = { workspace = true }
 rand = { workspace = true }
 serde_json = { workspace = true }
 monstertruck-modeling = { workspace = true, features = ["fillet"] }
 monstertruck-step = { workspace = true }
+
+[[bench]]
+name = "boolean_ops"
+harness = false
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 getrandom = { workspace = true }
