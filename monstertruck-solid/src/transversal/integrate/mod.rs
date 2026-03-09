@@ -17,9 +17,11 @@ pub trait ShapeOpsSurface:
     + Clone
     + Invertible
     + Send
-    + Sync {
+    + Sync
+{
 }
-impl<S> ShapeOpsSurface for S where S: ParametricSurface3D
+impl<S> ShapeOpsSurface for S where
+    S: ParametricSurface3D
         + ParameterDivision2D
         + SearchParameter<D2, Point = Point3>
         + SearchNearestParameter<D2, Point = Point3>
@@ -42,9 +44,11 @@ pub trait ShapeOpsCurve<S: ShapeOpsSurface>:
     + SearchParameter<D1, Point = Point3>
     + SearchNearestParameter<D1, Point = Point3>
     + Send
-    + Sync {
+    + Sync
+{
 }
-impl<C, S: ShapeOpsSurface> ShapeOpsCurve<S> for C where C: ParametricCurve3D
+impl<C, S: ShapeOpsSurface> ShapeOpsCurve<S> for C where
+    C: ParametricCurve3D
         + ParameterDivision1D<Point = Point3>
         + Cut
         + Clone
@@ -452,10 +456,11 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
                 .map(|i| ((mask >> i) & 1) == 1)
                 .collect();
             if let Some(candidate_score) = evaluate(&candidate)
-                && candidate_score < best_score {
-                    best_score = candidate_score;
-                    best_assignments = candidate;
-                }
+                && candidate_score < best_score
+            {
+                best_score = candidate_score;
+                best_assignments = candidate;
+            }
         });
         assignments = best_assignments;
     } else if unknown_faces.len() <= 24 {
@@ -466,11 +471,12 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
                 let mut candidate = assignments.clone();
                 candidate[index] = !candidate[index];
                 if let Some(candidate_score) = evaluate(&candidate)
-                    && candidate_score < best_score {
-                        assignments = candidate;
-                        best_score = candidate_score;
-                        improved = true;
-                    }
+                    && candidate_score < best_score
+                {
+                    assignments = candidate;
+                    best_score = candidate_score;
+                    improved = true;
+                }
             });
         }
     }
@@ -580,10 +586,12 @@ pub fn and<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     let debug_components = std::env::var("MT_BOOL_DEBUG_COMPONENTS").is_ok();
     let mut iter0 = solid0.boundaries().iter();
     let mut iter1 = solid1.boundaries().iter();
-    // SAFETY: a `Solid` always has at least one boundary shell.
-    let shell0 = iter0.next().unwrap();
-    // SAFETY: a `Solid` always has at least one boundary shell.
-    let shell1 = iter1.next().unwrap();
+    let shell0 = iter0
+        .next()
+        .ok_or(ShapeOpsError::EmptyOutputShell { operation: "and" })?;
+    let shell1 = iter1
+        .next()
+        .ok_or(ShapeOpsError::EmptyOutputShell { operation: "and" })?;
 
     let [mut and_shell, _] = process_one_pair_of_shells(shell0, shell1, tol)?;
     for shell in iter0 {
@@ -626,10 +634,12 @@ pub fn or<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     let debug_components = std::env::var("MT_BOOL_DEBUG_COMPONENTS").is_ok();
     let mut iter0 = solid0.boundaries().iter();
     let mut iter1 = solid1.boundaries().iter();
-    // SAFETY: a `Solid` always has at least one boundary shell.
-    let shell0 = iter0.next().unwrap();
-    // SAFETY: a `Solid` always has at least one boundary shell.
-    let shell1 = iter1.next().unwrap();
+    let shell0 = iter0
+        .next()
+        .ok_or(ShapeOpsError::EmptyOutputShell { operation: "or" })?;
+    let shell1 = iter1
+        .next()
+        .ok_or(ShapeOpsError::EmptyOutputShell { operation: "or" })?;
 
     let [_, mut or_shell] = process_one_pair_of_shells(shell0, shell1, tol)?;
     for shell in iter0 {

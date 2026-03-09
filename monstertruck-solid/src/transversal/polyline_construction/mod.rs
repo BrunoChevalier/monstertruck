@@ -30,8 +30,11 @@ impl From<Point3> for PointIndex {
     #[inline(always)]
     fn from(pt: Point3) -> PointIndex {
         let idx = pt.add_element_wise(TOLERANCE) / (2.0 * TOLERANCE);
-        // SAFETY: point coordinates are finite, so the cast to `i64` always succeeds.
-        PointIndex(idx.cast::<i64>().unwrap().into())
+        PointIndex(
+            idx.cast::<i64>()
+                .expect("vertex index exceeds i64::MAX")
+                .into(),
+        )
     }
 }
 
@@ -47,8 +50,11 @@ impl Node {
     }
 
     fn pop_one_adjacency(&mut self) -> PointIndex {
-        // SAFETY: nodes are removed from the graph when their adjacency set becomes empty.
-        let idx = *self.adjacency.keys().next().unwrap();
+        let idx = *self
+            .adjacency
+            .keys()
+            .next()
+            .expect("adjacency map unexpectedly empty");
         let mut remove = false;
         if let Some(count) = self.adjacency.get_mut(&idx) {
             *count -= 1;
@@ -66,12 +72,16 @@ struct Graph(HashMap<PointIndex, Node>);
 impl std::ops::Deref for Graph {
     type Target = HashMap<PointIndex, Node>;
     #[inline(always)]
-    fn deref(&self) -> &Self::Target { &self.0 }
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl std::ops::DerefMut for Graph {
     #[inline(always)]
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 impl Graph {
@@ -94,8 +104,7 @@ impl Graph {
 
     #[inline(always)]
     fn get_one(&self) -> (PointIndex, &Node) {
-        // SAFETY: only called inside `while !graph.is_empty()`.
-        let (idx, node) = self.iter().next().unwrap();
+        let (idx, node) = self.iter().next().expect("graph unexpectedly empty");
         (*idx, node)
     }
 

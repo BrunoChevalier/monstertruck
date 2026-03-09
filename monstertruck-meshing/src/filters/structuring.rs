@@ -169,10 +169,9 @@ impl SubStructureFilter for PolygonMesh {
         let face0 = self.faces().tri_faces()[face0_id];
         let face1 = self.faces().tri_faces()[face1_id];
 
-        // SAFETY: two adjacent triangles share exactly two vertices, so one vertex in face1 is not in face0.
         let k = (0..3)
             .find(|k| face0.iter().all(|x| x.pos != face1[*k].pos))
-            .unwrap();
+            .expect("adjacent triangle must have unshared vertex");
         let vec0 = self.positions()[face0[1].pos] - self.positions()[face0[0].pos];
         let vec1 = self.positions()[face0[2].pos] - self.positions()[face0[0].pos];
         let mut n = vec0.cross(vec1);

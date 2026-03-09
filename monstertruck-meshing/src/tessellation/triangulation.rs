@@ -17,9 +17,13 @@ type MeshedShell = Shell<Point3, PolylineCurve, Option<PolygonMesh>>;
 type MeshedCShell = CompressedShell<Point3, PolylineCurve, Option<PolygonMesh>>;
 
 pub(super) trait SP<S>:
-    Fn(&S, Point3, Option<(f64, f64)>) -> Option<(f64, f64)> + Parallelizable {
+    Fn(&S, Point3, Option<(f64, f64)>) -> Option<(f64, f64)> + Parallelizable
+{
 }
-impl<S, F> SP<S> for F where F: Fn(&S, Point3, Option<(f64, f64)>) -> Option<(f64, f64)> + Parallelizable {}
+impl<S, F> SP<S> for F where
+    F: Fn(&S, Point3, Option<(f64, f64)>) -> Option<(f64, f64)> + Parallelizable
+{
+}
 
 pub(super) fn search_parameter_sp<S: MeshableSurface>(trials: usize) -> impl SP<S> {
     move |surface: &S, point: Point3, hint: Option<(f64, f64)>| {
@@ -69,17 +73,21 @@ where
     let edge_map: HashMap<_, _> = eset
         .into_par_iter()
         .map(move |(id, edge)| {
-            // SAFETY: vmap was built from all vertices in the shell.
-            let v0 = vmap.get(&edge.absolute_front().id()).unwrap();
-            let v1 = vmap.get(&edge.absolute_back().id()).unwrap();
+            let v0 = vmap
+                .get(&edge.absolute_front().id())
+                .expect("vertex missing from vmap");
+            let v1 = vmap
+                .get(&edge.absolute_back().id())
+                .expect("vertex missing from vmap");
             let curve = edge.curve();
             let poly = PolylineCurve::from_curve(&curve, curve.range_tuple(), tolerance);
             (id, Edge::debug_new(v0, v1, poly))
         })
         .collect();
     let create_edge = |edge: &Edge<Point3, C>| -> Edge<_, _> {
-        // SAFETY: edge_map was built from all edges in the shell.
-        let new_edge = edge_map.get(&edge.id()).unwrap();
+        let new_edge = edge_map
+            .get(&edge.id())
+            .expect("edge missing from edge_map");
         match edge.orientation() {
             true => new_edge.clone(),
             false => new_edge.inverse(),
@@ -282,7 +290,9 @@ struct SurfacePoint {
 }
 
 impl From<(Point2, Point3)> for SurfacePoint {
-    fn from((uv, point): (Point2, Point3)) -> Self { Self { point, uv } }
+    fn from((uv, point): (Point2, Point3)) -> Self {
+        Self { point, uv }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -346,8 +356,7 @@ impl PolyBoundaryPiece {
             let quot = f64::floor((grav.y - v0) / vp);
             vec.iter_mut().for_each(|p| p.y -= quot * vp);
         }
-        // SAFETY: vec is non-empty because it was built from a non-empty boundary.
-        let last = *vec.last().unwrap();
+        let last = *vec.last().expect("boundary vec is non-empty");
         if !vec[0].near(&last) {
             let Point2 { x: u0, y: v0 } = last.uv;
             if surface.uder(u0, v0).so_small() || surface.vder(u0, v0).so_small() {
@@ -360,13 +369,14 @@ impl PolyBoundaryPiece {
 
 fn abs_diff(previous: f64) -> impl Fn(&f64, &f64) -> std::cmp::Ordering {
     let f = move |x: &f64| f64::abs(x - previous);
-    // SAFETY: UV parameters from surface evaluation are finite, so comparison succeeds.
-    move |x: &f64, y: &f64| f(x).partial_cmp(&f(y)).unwrap()
+    move |x: &f64, y: &f64| f(x).partial_cmp(&f(y)).unwrap_or(std::cmp::Ordering::Equal)
 }
 fn get_mindiff(u: f64, u0: f64, up: f64) -> f64 {
     let closure = |i| u + i as f64 * up;
-    // SAFETY: the iterator (-2..=2) is non-empty, containing five elements.
-    (-2..=2).map(closure).min_by(abs_diff(u0)).unwrap()
+    (-2..=2)
+        .map(closure)
+        .min_by(abs_diff(u0))
+        .expect("(-2..=2) is non-empty")
 }
 
 #[derive(Debug, Clone)]
@@ -421,7 +431,9 @@ fn loop_orientation(curve: &[SurfacePoint]) -> bool {
 
 type UvKey = (u64, u64);
 
-fn uv_key(uv: Point2) -> UvKey { (uv.x.to_bits(), uv.y.to_bits()) }
+fn uv_key(uv: Point2) -> UvKey {
+    (uv.x.to_bits(), uv.y.to_bits())
+}
 
 fn surface_point_with_cache(
     surface: &impl PreMeshableSurface,
@@ -460,8 +472,7 @@ impl PolyBoundary {
         let mut point_cache = HashMap::<UvKey, Point3>::default();
         match open.len() {
             1 => {
-                // SAFETY: open.len() == 1 was matched above.
-                let mut curve = open.pop().unwrap();
+                let mut curve = open.pop().expect("open.len() matched 1 above");
                 let p = curve[0];
                 let q = curve[curve.len() - 1];
                 if let (Some((u0, u1)), Some((v0, v1))) = surface.try_range_tuple() {
@@ -541,10 +552,11 @@ impl PolyBoundary {
                 }
             }
             2 => {
-                // SAFETY: open.len() == 2 was matched above.
-                let mut curve1 = open.pop().unwrap();
-                let mut curve0 = open.pop().unwrap();
-                fn end_pts<T: Copy>(vec: &[T]) -> (T, T) { (vec[0], vec[vec.len() - 1]) }
+                let mut curve1 = open.pop().expect("open.len() matched 2 above");
+                let mut curve0 = open.pop().expect("open.len() matched 2 above");
+                fn end_pts<T: Copy>(vec: &[T]) -> (T, T) {
+                    (vec[0], vec[vec.len() - 1])
+                }
                 let ((p0, p1), (q0, q1)) = (end_pts(&curve0), end_pts(&curve1));
                 if !p0.x.near(&p1.x) && !q0.x.near(&q1.x) {
                     if let (Some(urange), _) = surface.try_range_tuple() {
@@ -1366,7 +1378,9 @@ fn triangulation_into_polymesh<'a>(
     let tri_faces: Vec<[StandardVertex; 3]> = triangles
         .map(|tri| tri.vertices())
         .filter(|tri| {
-            fn sp2cg(p: SPoint2) -> Point2 { Point2::new(p.x, p.y) }
+            fn sp2cg(p: SPoint2) -> Point2 {
+                Point2::new(p.x, p.y)
+            }
             let tri = array![i => sp2cg(*tri[i].as_ref()); 3];
             let (a, b) = (tri[1] - tri[0], tri[2] - tri[0]);
             let c = tri[0] + (a + b) / 3.0;

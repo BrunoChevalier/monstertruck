@@ -36,9 +36,13 @@ pub struct BoundaryWire<P, C> {
 
 impl<P, C> BoundaryWire<P, C> {
     #[inline(always)]
-    pub fn new(wire: Wire<P, C>, status: ShapesOpStatus) -> Self { Self { wire, status } }
+    pub fn new(wire: Wire<P, C>, status: ShapesOpStatus) -> Self {
+        Self { wire, status }
+    }
     #[inline(always)]
-    pub fn status(&self) -> ShapesOpStatus { self.status }
+    pub fn status(&self) -> ShapesOpStatus {
+        self.status
+    }
     #[inline(always)]
     pub fn invert(&mut self) {
         self.wire.invert();
@@ -58,7 +62,8 @@ impl ShapesOpStatus {
     where
         C: ParametricCurve3D + BoundedCurve,
         S0: ParametricSurface3D + SearchNearestParameter<D2, Point = Point3>,
-        S1: ParametricSurface3D + SearchNearestParameter<D2, Point = Point3>, {
+        S1: ParametricSurface3D + SearchNearestParameter<D2, Point = Point3>,
+    {
         let (t0, t1) = curve.range_tuple();
         let t = (t0 + t1) / 2.0;
         let (_, pt0, pt1) = curve.search_triple(t, 100)?;
@@ -75,12 +80,16 @@ impl ShapesOpStatus {
 impl<P, C> std::ops::Deref for BoundaryWire<P, C> {
     type Target = Wire<P, C>;
     #[inline(always)]
-    fn deref(&self) -> &Self::Target { &self.wire }
+    fn deref(&self) -> &Self::Target {
+        &self.wire
+    }
 }
 
 impl<P, C> std::ops::DerefMut for BoundaryWire<P, C> {
     #[inline(always)]
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.wire }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.wire
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -91,23 +100,31 @@ pub struct LoopsStore<P, C>(Vec<Loops<P, C>>);
 impl<P, C> std::ops::Deref for Loops<P, C> {
     type Target = Vec<BoundaryWire<P, C>>;
     #[inline(always)]
-    fn deref(&self) -> &Self::Target { &self.0 }
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl<P, C> std::ops::DerefMut for Loops<P, C> {
     #[inline(always)]
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 impl<P, C> std::ops::Deref for LoopsStore<P, C> {
     type Target = Vec<Loops<P, C>>;
     #[inline(always)]
-    fn deref(&self) -> &Self::Target { &self.0 }
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl<P, C> std::ops::DerefMut for LoopsStore<P, C> {
     #[inline(always)]
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 impl<P, C> FromIterator<BoundaryWire<P, C>> for Loops<P, C> {
@@ -136,7 +153,9 @@ impl<'a, P: 'a, C: 'a, S: 'a> FromIterator<&'a Face<P, C, S>> for LoopsStore<P, 
 impl<'a, P, C> IntoIterator for &'a LoopsStore<P, C> {
     type Item = <&'a Vec<Loops<P, C>> as IntoIterator>::Item;
     type IntoIter = <&'a Vec<Loops<P, C>> as IntoIterator>::IntoIter;
-    fn into_iter(self) -> Self::IntoIter { self.0.iter() }
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
 }
 
 #[derive(Clone, Debug, Copy, PartialEq)]
@@ -178,7 +197,8 @@ impl<P: Copy, C: Clone> Loops<P, C> {
         P: Tolerance,
         C: BoundedCurve<Point = P>
             + SearchParameter<D1, Point = P>
-            + SearchNearestParameter<D1, Point = P>, {
+            + SearchNearestParameter<D1, Point = P>,
+    {
         self.iter()
             .enumerate()
             .flat_map(move |(i, wire)| wire.iter().enumerate().map(move |(j, edge)| (i, j, edge)))
@@ -329,7 +349,9 @@ impl<P: Copy + Tolerance, C: Clone> LoopsStore<P, C> {
 
 impl<C: Clone> Loops<Point3, C> {
     fn nearest_distance2(&self, pt: Point3) -> Option<f64>
-    where C: BoundedCurve<Point = Point3> + SearchNearestParameter<D1, Point = Point3> {
+    where
+        C: BoundedCurve<Point = Point3> + SearchNearestParameter<D1, Point = Point3>,
+    {
         self.iter()
             .flat_map(|wire| wire.iter())
             .filter_map(|edge| {
@@ -557,7 +579,8 @@ where
 fn create_independent_loop<P, C, D>(mut poly_curve0: C) -> Wire<P, D>
 where
     C: Cut<Point = P>,
-    D: From<C>, {
+    D: From<C>,
+{
     let (t0, t1) = poly_curve0.range_tuple();
     let t = (t0 + t1) / 2.0;
     let poly_curve1 = poly_curve0.cut(t);
@@ -976,8 +999,9 @@ where
                                     vertex_label: "front",
                                 })?;
                                 let polyline = intersection_curve.leader_mut();
-                                // SAFETY: a polyline curve always has at least one point.
-                                *polyline.first_mut().unwrap() = gv0.point();
+                                if let Some(first) = polyline.first_mut() {
+                                    *first = gv0.point();
+                                }
                             } else {
                                 let reused_poly =
                                     poly_loops_store0.find_near_vertex(face_index0, pv0.point(), snap_tol);
@@ -1019,8 +1043,9 @@ where
                                     vertex_label: "back",
                                 })?;
                                 let polyline = intersection_curve.leader_mut();
-                                // SAFETY: a polyline curve always has at least one point.
-                                *polyline.last_mut().unwrap() = gv1.point();
+                                if let Some(last) = polyline.last_mut() {
+                                    *last = gv1.point();
+                                }
                             } else {
                                 let reused_poly =
                                     poly_loops_store0.find_near_vertex(face_index0, pv1.point(), snap_tol);
@@ -1063,7 +1088,7 @@ where
                                 })?;
                                 let polyline = intersection_curve.leader_mut();
                                 // SAFETY: a polyline curve always has at least one point.
-                                *polyline.first_mut().unwrap() = gv0.point();
+                                *polyline.first_mut().expect("polyline has at least one point") = gv0.point();
                             } else {
                                 let reused_poly =
                                     poly_loops_store1.find_near_vertex(face_index1, pv0.point(), snap_tol);
@@ -1106,7 +1131,7 @@ where
                                 })?;
                                 let polyline = intersection_curve.leader_mut();
                                 // SAFETY: a polyline curve always has at least one point.
-                                *polyline.last_mut().unwrap() = gv1.point();
+                                *polyline.last_mut().expect("polyline has at least one point") = gv1.point();
                             } else {
                                 let reused_poly =
                                     poly_loops_store1.find_near_vertex(face_index1, pv1.point(), snap_tol);

@@ -25,8 +25,7 @@ impl<'a> Iterator for TriangleIter<'a> {
                 return None;
             }
         }
-        // SAFETY: the if-block above sets current_face to Some or returns None.
-        let face = self.current_face.unwrap();
+        let face = self.current_face.expect("current_face set in if-block above");
         let res = [
             face[0],
             face[self.current_vertex + 1],

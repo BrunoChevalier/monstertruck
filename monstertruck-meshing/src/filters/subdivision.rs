@@ -26,7 +26,9 @@ struct EdgeInfo {
 
 impl Edge {
     #[inline]
-    fn new(v0: usize, v1: usize) -> Self { Edge(usize::min(v0, v1), usize::max(v0, v1)) }
+    fn new(v0: usize, v1: usize) -> Self {
+        Edge(usize::min(v0, v1), usize::max(v0, v1))
+    }
 }
 
 impl EdgeInfo {
@@ -39,7 +41,9 @@ impl EdgeInfo {
         }
     }
     #[inline]
-    fn add_second_wing(&mut self, second_wing: usize) { self.second_wing = Some(second_wing); }
+    fn add_second_wing(&mut self, second_wing: usize) {
+        self.second_wing = Some(second_wing);
+    }
 }
 
 impl Subdivision for PolygonMesh {
@@ -63,11 +67,25 @@ impl Subdivision for PolygonMesh {
             .iter()
             .flat_map(|v| {
                 let len = self.positions().len();
-                // SAFETY: all edges were inserted from the same set of triangle faces.
                 let e: [StandardVertex; 3] = [
-                    (edges.get(&Edge::new(v[1].pos, v[2].pos)).unwrap().idx + len).into(),
-                    (edges.get(&Edge::new(v[2].pos, v[0].pos)).unwrap().idx + len).into(),
-                    (edges.get(&Edge::new(v[0].pos, v[1].pos)).unwrap().idx + len).into(),
+                    (edges
+                        .get(&Edge::new(v[1].pos, v[2].pos))
+                        .expect("edge missing from edge set")
+                        .idx
+                        + len)
+                        .into(),
+                    (edges
+                        .get(&Edge::new(v[2].pos, v[0].pos))
+                        .expect("edge missing from edge set")
+                        .idx
+                        + len)
+                        .into(),
+                    (edges
+                        .get(&Edge::new(v[0].pos, v[1].pos))
+                        .expect("edge missing from edge set")
+                        .idx
+                        + len)
+                        .into(),
                 ];
                 vec![
                     [v[0], e[2], e[1]],
@@ -115,8 +133,9 @@ enum VertexBoundaryCondition {
 impl VertexBoundaryCondition {
     fn new(v: usize, adjacency: &[usize], edges: &HashMap<Edge, EdgeInfo>) -> Self {
         let binfo = adjacency.iter().copied().fold((None, None), |binfo, w| {
-            // SAFETY: the adjacency list was built from the same edge set.
-            let edge = edges.get(&Edge::new(v, w)).unwrap();
+            let edge = edges
+                .get(&Edge::new(v, w))
+                .expect("edge missing from edge set");
             match (edge.second_wing, binfo) {
                 (None, (None, _)) => (Some(w), None),
                 (None, (Some(x), None)) => (Some(x), Some(w)),

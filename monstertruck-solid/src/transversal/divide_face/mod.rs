@@ -30,8 +30,7 @@ where
             let div = curve.parameter_division(curve.range_tuple(), tol).1;
             PolylineCurve(div)
         });
-        // SAFETY: `vec` is initialized with one element and only appended to.
-        let mut p = *vec.last().unwrap();
+        let mut p = *vec.last().expect("vec initialized with one element");
         let closure = |q: &P| -> Option<Point2> {
             p = surface
                 .search_parameter(*q, Some(p.into()), 100)

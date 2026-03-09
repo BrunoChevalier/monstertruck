@@ -264,11 +264,17 @@ impl ToDataSet for Wire<Point3, PolylineCurve<Point3>> {
         let vmap: HashMap<_, _> = vmap.into();
         self.edge_iter().for_each(|edge| {
             let pts = edge.oriented_curve().0;
-            // SAFETY: vmap was built from all vertices of this wire.
-            connectivity.push(*vmap.get(&edge.front().id()).unwrap());
+            connectivity.push(
+                *vmap
+                    .get(&edge.front().id())
+                    .expect("vertex missing from vmap"),
+            );
             connectivity.extend((1..pts.len() - 1).map(|i| (points.len() + i - 1) as u64));
-            // SAFETY: vmap was built from all vertices of this wire.
-            connectivity.push(*vmap.get(&edge.back().id()).unwrap());
+            connectivity.push(
+                *vmap
+                    .get(&edge.back().id())
+                    .expect("vertex missing from vmap"),
+            );
             offsets.push(connectivity.len() as u64);
             points.extend(
                 pts[1..pts.len() - 1]

@@ -12,7 +12,9 @@ struct Triangle([Point3; 3]);
 
 impl Triangle {
     #[inline(always)]
-    fn normal(self) -> Vector3 { (self[1] - self[0]).cross(self[2] - self[0]).normalize() }
+    fn normal(self) -> Vector3 {
+        (self[1] - self[0]).cross(self[2] - self[0]).normalize()
+    }
 
     fn is_crossing(self, ray: Ray) -> bool {
         let a = self[0] - self[1];
@@ -21,8 +23,7 @@ impl Triangle {
         if mat.determinant().so_small() {
             false
         } else {
-            // SAFETY: the determinant was checked to be non-small above, so the matrix is invertible.
-            let inv = mat.invert().unwrap();
+            let inv = mat.invert().expect("determinant checked non-small above");
             let uvt = inv * (self[0] - ray.origin);
             uvt[0] > 0.0 && uvt[1] > 0.0 && uvt[0] + uvt[1] < 1.0 && uvt[2] > 0.0
         }

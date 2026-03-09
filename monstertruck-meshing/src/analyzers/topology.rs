@@ -90,8 +90,10 @@ impl Topology for Faces {
         let mut res = Vec::new();
         while !vemap.is_empty() {
             let mut wire = Vec::new();
-            // SAFETY: the while loop condition ensures vemap is non-empty.
-            let front = vemap.iter().next().unwrap();
+            let front = vemap
+                .iter()
+                .next()
+                .expect("vemap confirmed non-empty by while condition");
             let front = (*front.0, *front.1);
             vemap.remove(&front.0);
             wire.push(front.0);
@@ -113,6 +115,10 @@ impl Topology for Faces {
 }
 
 impl Topology for PolygonMesh {
-    fn extract_boundaries(&self) -> Vec<Vec<usize>> { self.faces().extract_boundaries() }
-    fn shell_condition(&self) -> ShellCondition { self.faces().shell_condition() }
+    fn extract_boundaries(&self) -> Vec<Vec<usize>> {
+        self.faces().extract_boundaries()
+    }
+    fn shell_condition(&self) -> ShellCondition {
+        self.faces().shell_condition()
+    }
 }

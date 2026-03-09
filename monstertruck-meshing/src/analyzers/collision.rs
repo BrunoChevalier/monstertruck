@@ -79,7 +79,8 @@ fn tri_to_seg(tri: [Point3; 3], unit: Vector3) -> (f64, f64) {
 fn sorted_endpoints<I, J>(iter0: I, iter1: J, unit: Vector3) -> Vec<EndPoint>
 where
     I: IntoIterator<Item = [Point3; 3]>,
-    J: IntoIterator<Item = [Point3; 3]>, {
+    J: IntoIterator<Item = [Point3; 3]>,
+{
     let mut res: Vec<EndPoint> = iter0
         .into_iter()
         .enumerate()
@@ -118,12 +119,11 @@ fn colliding_segment_pairs(sort_endpoints: Vec<EndPoint>) -> impl Iterator<Item 
                     )
                 }
                 EndPointType::Back => {
-                    // SAFETY: every Back endpoint has a matching Front that pushed this index.
                     let i = current[segnum]
                         .iter()
                         .enumerate()
                         .find(|(_, idx)| **idx == index)
-                        .unwrap()
+                        .expect("Back endpoint has matching Front")
                         .0;
                     current[segnum].swap_remove(i);
                     None
