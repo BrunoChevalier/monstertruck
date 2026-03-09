@@ -41,6 +41,11 @@ Replaced all 9 `unimplemented!()` arms for `Curve::IntersectionCurve` in `monste
 - `cargo clippy -p monstertruck-modeling --all-targets -- -W warnings` -- Zero warnings.
 - `grep unimplemented monstertruck-modeling/src/geometry.rs` -- Zero matches.
 
+## Downstream Verification (post-execution)
+
+- `cargo nextest run -p monstertruck-solid --lib --no-fail-fast`: 50 passed, 7 failed (pre-existing), 2 timed out (pre-existing). No new failures from plan 1-1 changes.
+- `cargo clippy -p monstertruck-modeling --all-targets -- -W warnings`: Zero warnings.
+
 ## Deviations
 
-- `monstertruck-solid` lib tests have 7 pre-existing compilation errors in `fillet/tests.rs` (type mismatches unrelated to IntersectionCurve). Downstream solid test verification (plan Task 3) could not be completed. The solid library itself compiles; only its test module fails.
+- `monstertruck-solid` lib tests have 7 pre-existing compilation/assertion errors in `fillet/tests.rs` and 2 pre-existing timeouts (`boolean_shell_converts_for_fillet`, `punched_cube`). Downstream solid test verification confirmed no regressions from IntersectionCurve changes.
