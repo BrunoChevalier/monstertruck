@@ -8,6 +8,11 @@ pub enum FilletProfile {
     #[default]
     Round,
     /// Flat ruled surface (chamfer/bevel).
+    ///
+    /// Creates a flat cut between two adjacent faces, replacing the shared edge
+    /// with a ruled surface. Unlike [`Round`](Self::Round), which creates a
+    /// circular arc cross-section, `Chamfer` creates a straight-line transition.
+    /// Use with [`FilletOptions::with_profile`].
     Chamfer,
     /// V-shaped ridge: two straight segments meeting at the transit point.
     Ridge,

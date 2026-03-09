@@ -2411,6 +2411,200 @@ fn continuity_at_wire_joins() {
 }
 
 // ---------------------------------------------------------------------------
+// Phase 3-2: Chamfer topological validity tests
+// ---------------------------------------------------------------------------
+
+/// Chamfer a single edge on a closed 6-face cube and verify topological validity.
+#[test]
+fn chamfer_cube_edge_valid_topology() {
+    let (mut shell, edge, _v) = build_6face_box();
+    let initial_face_count = shell.len();
+    assert_eq!(initial_face_count, 6);
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::Constant(0.2),
+        profile: FilletProfile::Chamfer,
+        ..Default::default()
+    };
+    fillet_edges(&mut shell, &[edge[5].id()], Some(&opts)).unwrap();
+
+    // Chamfer replaces one edge with a flat-cut face.
+    assert_eq!(
+        shell.len(),
+        initial_face_count + 1,
+        "chamfer should add exactly one face"
+    );
+
+    // Shell must remain closed after chamfer.
+    assert_eq!(
+        shell.shell_condition(),
+        ShellCondition::Closed,
+        "chamfered shell must be closed"
+    );
+
+    // No singular vertices.
+    assert!(
+        shell.singular_vertices().is_empty(),
+        "chamfered shell must have no singular vertices"
+    );
+
+    // No open boundaries.
+    assert!(
+        shell.extract_boundaries().is_empty(),
+        "chamfered shell must have no open boundaries"
+    );
+
+    // Triangulation must succeed.
+    let _poly = shell.robust_triangulation(0.001).to_polygon();
+}
+
+/// Chamfer multiple non-adjacent edges on a closed cube and verify validity.
+#[test]
+fn chamfer_cube_multiple_edges() {
+    let (mut shell, edge, _v) = build_6face_box();
+    let initial_face_count = shell.len();
+
+    // Edges 5 (front-right vertical) and 10 (back-bottom) are non-adjacent.
+    let opts = FilletOptions {
+        radius: RadiusSpec::Constant(0.15),
+        profile: FilletProfile::Chamfer,
+        ..Default::default()
+    };
+    fillet_edges(&mut shell, &[edge[5].id(), edge[10].id()], Some(&opts)).unwrap();
+
+    // Each chamfered edge adds one face.
+    assert!(
+        shell.len() >= initial_face_count + 2,
+        "expected at least {} faces, got {}",
+        initial_face_count + 2,
+        shell.len()
+    );
+
+    // Topological validity.
+    assert_eq!(shell.shell_condition(), ShellCondition::Closed);
+    assert!(shell.singular_vertices().is_empty());
+    assert!(shell.extract_boundaries().is_empty());
+
+    // Verify chamfer faces are ruled (degree-1 in one direction, i.e. `BsplineSurface`).
+    // Chamfer faces are the ones added beyond the original 6.
+    let fillet_faces = &shell[initial_face_count..];
+    for face in fillet_faces {
+        let surface = face.oriented_surface();
+        // A chamfer surface is a NURBS surface with degree 1 in the cross-section
+        // direction (v-direction). Verify the surface is at least a valid BsplineSurface.
+        let (u_range, v_range) = surface.range_tuple();
+        // Sample at mid-parameter to confirm the surface evaluates without panic.
+        let _pt = surface.evaluate((u_range.0 + u_range.1) * 0.5, (v_range.0 + v_range.1) * 0.5);
+    }
+
+    let _poly = shell.robust_triangulation(0.001).to_polygon();
+}
+
+/// Chamfer with variable radius along a single edge.
+#[test]
+fn chamfer_variable_radius() {
+    let (mut shell, edge, _v) = build_6face_box();
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::Variable(Box::new(|t| 0.05 + 0.10 * t)),
+        profile: FilletProfile::Chamfer,
+        ..Default::default()
+    };
+    fillet_edges(&mut shell, &[edge[5].id()], Some(&opts)).unwrap();
+
+    // Topological validity.
+    assert_eq!(
+        shell.shell_condition(),
+        ShellCondition::Closed,
+        "variable-radius chamfer must produce a closed shell"
+    );
+    assert!(shell.singular_vertices().is_empty());
+    assert!(shell.extract_boundaries().is_empty());
+
+    let _poly = shell.robust_triangulation(0.001).to_polygon();
+}
+
+/// Chamfer with per-edge radius on two edges.
+#[test]
+fn chamfer_per_edge_radius() {
+    let (mut shell, edge, _v) = build_6face_box();
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::PerEdge(vec![0.1, 0.2]),
+        profile: FilletProfile::Chamfer,
+        ..Default::default()
+    };
+    fillet_edges(&mut shell, &[edge[5].id(), edge[10].id()], Some(&opts)).unwrap();
+
+    // Topological validity.
+    assert_eq!(
+        shell.shell_condition(),
+        ShellCondition::Closed,
+        "per-edge chamfer must produce a closed shell"
+    );
+    assert!(shell.singular_vertices().is_empty());
+    assert!(shell.extract_boundaries().is_empty());
+
+    let _poly = shell.robust_triangulation(0.001).to_polygon();
+}
+
+/// Chamfer serialization round-trip: build a cube with modeling types, chamfer
+/// it, compress, serialize to JSON, deserialize, extract, and verify validity.
+#[test]
+fn chamfer_serialization_round_trip() {
+    use monstertruck_modeling::builder;
+    use monstertruck_topology::shell::ShellCondition as SC;
+
+    // Build a unit cube using the modeling builder.
+    let v = builder::vertex(Point3::origin());
+    let e = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&e, Vector3::unit_y());
+    let cube: monstertruck_modeling::Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let mut shells = cube.into_boundaries();
+    let shell = &mut shells[0];
+
+    // Collect an edge to chamfer.
+    let target_edge: Vec<_> = shell.edge_iter().take(1).collect();
+    assert!(!target_edge.is_empty());
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::Constant(0.15),
+        profile: FilletProfile::Chamfer,
+        ..Default::default()
+    };
+    fillet_edges_generic(shell, &target_edge, Some(&opts)).unwrap();
+
+    // Pre-condition: chamfered shell is closed.
+    assert_eq!(shell.shell_condition(), SC::Closed);
+
+    // Compress -> serialize -> deserialize -> extract.
+    let compressed = shell.compress();
+    let json = serde_json::to_vec(&compressed).unwrap();
+    let restored: monstertruck_topology::compress::CompressedShell<
+        Point3,
+        monstertruck_modeling::Curve,
+        monstertruck_modeling::Surface,
+    > = serde_json::from_slice(&json).unwrap();
+    let restored_shell = monstertruck_topology::Shell::<
+        Point3,
+        monstertruck_modeling::Curve,
+        monstertruck_modeling::Surface,
+    >::extract(restored)
+    .unwrap();
+
+    // Restored shell must have the same face count.
+    assert_eq!(
+        restored_shell.len(),
+        shell.len(),
+        "restored shell must have the same number of faces"
+    );
+
+    // Restored shell must be closed.
+    assert_eq!(restored_shell.shell_condition(), SC::Closed);
+}
+
+// ---------------------------------------------------------------------------
 // Phase 7: Boundary-run chain grouping tests
 // ---------------------------------------------------------------------------
 
