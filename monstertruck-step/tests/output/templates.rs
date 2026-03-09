@@ -12,8 +12,8 @@ fn default_shell_template() {
         format!(
             "ISO-10303-21;
 HEADER;
-FILE_DESCRIPTION(('Shape Data from truck'), '2;1');
-FILE_NAME('', '{time_stamp}', (''), (''), 'truck', '', '');
+FILE_DESCRIPTION(('Shape Data from monstertruck'), '2;1');
+FILE_NAME('', '{time_stamp}', (''), (''), 'monstertruck', '', '');
 FILE_SCHEMA(('ISO-10303-042'));
 ENDSEC;
 DATA;
@@ -65,8 +65,8 @@ fn default_solid_template() {
         string,
         format!("ISO-10303-21;
 HEADER;
-FILE_DESCRIPTION(('Shape Data from truck'), '2;1');
-FILE_NAME('', '{time_stamp}', (''), (''), 'truck', '', '');
+FILE_DESCRIPTION(('Shape Data from monstertruck'), '2;1');
+FILE_NAME('', '{time_stamp}', (''), (''), 'monstertruck', '', '');
 FILE_SCHEMA(('ISO-10303-042'));
 ENDSEC;
 DATA;
@@ -126,9 +126,9 @@ fn custom_header_template() {
         format!(
             "ISO-10303-21;
 HEADER;
-FILE_DESCRIPTION(('Shape Data from truck'), '2;1');
+FILE_DESCRIPTION(('Shape Data from monstertruck'), '2;1');
 FILE_NAME('AMAZING_PRODUCT.step', '{time_stamp}', ('Tensai', 'Genius', 'Bokusama'), \
-('Great Awesome Co. Ltd.', 'Univ. Clever Genius', 'Senkai'), 'truck', 'Kusanagi Sword', 'IT'S ME!');
+('Great Awesome Co. Ltd.', 'Univ. Clever Genius', 'Senkai'), 'monstertruck', 'Kusanagi Sword', 'IT'S ME!');
 FILE_SCHEMA(('ISO-10303-042'));
 ENDSEC;
 DATA;

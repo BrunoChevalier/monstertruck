@@ -2,8 +2,8 @@
 //!
 //! # Current Status
 //!
-//! It is possible to output data modeled by monstertruck-modeling.
-//! Shapes created by set operations cannot be output yet.
+//! Both shapes modeled by monstertruck-modeling and shapes created by set operations
+//! (boolean union, difference, intersection) can be exported to STEP.
 //! Input will come further down the road.
 
 #![cfg_attr(not(debug_assertions), deny(warnings))]
