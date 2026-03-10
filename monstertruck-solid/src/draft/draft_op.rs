@@ -281,14 +281,34 @@ where
     };
     let rotation_angle = sign * angle;
 
-    // Find hinge point: intersection of face plane and neutral plane.
+    // Find hinge point: any point on the intersection line of the face
+    // plane and the neutral plane. Solve the 2-plane intersection by
+    // finding a point that satisfies both plane equations.
     let face_origin = ParametricSurface::evaluate(surface, 0.0, 0.0);
-    let denom = face_normal.dot(*neutral_normal);
-    if denom.abs().so_small() {
-        return Matrix4::identity();
-    }
-    let dist = (*neutral_origin - face_origin).dot(*neutral_normal) / denom;
-    let hinge_point = face_origin + dist * *face_normal;
+    let d_face = face_normal.dot(face_origin.to_vec());
+    let d_neutral = neutral_normal.dot(neutral_origin.to_vec());
+
+    // Build a 3x3 system: two plane equations plus the hinge direction
+    // to pick the unique closest point to the origin.
+    let mat = Matrix3::new(
+        face_normal.x,
+        neutral_normal.x,
+        hinge.x,
+        face_normal.y,
+        neutral_normal.y,
+        hinge.y,
+        face_normal.z,
+        neutral_normal.z,
+        hinge.z,
+    );
+    let hinge_point = match mat.invert() {
+        Some(inv) => {
+            let rhs = Vector3::new(d_face, d_neutral, 0.0);
+            let result = inv * rhs;
+            Point3::new(result.x, result.y, result.z)
+        }
+        None => face_origin,
+    };
 
     // Build the transform: translate to hinge, rotate, translate back.
     let rotation = Matrix3::from_axis_angle(hinge, Rad(rotation_angle));
