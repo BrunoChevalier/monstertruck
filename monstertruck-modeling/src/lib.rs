@@ -127,7 +127,7 @@ pub mod text;
 /// Requires the `solid-ops` feature flag. Re-exports from [`monstertruck_solid`].
 #[cfg(feature = "solid-ops")]
 pub use monstertruck_solid::{
-    DraftError, DraftOptions, draft_faces, offset_shell, shell_solid,
+    DraftError, DraftOptions, OffsetCurve, OffsetSurface, draft_faces, offset_shell, shell_solid,
 };
 
 /// Fillet operations for shell edges.
