@@ -1,15 +1,6 @@
-# Tendrion Configuration
 version: 2
-
-# TDD enforcement level
-tdd: strict  # strict | guided | off
-
-# Profile selects model assignments
-# Override individual roles below
-profile: quality  # quality | balanced | budget
-
-# Model role assignments
-# Each AI workflow step has main + review model
+tdd: strict
+profile: quality
 models:
   planning_main: opus
   planning_review: codex
@@ -19,17 +10,14 @@ models:
   verification_review: codex
   debugging_main: opus
   debugging_review: sonnet
-
-# Review settings
 review:
-  max_rounds: 2  # positive integer
-  skip_trivial: true  # true | false
-
-# Embedded systems mode
+  max_rounds: 2
+  skip_trivial: true
 embedded:
-  mode: disabled  # auto | enabled | disabled
-  threshold: 2  # positive integer, min 1
-
-# Execution settings
-parallelization: true  # true | false
-commit_docs: true  # true | false
+  mode: disabled
+  threshold: 2
+parallelization: true
+commit_docs: true
+test_commands:
+  - cargo test
+  - cargo nextest run
