@@ -122,9 +122,18 @@ mod fillet_impl;
 #[cfg(feature = "font")]
 pub mod text;
 
+/// Shell (hollow-out), offset, and draft/taper operations.
+///
+/// Requires the `solid-ops` feature flag. Re-exports from [`monstertruck_solid`].
+#[cfg(feature = "solid-ops")]
+pub use monstertruck_solid::{
+    DraftError, DraftOptions, draft_faces, offset_shell, shell_solid,
+};
+
 /// Fillet operations for shell edges.
 ///
-/// Requires the `fillet` feature flag. Re-exports from [`monstertruck_solid`].
+/// Requires the `fillet` feature flag (implies `solid-ops`).
+/// Re-exports from [`monstertruck_solid`].
 #[cfg(feature = "fillet")]
 pub use monstertruck_solid::{
     FilletError, FilletIntersectionCurve, FilletOptions, FilletProfile, RadiusSpec,
