@@ -62,8 +62,8 @@ The `monstertruck` kernel is split into independent crates so you only need to p
 ### Topology & Modeling
 
 - [`monstertruck-topology`](monstertruck-topology/) – Topological data structures: vertices, edges, wires, faces, shells, and solids.
-- [`monstertruck-modeling`](monstertruck-modeling/) – Integrated geometric and topological modeling algorithms.
-- [`monstertruck-solid`](monstertruck-solid/) – Boolean operations, fillets, and shape healing for solids.
+- [`monstertruck-modeling`](monstertruck-modeling/) – Integrated geometric and topological modeling algorithms. The `solid-ops` feature re-exports shell, offset, and draft operations from `monstertruck-solid`.
+- [`monstertruck-solid`](monstertruck-solid/) – Boolean operations, fillets, chamfers, shell/offset, draft/taper, and shape healing for solids.
 - [`monstertruck-assembly`](monstertruck-assembly/) – Assembly data structures using a directed acyclic graph (DAG).
 
 ### Meshing & Rendering
@@ -75,7 +75,7 @@ The `monstertruck` kernel is split into independent crates so you only need to p
 
 ### I/O & Bindings
 
-- [`monstertruck-step`](monstertruck-step/) – STEP file import and export.
+- [`monstertruck-step`](monstertruck-step/) – STEP file import and export, including boolean-result shape export.
 - [`monstertruck-wasm`](monstertruck-wasm/) – WebAssembly/JavaScript bindings.
 
 ## Development
