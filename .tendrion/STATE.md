@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 3 of 4 (Feature Completeness)
-**Plan:** 0 of 5
+**Plan:** 1 of 5
 **Progress:**
 
 
