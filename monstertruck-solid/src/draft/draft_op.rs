@@ -42,6 +42,15 @@ pub struct DraftOptions {
     pub neutral_plane: Plane,
 }
 
+/// Returns the oriented normal of a surface, flipped if `orientation` is false.
+fn oriented_normal<S>(surface: &S, orientation: bool, u: f64, v: f64) -> Vector3
+where
+    S: ParametricSurface3D<Point = Point3, Vector = Vector3>,
+{
+    let n = ParametricSurface3D::normal(surface, u, v);
+    if orientation { n } else { -n }
+}
+
 /// Apply draft angle to specified faces of a solid.
 ///
 /// Each selected face is tilted by `angle` relative to `pull_direction`,
@@ -85,8 +94,9 @@ where
     let n_verts = compressed.vertices.len();
     let n_faces = compressed.faces.len();
 
-    // Build vertex-to-face adjacency: for each vertex, which faces reference it.
+    // Build adjacency maps: vertex-to-face and edge-to-face.
     let mut vertex_faces: Vec<Vec<usize>> = vec![Vec::new(); n_verts];
+    let mut edge_face_map: Vec<Vec<usize>> = vec![Vec::new(); compressed.edges.len()];
     compressed.faces.iter().enumerate().for_each(|(fi, face)| {
         face.boundaries.iter().for_each(|boundary| {
             boundary.iter().for_each(|edge_idx| {
@@ -96,6 +106,9 @@ where
                 }
                 if !vertex_faces[edge.vertices.1].contains(&fi) {
                     vertex_faces[edge.vertices.1].push(fi);
+                }
+                if !edge_face_map[edge_idx.index].contains(&fi) {
+                    edge_face_map[edge_idx.index].push(fi);
                 }
             });
         });
@@ -108,17 +121,11 @@ where
             if !face_indices.contains(&fi) {
                 return Matrix4::identity();
             }
-            let surface = &compressed.faces[fi].surface;
-            let orientation = compressed.faces[fi].orientation;
-            let geom_normal = ParametricSurface3D::normal(surface, 0.5, 0.5);
-            let face_normal = if orientation {
-                geom_normal
-            } else {
-                -geom_normal
-            };
+            let cface = &compressed.faces[fi];
+            let face_normal = oriented_normal(&cface.surface, cface.orientation, 0.5, 0.5);
 
             compute_draft_transform(
-                surface,
+                &cface.surface,
                 &face_normal,
                 &pull,
                 &neutral_origin,
@@ -137,35 +144,16 @@ where
         .collect();
 
     // Apply transforms to edge curves.
-    // Each edge is shared by exactly 2 faces. For the edge curve, we need a
-    // consistent transform. If both adjacent faces have the same transform
-    // (or one is identity), use the non-identity one. If they differ, the
-    // edge lies on the boundary between drafted and undrafted regions, and
-    // neither transform alone is correct -- but the curve endpoints will be
-    // determined by the vertex positions (3-plane intersection), so we just
-    // need a curve that connects them. For Lines, the curve is fully determined
-    // by its endpoints, so any transform works.
-    let edge_face_map: Vec<Vec<usize>> = {
-        let mut ef: Vec<Vec<usize>> = vec![Vec::new(); compressed.edges.len()];
-        compressed.faces.iter().enumerate().for_each(|(fi, face)| {
-            face.boundaries.iter().for_each(|boundary| {
-                boundary.iter().for_each(|edge_idx| {
-                    if !ef[edge_idx.index].contains(&fi) {
-                        ef[edge_idx.index].push(fi);
-                    }
-                });
-            });
-        });
-        ef
-    };
-
+    // Each edge is shared by exactly 2 faces. Pick a non-identity transform
+    // when available. For Lines the curve is fully determined by endpoints,
+    // so the specific transform choice does not matter at boundaries between
+    // drafted and undrafted regions.
     let identity = Matrix4::identity();
     let drafted_edges: Vec<CompressedEdge<C>> = compressed
         .edges
         .iter()
         .enumerate()
         .map(|(ei, edge)| {
-            // Pick a non-identity transform if available.
             let transform = edge_face_map[ei]
                 .iter()
                 .map(|&fi| &face_transforms[fi])
@@ -182,15 +170,9 @@ where
     // 3-plane vertex intersection.
     let plane_data: Vec<(Vector3, Point3)> = (0..n_faces)
         .map(|fi| {
-            let surf = &drafted_surfaces[fi];
-            let orientation = compressed.faces[fi].orientation;
-            let geom_normal = ParametricSurface3D::normal(surf, 0.0, 0.0);
-            let face_normal = if orientation {
-                geom_normal
-            } else {
-                -geom_normal
-            };
-            let pt_on_plane = ParametricSurface::evaluate(surf, 0.0, 0.0);
+            let cface = &compressed.faces[fi];
+            let face_normal = oriented_normal(&drafted_surfaces[fi], cface.orientation, 0.0, 0.0);
+            let pt_on_plane = ParametricSurface::evaluate(&drafted_surfaces[fi], 0.0, 0.0);
             (face_normal, pt_on_plane)
         })
         .collect();
