@@ -11,7 +11,7 @@ models:
   debugging_main: opus
   debugging_review: sonnet
 review:
-  max_rounds: 2
+  max_rounds: 3
   skip_trivial: true
 embedded:
   mode: disabled
