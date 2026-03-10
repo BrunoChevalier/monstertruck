@@ -1,4 +1,13 @@
-//! Crate for operation shapes. Provides boolean operations to Solid, and shape healing for importing shapes from other CAD systems.
+//! Solid modeling operations: boolean, chamfer/fillet, shell/offset, and draft/taper.
+//!
+//! Provides the following operations on [`Solid`](monstertruck_topology::Solid) bodies:
+//!
+//! - **Boolean operations** ([`and`], [`or`], [`difference`], [`symmetric_difference`]):
+//!   Combine solids via CSG operations.
+//! - **Fillet/chamfer** ([`fillet`]): Round or bevel edges of a shell.
+//! - **Shell/offset** ([`shell_ops`]): Hollow out a solid or offset shell surfaces.
+//! - **Draft/taper** ([`draft`]): Apply mold-release draft angles to selected faces.
+//! - **Shape healing** ([`extract_healed`]): Repair topology for imported shapes.
 
 #![cfg_attr(not(debug_assertions), deny(warnings))]
 #![deny(clippy::all, rust_2018_idioms)]
