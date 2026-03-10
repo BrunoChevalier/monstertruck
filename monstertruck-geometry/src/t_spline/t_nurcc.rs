@@ -386,12 +386,24 @@ where
                 .sum::<f64>()
                 * 2.0;
 
-            // Equation 14 in \[Sederberg et al. 1998\] for alpha_{ij}
-            // TODO: Check that the TnurccConnection parity is correct (L/R)
+            // Equation 14 in \[Sederberg et al. 1998\] for alpha_{ij} (origin to dest).
+            // The left-side connections (`LeftAcw`, `LeftCw`) are the edges adjacent to
+            // edge (i,j) on the LEFT face (`face_left`), i.e. the face on the left when
+            // traversing from origin to dest. This matches the paper's convention where
+            // alpha_{ij} uses knot intervals on the left side of the directed edge.
             let a_od = {
                 if a_denom.so_small() {
                     0.0
                 } else {
+                    debug_assert!(
+                        [LeftAcw, LeftCw].iter().all(|c| edge
+                            .read()
+                            .connection(*c)
+                            .read()
+                            .knot_interval
+                            >= 0.0),
+                        "Knot intervals must be non-negative"
+                    );
                     [LeftAcw, LeftCw]
                         .iter()
                         .map(|c| edge.read().connection(*c).read().knot_interval)
@@ -399,12 +411,23 @@ where
                         / a_denom
                 }
             };
-            // Equation 14 in \[Sederberg et al. 1998\] for alpha_{ji}
-            // TODO: Check that the TnurccConnection parity is correct (L/R)
+            // Equation 14 in \[Sederberg et al. 1998\] for alpha_{ji} (dest to origin).
+            // The right-side connections (`RightAcw`, `RightCw`) are the edges adjacent to
+            // edge (i,j) on the RIGHT face (`face_right`), i.e. the face on the right when
+            // traversing from origin to dest.
             let a_do = {
                 if a_denom.so_small() {
                     0.0
                 } else {
+                    debug_assert!(
+                        [RightAcw, RightCw].iter().all(|c| edge
+                            .read()
+                            .connection(*c)
+                            .read()
+                            .knot_interval
+                            >= 0.0),
+                        "Knot intervals must be non-negative"
+                    );
                     [RightAcw, RightCw]
                         .iter()
                         .map(|c| edge.read().connection(*c).read().knot_interval)
@@ -444,11 +467,15 @@ where
             let p_naught = vertex.read().point;
             let valence = vertex.read().valence as f64;
 
-            // Get radial edges and push first again as last for last window
+            // Get radial edges and push first again as last for last window.
             let mut radial_edges = TnurccControlPoint::radial_edges(Arc::clone(vertex));
             if radial_edges.is_empty() {
-                // Probably needs its own error
-                // TODO: Fix the Tnurcc errors?
+                // A vertex with no radial edges is an isolated vertex that does not
+                // participate in any face. This can only occur if the mesh was
+                // constructed incorrectly (e.g. a control point was added without
+                // connecting it to any edges). `TnurccMalformedFace` is the
+                // appropriate error because the condition implies a missing or
+                // broken face definition around this vertex.
                 return Err(Error::TnurccMalformedFace);
             }
             radial_edges.push(Arc::clone(&radial_edges[0]));

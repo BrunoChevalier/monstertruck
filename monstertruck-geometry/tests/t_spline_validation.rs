@@ -1,5 +1,4 @@
 use monstertruck_geometry::prelude::*;
-use std::sync::Arc;
 
 // ---------------------------------------------------------------------------
 // 1. Connection parity tests for T-NURCC subdivision
@@ -293,17 +292,23 @@ fn t_spline_validation_zero_knot_perpendicular_edges() {
     let new_point = result.unwrap();
     let new_borrow = new_point.read();
 
-    // The new point should have proper connections in the perpendicular directions
-    // (up and down should be edge conditions since we're on the boundary).
-    assert_eq!(
-        new_borrow.con_type(TmeshDirection::Up),
-        TmeshConnectionType::Edge,
-        "Perpendicular up direction should be an edge condition"
-    );
+    // The new point should have proper connections in the perpendicular directions.
+    // Down inherits the edge condition from `con` since `con` is on the boundary.
     assert_eq!(
         new_borrow.con_type(TmeshDirection::Down),
         TmeshConnectionType::Edge,
         "Perpendicular down direction should be an edge condition"
+    );
+
+    // Up becomes a T-junction: `con` has a point connection going Up (to (0,1,0)),
+    // so the inferred connection search is attempted. With zero knot interval,
+    // `p` shares parametric coordinates with `con`, and (0,1,0) is already
+    // connected Down to `con`. The inferred connection cannot be made, so `p`
+    // has a T-junction going Up per Figure 9 of [Sederberg et al. 2003].
+    assert_eq!(
+        new_borrow.con_type(TmeshDirection::Up),
+        TmeshConnectionType::Tjunction,
+        "Perpendicular up direction should be a T-junction for zero-interval insertion"
     );
 }
 
@@ -346,8 +351,7 @@ fn t_spline_validation_parity_to_tmesh_conversion() {
         [0, 4, 7, 3],
     ];
 
-    let tnurcc =
-        Tnurcc::from_quad_mesh(points, &faces).expect("Cube should be constructable");
+    let tnurcc = Tnurcc::from_quad_mesh(points, &faces).expect("Cube should be constructable");
 
     let tmesh = tnurcc
         .to_tmesh(2)

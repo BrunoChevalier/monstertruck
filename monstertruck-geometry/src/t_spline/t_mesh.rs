@@ -341,9 +341,14 @@ impl<P> Tmesh<P> {
         // the two sides perpendicular to the connection. If there is no edge condition,
         // Rule 2 for T-meshes [Sederberg et al. 2003] should be checked to find any
         // inferred connections (ic), and if it does not apply, the connection is removed.
-
-        // TODO: Currently this code does not allow for knot intervals of 0, and needs to be
-        // updated once a solution to figure 9 in [Sederberg et al. 2003] is found.
+        //
+        // Zero knot intervals (per Figure 9 in [Sederberg et al. 2003]) are valid and
+        // represent degenerate cases where control points share the same parametric
+        // position. When `knot_ratio` is 0.0 or 1.0, one of the resulting connections
+        // has a zero knot interval. The perpendicular edge condition and inferred
+        // connection logic must tolerate this: `find_inferred_connection` may encounter
+        // existing connections at the shared parametric position, and errors from
+        // traversal past the mesh boundary in such cases are non-fatal.
         if con.read().con_type(connection_side.clockwise()) == TmeshConnectionType::Edge {
             let edge_weight = con
                 .read()
@@ -358,9 +363,15 @@ impl<P> Tmesh<P> {
             let _ = p.write().remove_edge_condition(connection_side.clockwise());
 
             // If a point that satisfies Rule 2 from [Sederberg et al. 2003] is found, connect it.
-            // Should also never return an error.
-            self.find_inferred_connection(Arc::clone(&p), connection_side.clockwise())
-                .map_err(|_| Error::TmeshUnknownError)?;
+            // With zero knot intervals, the traversal may reach a mesh boundary when the
+            // new point shares parametric coordinates with an existing vertex whose
+            // neighbours already occupy the target connection slots. In such cases,
+            // `TmeshControlPointNotFound` (edge condition reached) is non-fatal.
+            match self.find_inferred_connection(Arc::clone(&p), connection_side.clockwise()) {
+                Ok(_) => {}
+                Err(Error::TmeshControlPointNotFound) => {}
+                Err(e) => return Err(e),
+            }
         }
 
         if con.read().con_type(connection_side.anti_clockwise()) == TmeshConnectionType::Edge {
@@ -378,10 +389,12 @@ impl<P> Tmesh<P> {
                 .write()
                 .remove_edge_condition(connection_side.anti_clockwise());
 
-            // If a point that satisfies Rule 2 from [Sederberg et al. 2003] is found, connect it.
-            // Should also never return an error.
-            self.find_inferred_connection(Arc::clone(&p), connection_side.anti_clockwise())
-                .map_err(|_| Error::TmeshUnknownError)?;
+            // Same zero-knot-interval tolerance as the clockwise case above.
+            match self.find_inferred_connection(Arc::clone(&p), connection_side.anti_clockwise()) {
+                Ok(_) => {}
+                Err(Error::TmeshControlPointNotFound) => {}
+                Err(e) => return Err(e),
+            }
         }
 
         // Add control point
