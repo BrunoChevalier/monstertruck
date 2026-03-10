@@ -4,6 +4,7 @@ use monstertruck_core::cgmath64::*;
 use monstertruck_geometry::prelude::*;
 use monstertruck_topology::compress::*;
 use monstertruck_topology::*;
+use std::f64::consts::FRAC_PI_2;
 use thiserror::Error;
 
 /// Errors for draft operations.
@@ -48,9 +49,250 @@ pub struct DraftOptions {
 ///
 /// Returns a new solid with drafted faces.
 pub fn draft_faces<C, S>(
-    _solid: &Solid<Point3, C, S>,
-    _face_indices: &[usize],
-    _options: &DraftOptions,
-) -> std::result::Result<Solid<Point3, C, S>, DraftError> {
-    todo!()
+    solid: &Solid<Point3, C, S>,
+    face_indices: &[usize],
+    options: &DraftOptions,
+) -> std::result::Result<Solid<Point3, C, S>, DraftError>
+where
+    C: Clone + Transformed<Matrix4>,
+    S: Clone + ParametricSurface3D<Point = Point3, Vector = Vector3> + Transformed<Matrix4>,
+{
+    // Validate inputs.
+    if options.angle < 0.0 || options.angle >= FRAC_PI_2 {
+        return Err(DraftError::InvalidAngle);
+    }
+    if options.pull_direction.magnitude().so_small() {
+        return Err(DraftError::InvalidPullDirection);
+    }
+
+    let shell = solid
+        .boundaries()
+        .first()
+        .ok_or_else(|| DraftError::InvalidTopology {
+            message: "solid has no boundary shells".to_string(),
+        })?;
+
+    // Zero angle: clone the original solid.
+    if options.angle.so_small() {
+        return Ok(Solid::new_unchecked(solid.boundaries().clone()));
+    }
+
+    let pull = options.pull_direction.normalize();
+    let neutral_origin = options.neutral_plane.origin();
+    let neutral_normal = options.neutral_plane.normal();
+
+    let compressed = shell.compress();
+    let n_verts = compressed.vertices.len();
+    let n_faces = compressed.faces.len();
+
+    // Build vertex-to-face adjacency: for each vertex, which faces reference it.
+    let mut vertex_faces: Vec<Vec<usize>> = vec![Vec::new(); n_verts];
+    compressed.faces.iter().enumerate().for_each(|(fi, face)| {
+        face.boundaries.iter().for_each(|boundary| {
+            boundary.iter().for_each(|edge_idx| {
+                let edge = &compressed.edges[edge_idx.index];
+                if !vertex_faces[edge.vertices.0].contains(&fi) {
+                    vertex_faces[edge.vertices.0].push(fi);
+                }
+                if !vertex_faces[edge.vertices.1].contains(&fi) {
+                    vertex_faces[edge.vertices.1].push(fi);
+                }
+            });
+        });
+    });
+
+    // For each face, compute the transform matrix (rotation about hinge).
+    // Non-selected faces get the identity transform.
+    let face_transforms: Vec<Matrix4> = (0..n_faces)
+        .map(|fi| {
+            if !face_indices.contains(&fi) {
+                return Matrix4::identity();
+            }
+            let surface = &compressed.faces[fi].surface;
+            let orientation = compressed.faces[fi].orientation;
+            let geom_normal = ParametricSurface3D::normal(surface, 0.5, 0.5);
+            let face_normal = if orientation {
+                geom_normal
+            } else {
+                -geom_normal
+            };
+
+            compute_draft_transform(
+                surface,
+                &face_normal,
+                &pull,
+                &neutral_origin,
+                &neutral_normal,
+                options.angle,
+            )
+        })
+        .collect();
+
+    // Apply transforms to surfaces.
+    let drafted_surfaces: Vec<S> = compressed
+        .faces
+        .iter()
+        .zip(&face_transforms)
+        .map(|(face, transform)| face.surface.transformed(*transform))
+        .collect();
+
+    // Apply transforms to edge curves.
+    // Each edge is shared by exactly 2 faces. For the edge curve, we need a
+    // consistent transform. If both adjacent faces have the same transform
+    // (or one is identity), use the non-identity one. If they differ, the
+    // edge lies on the boundary between drafted and undrafted regions, and
+    // neither transform alone is correct -- but the curve endpoints will be
+    // determined by the vertex positions (3-plane intersection), so we just
+    // need a curve that connects them. For Lines, the curve is fully determined
+    // by its endpoints, so any transform works.
+    let edge_face_map: Vec<Vec<usize>> = {
+        let mut ef: Vec<Vec<usize>> = vec![Vec::new(); compressed.edges.len()];
+        compressed.faces.iter().enumerate().for_each(|(fi, face)| {
+            face.boundaries.iter().for_each(|boundary| {
+                boundary.iter().for_each(|edge_idx| {
+                    if !ef[edge_idx.index].contains(&fi) {
+                        ef[edge_idx.index].push(fi);
+                    }
+                });
+            });
+        });
+        ef
+    };
+
+    let identity = Matrix4::identity();
+    let drafted_edges: Vec<CompressedEdge<C>> = compressed
+        .edges
+        .iter()
+        .enumerate()
+        .map(|(ei, edge)| {
+            // Pick a non-identity transform if available.
+            let transform = edge_face_map[ei]
+                .iter()
+                .map(|&fi| &face_transforms[fi])
+                .find(|t| **t != identity)
+                .unwrap_or(&identity);
+            CompressedEdge {
+                vertices: edge.vertices,
+                curve: edge.curve.transformed(*transform),
+            }
+        })
+        .collect();
+
+    // Collect (normal, point-on-surface) for each drafted surface for
+    // 3-plane vertex intersection.
+    let plane_data: Vec<(Vector3, Point3)> = (0..n_faces)
+        .map(|fi| {
+            let surf = &drafted_surfaces[fi];
+            let orientation = compressed.faces[fi].orientation;
+            let geom_normal = ParametricSurface3D::normal(surf, 0.0, 0.0);
+            let face_normal = if orientation {
+                geom_normal
+            } else {
+                -geom_normal
+            };
+            let pt_on_plane = ParametricSurface::evaluate(surf, 0.0, 0.0);
+            (face_normal, pt_on_plane)
+        })
+        .collect();
+
+    // Compute new vertex positions as 3-plane intersections.
+    let new_vertices: Vec<Point3> = (0..n_verts)
+        .map(|vi| {
+            let adj = &vertex_faces[vi];
+            if adj.len() < 3 {
+                return compressed.vertices[vi];
+            }
+
+            let n0 = plane_data[adj[0]].0;
+            let n1 = plane_data[adj[1]].0;
+            let n2 = plane_data[adj[2]].0;
+            let d0 = n0.dot(plane_data[adj[0]].1.to_vec());
+            let d1 = n1.dot(plane_data[adj[1]].1.to_vec());
+            let d2 = n2.dot(plane_data[adj[2]].1.to_vec());
+
+            // Column-major: row i is n_i, so n_i . x = d_i.
+            let mat = Matrix3::new(n0.x, n1.x, n2.x, n0.y, n1.y, n2.y, n0.z, n1.z, n2.z);
+
+            match mat.invert() {
+                Some(inv) => {
+                    let rhs = Vector3::new(d0, d1, d2);
+                    let result = inv * rhs;
+                    Point3::new(result.x, result.y, result.z)
+                }
+                None => compressed.vertices[vi],
+            }
+        })
+        .collect();
+
+    // Rebuild the compressed shell with new geometry.
+    let new_faces: Vec<CompressedFace<S>> = compressed
+        .faces
+        .into_iter()
+        .zip(drafted_surfaces)
+        .map(|(f, surface)| CompressedFace {
+            boundaries: f.boundaries,
+            orientation: f.orientation,
+            surface,
+        })
+        .collect();
+
+    let new_compressed = CompressedShell {
+        vertices: new_vertices,
+        edges: drafted_edges,
+        faces: new_faces,
+    };
+
+    let new_shell = Shell::extract(new_compressed).map_err(|e| DraftError::InvalidTopology {
+        message: format!("{e}"),
+    })?;
+
+    Ok(Solid::new_unchecked(vec![new_shell]))
+}
+
+/// Computes the [`Matrix4`] transform that drafts a planar surface by rotating
+/// its plane around the hinge axis (intersection of face plane and neutral plane).
+fn compute_draft_transform<S>(
+    surface: &S,
+    face_normal: &Vector3,
+    pull: &Vector3,
+    neutral_origin: &Point3,
+    neutral_normal: &Vector3,
+    angle: f64,
+) -> Matrix4
+where
+    S: ParametricSurface3D<Point = Point3, Vector = Vector3>,
+{
+    // Hinge axis = face_normal x neutral_normal.
+    let hinge = face_normal.cross(*neutral_normal);
+    let hinge_mag = hinge.magnitude();
+
+    if hinge_mag.so_small() {
+        // Face is parallel to neutral plane (top/bottom). No draft.
+        return Matrix4::identity();
+    }
+    let hinge = hinge / hinge_mag;
+
+    // Determine rotation sign: face normal should tilt toward pull direction.
+    let cross_test = face_normal.cross(*pull);
+    let sign = if cross_test.dot(hinge) >= 0.0 {
+        1.0
+    } else {
+        -1.0
+    };
+    let rotation_angle = sign * angle;
+
+    // Find hinge point: intersection of face plane and neutral plane.
+    let face_origin = ParametricSurface::evaluate(surface, 0.0, 0.0);
+    let denom = face_normal.dot(*neutral_normal);
+    if denom.abs().so_small() {
+        return Matrix4::identity();
+    }
+    let dist = (*neutral_origin - face_origin).dot(*neutral_normal) / denom;
+    let hinge_point = face_origin + dist * *face_normal;
+
+    // Build the transform: translate to hinge, rotate, translate back.
+    let rotation = Matrix3::from_axis_angle(hinge, Rad(rotation_angle));
+    Matrix4::from_translation(hinge_point.to_vec())
+        * Matrix4::from(rotation)
+        * Matrix4::from_translation(-hinge_point.to_vec())
 }
