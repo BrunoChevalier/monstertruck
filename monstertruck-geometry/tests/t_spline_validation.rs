@@ -328,6 +328,81 @@ fn t_spline_validation_malformed_face_error_variant() {
     );
 }
 
+/// Verifies that `to_tmesh()` returns `Err(Error::TnurccMalformedFace)` when
+/// a T-NURCC contains an isolated vertex (a control point not connected to any
+/// edge). The error path is in `global_subdivide` where `radial_edges` is empty.
+#[test]
+fn t_spline_validation_malformed_face_subdivide_error() {
+    // Build a valid cube with 8 vertices (indices 0..7) plus one extra
+    // isolated vertex at index 8 that participates in no face.
+    let points = vec![
+        Point3::from((0.0, 0.0, 0.0)), // 0
+        Point3::from((0.0, 0.0, 1.0)), // 1
+        Point3::from((1.0, 0.0, 1.0)), // 2
+        Point3::from((1.0, 0.0, 0.0)), // 3
+        Point3::from((0.0, 1.0, 0.0)), // 4
+        Point3::from((0.0, 1.0, 1.0)), // 5
+        Point3::from((1.0, 1.0, 1.0)), // 6
+        Point3::from((1.0, 1.0, 0.0)), // 7
+        Point3::from((5.0, 5.0, 5.0)), // 8 -- isolated, not in any face
+    ];
+
+    // Six faces of the cube reference only indices 0..7.
+    // Index 8 is never referenced, creating an isolated control point.
+    let faces = vec![
+        [
+            (0, vec![(3, 1.0)]),
+            (3, vec![(2, 1.0)]),
+            (2, vec![(1, 1.0)]),
+            (1, vec![(0, 1.0)]),
+        ],
+        [
+            (0, vec![(1, 1.0)]),
+            (1, vec![(5, 1.0)]),
+            (5, vec![(4, 1.0)]),
+            (4, vec![(0, 1.0)]),
+        ],
+        [
+            (1, vec![(2, 1.0)]),
+            (2, vec![(6, 1.0)]),
+            (6, vec![(5, 1.0)]),
+            (5, vec![(1, 1.0)]),
+        ],
+        [
+            (4, vec![(5, 1.0)]),
+            (5, vec![(6, 1.0)]),
+            (6, vec![(7, 1.0)]),
+            (7, vec![(4, 1.0)]),
+        ],
+        [
+            (2, vec![(3, 1.0)]),
+            (3, vec![(7, 1.0)]),
+            (7, vec![(6, 1.0)]),
+            (6, vec![(2, 1.0)]),
+        ],
+        [
+            (0, vec![(4, 1.0)]),
+            (4, vec![(7, 1.0)]),
+            (7, vec![(3, 1.0)]),
+            (3, vec![(0, 1.0)]),
+        ],
+    ];
+
+    let tnurcc = Tnurcc::try_new(points, faces)
+        .expect("Cube with isolated vertex should be constructable");
+
+    // Subdividing should fail because vertex 8 has no radial edges.
+    let result = tnurcc.to_tmesh(1);
+    assert!(
+        result.is_err(),
+        "to_tmesh should fail for a T-NURCC with an isolated vertex"
+    );
+    assert_eq!(
+        format!("{}", result.unwrap_err()),
+        "A T-NURCC face must have at least two points and one edge defining it."
+    );
+}
+
 /// Tests that `to_tmesh` converts a T-NURCC with parity-sensitive edges
 /// into a valid T-mesh preserving the knot structure.
 #[test]
