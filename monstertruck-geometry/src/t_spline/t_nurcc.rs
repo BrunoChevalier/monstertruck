@@ -386,17 +386,20 @@ where
                 .sum::<f64>()
                 * 2.0;
 
-            // Equation 14 in \[Sederberg et al. 1998\] for alpha_{ij} (origin to dest).
-            // The left-side connections (`LeftAcw`, `LeftCw`) are the edges adjacent to
-            // edge (i,j) on the LEFT face (`face_left`), i.e. the face on the left when
-            // traversing from origin to dest. This matches the paper's convention where
-            // alpha_{ij} uses knot intervals on the left side of the directed edge.
-            let a_od = {
+            // Equation 14 in \[Sederberg et al. 1998\]: alpha values for the edge.
+            //
+            // `a_od` (alpha_{ij}, origin to dest) uses LEFT-side connections
+            // (`LeftAcw`, `LeftCw`), i.e. edges adjacent on `face_left` -- the face
+            // on the left when traversing from origin to dest.
+            //
+            // `a_do` (alpha_{ji}, dest to origin) uses RIGHT-side connections
+            // (`RightAcw`, `RightCw`), i.e. edges adjacent on `face_right`.
+            let alpha = |cons: [TnurccConnection; 2]| -> f64 {
                 if a_denom.so_small() {
                     0.0
                 } else {
                     debug_assert!(
-                        [LeftAcw, LeftCw].iter().all(|c| edge
+                        cons.iter().all(|c| edge
                             .read()
                             .connection(*c)
                             .read()
@@ -404,37 +407,14 @@ where
                             >= 0.0),
                         "Knot intervals must be non-negative"
                     );
-                    [LeftAcw, LeftCw]
-                        .iter()
+                    cons.iter()
                         .map(|c| edge.read().connection(*c).read().knot_interval)
                         .sum::<f64>()
                         / a_denom
                 }
             };
-            // Equation 14 in \[Sederberg et al. 1998\] for alpha_{ji} (dest to origin).
-            // The right-side connections (`RightAcw`, `RightCw`) are the edges adjacent to
-            // edge (i,j) on the RIGHT face (`face_right`), i.e. the face on the right when
-            // traversing from origin to dest.
-            let a_do = {
-                if a_denom.so_small() {
-                    0.0
-                } else {
-                    debug_assert!(
-                        [RightAcw, RightCw].iter().all(|c| edge
-                            .read()
-                            .connection(*c)
-                            .read()
-                            .knot_interval
-                            >= 0.0),
-                        "Knot intervals must be non-negative"
-                    );
-                    [RightAcw, RightCw]
-                        .iter()
-                        .map(|c| edge.read().connection(*c).read().knot_interval)
-                        .sum::<f64>()
-                        / a_denom
-                }
-            };
+            let a_od = alpha([LeftAcw, LeftCw]);
+            let a_do = alpha([RightAcw, RightCw]);
             // Equation 15 in \[Sederberg et al. 1998\]
             let m: P = {
                 let num_dest_sum = edge.read().knot_interval
