@@ -8,3 +8,6 @@ parallel/
 parallel-merge/
 research/
 auto-unknown-provenance.jsonl
+
+# Added by tendrion update
+.hook-cache/
