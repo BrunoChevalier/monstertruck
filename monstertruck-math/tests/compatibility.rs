@@ -315,3 +315,36 @@ fn serde_matrix2_roundtrip() {
     let m2: Matrix2<f64> = serde_json::from_str(&json).unwrap();
     assert_eq!(m, m2);
 }
+
+// ---------- Edge-case coverage ----------
+
+#[test]
+fn normalize_zero_vector_produces_nan() {
+    let z: Vector3<f64> = Zero::zero();
+    let n = InnerSpace::normalize(z);
+    assert!(n[0].is_nan());
+    assert!(n[1].is_nan());
+    assert!(n[2].is_nan());
+}
+
+#[test]
+fn vector2_unit_z_returns_zero() {
+    let z: Vector2<f64> = UnitVectors::unit_z();
+    assert_eq!(z, Vector2::new(0.0, 0.0));
+    // Confirm it is NOT a unit vector.
+    assert_eq!(InnerSpace::magnitude(z), 0.0);
+}
+
+#[test]
+fn matrix4_mul_point3_perspective_division() {
+    // A matrix that scales w by 2 to exercise perspective division.
+    let m = Matrix4::new(
+        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 2.0,
+    );
+    let p = Point3::new(4.0, 6.0, 8.0);
+    let result = m * p;
+    // After perspective divide: (4/2, 6/2, 8/2) = (2, 3, 4).
+    assert!((result[0] - 2.0_f64).abs() < 1e-10);
+    assert!((result[1] - 3.0_f64).abs() < 1e-10);
+    assert!((result[2] - 4.0_f64).abs() < 1e-10);
+}

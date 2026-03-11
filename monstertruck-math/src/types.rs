@@ -141,7 +141,7 @@ impl<S: na::Scalar + Copy> Matrix2<S> {
     {
         let (sin, cos) = angle.0.sin_cos();
         // cgmath convention: columns are [cos, sin] and [-sin, cos].
-        Matrix2::new(cos, sin, -sin.clone(), cos)
+        Matrix2::new(cos, sin, -sin, cos)
     }
 
     /// Creates a diagonal matrix (from_value in cgmath).
@@ -161,15 +161,19 @@ impl<S: na::Scalar + Copy> Matrix3<S> {
     #[allow(clippy::too_many_arguments)]
     #[inline]
     pub fn new(
-        c0r0: S, c0r1: S, c0r2: S,
-        c1r0: S, c1r1: S, c1r2: S,
-        c2r0: S, c2r1: S, c2r2: S,
+        c0r0: S,
+        c0r1: S,
+        c0r2: S,
+        c1r0: S,
+        c1r1: S,
+        c1r2: S,
+        c2r0: S,
+        c2r1: S,
+        c2r2: S,
     ) -> Self {
         // Transpose to nalgebra's row-major constructor order.
         Matrix3(na::Matrix3::new(
-            c0r0, c1r0, c2r0,
-            c0r1, c1r1, c2r1,
-            c0r2, c1r2, c2r2,
+            c0r0, c1r0, c2r0, c0r1, c1r1, c2r1, c0r2, c1r2, c2r2,
         ))
     }
 
@@ -204,9 +208,15 @@ impl<S: na::Scalar + Copy> Matrix3<S> {
         S: na::RealField,
     {
         Matrix3::new(
-            m[(0, 0)], m[(1, 0)], S::zero(),
-            m[(0, 1)], m[(1, 1)], S::zero(),
-            S::zero(), S::zero(), S::one(),
+            m[(0, 0)],
+            m[(1, 0)],
+            S::zero(),
+            m[(0, 1)],
+            m[(1, 1)],
+            S::zero(),
+            S::zero(),
+            S::zero(),
+            S::one(),
         )
     }
 
@@ -216,10 +226,7 @@ impl<S: na::Scalar + Copy> Matrix3<S> {
     where
         S: na::RealField,
     {
-        let rot = na::Rotation3::from_axis_angle(
-            &na::Unit::new_normalize(axis),
-            angle.0,
-        );
+        let rot = na::Rotation3::from_axis_angle(&na::Unit::new_normalize(axis), angle.0);
         Matrix3(*rot.matrix())
     }
 
@@ -261,17 +268,17 @@ impl<S: na::Scalar + Copy> Matrix3<S> {
         let r = qr.r();
         // K = diagonal of R
         let mut k = na::Matrix3::<S>::zeros();
-        k[(0, 0)] = r[(0, 0)].clone();
-        k[(1, 1)] = r[(1, 1)].clone();
-        k[(2, 2)] = r[(2, 2)].clone();
+        k[(0, 0)] = r[(0, 0)];
+        k[(1, 1)] = r[(1, 1)];
+        k[(2, 2)] = r[(2, 2)];
         // Upper unitriangular: K^-1 * R (normalize R rows by diagonal)
         let mut u = na::Matrix3::<S>::identity();
         if !k[(0, 0)].is_zero() {
-            u[(0, 1)] = r[(0, 1)].clone() / k[(0, 0)].clone();
-            u[(0, 2)] = r[(0, 2)].clone() / k[(0, 0)].clone();
+            u[(0, 1)] = r[(0, 1)] / k[(0, 0)];
+            u[(0, 2)] = r[(0, 2)] / k[(0, 0)];
         }
         if !k[(1, 1)].is_zero() {
-            u[(1, 2)] = r[(1, 2)].clone() / k[(1, 1)].clone();
+            u[(1, 2)] = r[(1, 2)] / k[(1, 1)];
         }
         Some((Matrix3(q), Matrix3(k), Matrix3(u)))
     }
@@ -282,28 +289,33 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
     #[allow(clippy::too_many_arguments)]
     #[inline]
     pub fn new(
-        c0r0: S, c0r1: S, c0r2: S, c0r3: S,
-        c1r0: S, c1r1: S, c1r2: S, c1r3: S,
-        c2r0: S, c2r1: S, c2r2: S, c2r3: S,
-        c3r0: S, c3r1: S, c3r2: S, c3r3: S,
+        c0r0: S,
+        c0r1: S,
+        c0r2: S,
+        c0r3: S,
+        c1r0: S,
+        c1r1: S,
+        c1r2: S,
+        c1r3: S,
+        c2r0: S,
+        c2r1: S,
+        c2r2: S,
+        c2r3: S,
+        c3r0: S,
+        c3r1: S,
+        c3r2: S,
+        c3r3: S,
     ) -> Self {
         // Transpose to nalgebra's row-major constructor order.
         Matrix4(na::Matrix4::new(
-            c0r0, c1r0, c2r0, c3r0,
-            c0r1, c1r1, c2r1, c3r1,
-            c0r2, c1r2, c2r2, c3r2,
-            c0r3, c1r3, c2r3, c3r3,
+            c0r0, c1r0, c2r0, c3r0, c0r1, c1r1, c2r1, c3r1, c0r2, c1r2, c2r2, c3r2, c0r3, c1r3,
+            c2r3, c3r3,
         ))
     }
 
     /// Creates a 4x4 matrix from four column vectors.
     #[inline]
-    pub fn from_cols(
-        c0: Vector4<S>,
-        c1: Vector4<S>,
-        c2: Vector4<S>,
-        c3: Vector4<S>,
-    ) -> Self {
+    pub fn from_cols(c0: Vector4<S>, c1: Vector4<S>, c2: Vector4<S>, c3: Vector4<S>) -> Self {
         Matrix4(na::Matrix4::from_columns(&[c0, c1, c2, c3]))
     }
 
@@ -406,14 +418,14 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
         // K = diagonal of R
         let mut k = na::Matrix4::<S>::zeros();
         for i in 0..4 {
-            k[(i, i)] = r[(i, i)].clone();
+            k[(i, i)] = r[(i, i)];
         }
         // Upper unitriangular
         let mut u = na::Matrix4::<S>::identity();
         for i in 0..4 {
             if !k[(i, i)].is_zero() {
                 for j in (i + 1)..4 {
-                    u[(i, j)] = r[(i, j)].clone() / k[(i, i)].clone();
+                    u[(i, j)] = r[(i, j)] / k[(i, i)];
                 }
             }
         }
@@ -429,10 +441,7 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
         let zero = S::zero();
         let one = S::one();
         Matrix4::new(
-            x, zero, zero, zero,
-            zero, y, zero, zero,
-            zero, zero, z, zero,
-            zero, zero, zero, one,
+            x, zero, zero, zero, zero, y, zero, zero, zero, zero, z, zero, zero, zero, zero, one,
         )
     }
 
@@ -445,10 +454,8 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
         let zero = S::zero();
         let one = S::one();
         Matrix4::new(
-            one, zero, zero, v[0],
-            zero, one, zero, v[1],
-            zero, zero, one, v[2],
-            zero, zero, zero, one,
+            one, zero, zero, v[0], zero, one, zero, v[1], zero, zero, one, v[2], zero, zero, zero,
+            one,
         )
     }
 }
@@ -592,8 +599,7 @@ macro_rules! impl_matrix_ops {
             }
         }
         // One
-        impl<S: na::RealField> num_traits::One for $mtype<S>
-        {
+        impl<S: na::RealField> num_traits::One for $mtype<S> {
             #[inline]
             fn one() -> Self {
                 $mtype(<$na_type>::identity())
@@ -639,13 +645,20 @@ impl_scalar_mul_matrix!(Matrix3, f32);
 impl_scalar_mul_matrix!(Matrix4, f32);
 
 // Matrix4 * Point3 (Transform).
+//
+// Performs perspective division by the resulting w component.
+// Assumes w != 0; division by zero produces infinity/NaN.
 impl<S: na::RealField> std::ops::Mul<Point3<S>> for Matrix4<S> {
     type Output = Point3<S>;
     #[inline]
     fn mul(self, rhs: Point3<S>) -> Point3<S> {
         let h = self.0 * rhs.to_homogeneous();
         let w = h[3].clone();
-        Point3::new(h[0].clone() / w.clone(), h[1].clone() / w.clone(), h[2].clone() / w)
+        Point3::new(
+            h[0].clone() / w.clone(),
+            h[1].clone() / w.clone(),
+            h[2].clone() / w,
+        )
     }
 }
 
@@ -749,12 +762,15 @@ impl<S: num_traits::Float> Rad<S> {
 // cgmath's `matrix[col_index]` returned a column vector reference.
 // nalgebra uses `(row, col)` tuple indexing. These impls bridge the gap.
 
-// Safety rationale for column indexing:
-// nalgebra stores matrices in column-major order. Each column of an NxN matrix
-// is stored as N contiguous elements. `na::VectorN<S>` (= `SVector<S, N>`) is
-// a `Matrix<S, Const<N>, Const<1>, ArrayStorage<S, N, 1>>` which is
-// `#[repr(C)]` over `[[S; N]; 1]`, i.e. N contiguous `S` values -- exactly
-// matching the memory layout of one column inside the parent matrix.
+// SAFETY rationale for column indexing:
+// 1. Bounds: `na::Matrix::column(col)` panics when `col >= N`, so the pointer
+//    cast below is only reached for in-bounds columns.
+// 2. Layout: nalgebra stores matrices in column-major order. Each column of an
+//    NxN matrix is N contiguous `S` values. `na::SVector<S, N>` is
+//    `Matrix<S, Const<N>, Const<1>, ArrayStorage<S, N, 1>>` which is
+//    `#[repr(C)]` over `[[S; N]; 1]`, i.e. N contiguous `S` values -- exactly
+//    matching the memory layout of one column inside the parent matrix.
+// 3. Alignment: both the column slice and `SVector` have alignment of `S`.
 // Therefore the pointer cast from the start of a column to `&VectorN<S>` is
 // safe and well-aligned.
 
@@ -823,9 +839,15 @@ impl<S: na::Scalar + num_traits::Zero + num_traits::One> From<Matrix2<S>> for Ma
         let z = S::zero();
         let o = S::one();
         Matrix3(na::Matrix3::new(
-            m.0[(0, 0)].clone(), m.0[(0, 1)].clone(), z.clone(),
-            m.0[(1, 0)].clone(), m.0[(1, 1)].clone(), z,
-            S::zero(), S::zero(), o,
+            m.0[(0, 0)].clone(),
+            m.0[(0, 1)].clone(),
+            z.clone(),
+            m.0[(1, 0)].clone(),
+            m.0[(1, 1)].clone(),
+            z,
+            S::zero(),
+            S::zero(),
+            o,
         ))
     }
 }
@@ -840,10 +862,22 @@ impl<S: na::Scalar + num_traits::Zero + num_traits::One> From<Matrix3<S>> for Ma
         let z = S::zero();
         let o = S::one();
         Matrix4(na::Matrix4::new(
-            m.0[(0, 0)].clone(), m.0[(0, 1)].clone(), m.0[(0, 2)].clone(), z.clone(),
-            m.0[(1, 0)].clone(), m.0[(1, 1)].clone(), m.0[(1, 2)].clone(), z.clone(),
-            m.0[(2, 0)].clone(), m.0[(2, 1)].clone(), m.0[(2, 2)].clone(), z,
-            S::zero(), S::zero(), S::zero(), o,
+            m.0[(0, 0)].clone(),
+            m.0[(0, 1)].clone(),
+            m.0[(0, 2)].clone(),
+            z.clone(),
+            m.0[(1, 0)].clone(),
+            m.0[(1, 1)].clone(),
+            m.0[(1, 2)].clone(),
+            z.clone(),
+            m.0[(2, 0)].clone(),
+            m.0[(2, 1)].clone(),
+            m.0[(2, 2)].clone(),
+            z,
+            S::zero(),
+            S::zero(),
+            S::zero(),
+            o,
         ))
     }
 }
@@ -872,10 +906,7 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
     where
         S: na::RealField,
     {
-        let rot = na::Rotation3::from_axis_angle(
-            &na::Unit::new_normalize(axis),
-            angle.0,
-        );
+        let rot = na::Rotation3::from_axis_angle(&na::Unit::new_normalize(axis), angle.0);
         Matrix4(rot.to_homogeneous())
     }
 }

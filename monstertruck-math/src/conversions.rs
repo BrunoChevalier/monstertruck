@@ -238,9 +238,12 @@ impl<S: BaseFloat> UnitVectors for na::Vector2<S> {
     fn unit_y() -> Self {
         na::Vector2::new(S::zero(), S::one())
     }
+    /// Returns the zero vector (not a unit vector).
+    ///
+    /// 2D vectors have no Z axis, so this returns `(0, 0)` for cgmath API
+    /// compatibility. The result is **not** a unit vector.
     #[inline]
     fn unit_z() -> Self {
-        // 2D vectors don't have a Z axis; return zero for compatibility.
         na::Vector2::new(S::zero(), S::zero())
     }
 }

@@ -65,6 +65,11 @@ pub trait InnerSpace: VectorSpace {
     /// Squared magnitude.
     fn magnitude2(self) -> Self::Scalar;
     /// Returns a unit vector in the same direction.
+    ///
+    /// # Note
+    ///
+    /// Normalizing a zero-length vector produces a vector of `NaN` components,
+    /// matching nalgebra's behavior. Callers must ensure the vector is non-zero.
     fn normalize(self) -> Self;
 }
 
@@ -345,6 +350,10 @@ impl<S: BaseFloat> VectorSpace for types::Matrix4<S> {
 
 impl<S: BaseFloat> Transform<na::Point3<S>> for types::Matrix4<S> {
     type Vector = na::Vector3<S>;
+    /// Transforms a point via homogeneous multiplication with perspective division.
+    ///
+    /// Divides by the resulting w component. Assumes w != 0; a zero w produces
+    /// infinity/NaN coordinates.
     fn transform_point(&self, point: na::Point3<S>) -> na::Point3<S> {
         let h = self.0 * point.to_homogeneous();
         na::Point3::new(h[0] / h[3], h[1] / h[3], h[2] / h[3])

@@ -28,8 +28,7 @@ pub mod types;
 
 // Re-export all types at crate root.
 pub use types::{
-    Deg, Matrix2, Matrix3, Matrix4, Point1, Point2, Point3, Rad, Vector1, Vector2, Vector3,
-    Vector4,
+    Deg, Matrix2, Matrix3, Matrix4, Point1, Point2, Point3, Rad, Vector1, Vector2, Vector3, Vector4,
 };
 
 // Re-export all traits at crate root.
@@ -52,8 +51,9 @@ pub use nalgebra;
 
 /// Prelude module mimicking `cgmath::prelude::*`.
 pub mod prelude {
-    //! Convenient re-exports of commonly used traits.
-    pub use crate::conversions::{Cast, Extend, MulElementWise, ToHomogeneous, Truncate, UnitVectors};
+    pub use crate::conversions::{
+        Cast, Extend, MulElementWise, ToHomogeneous, Truncate, UnitVectors,
+    };
     pub use crate::traits::{
         BaseFloat, EuclideanSpace, InnerSpace, MetricSpace, One, SquareMatrix, Transform,
         VectorSpace, Zero,
@@ -62,12 +62,7 @@ pub mod prelude {
 }
 
 /// Creates a perspective projection matrix (right-handed, zero-to-one depth).
-pub fn perspective<S: BaseFloat>(
-    fovy: Rad<S>,
-    aspect: S,
-    near: S,
-    far: S,
-) -> Matrix4<S> {
+pub fn perspective<S: BaseFloat>(fovy: Rad<S>, aspect: S, near: S, far: S) -> Matrix4<S> {
     let two = S::one() + S::one();
     let f = S::one() / num_traits::Float::tan(fovy.0 / two);
     Matrix4::new(
@@ -91,14 +86,7 @@ pub fn perspective<S: BaseFloat>(
 }
 
 /// Creates an orthographic projection matrix.
-pub fn ortho<S: BaseFloat>(
-    left: S,
-    right: S,
-    bottom: S,
-    top: S,
-    near: S,
-    far: S,
-) -> Matrix4<S> {
+pub fn ortho<S: BaseFloat>(left: S, right: S, bottom: S, top: S, near: S, far: S) -> Matrix4<S> {
     let two = S::one() + S::one();
     let zero = S::zero();
     let one = S::one();
@@ -126,14 +114,7 @@ pub fn ortho<S: BaseFloat>(
 }
 
 /// Creates a frustum projection matrix.
-pub fn frustum<S: BaseFloat>(
-    left: S,
-    right: S,
-    bottom: S,
-    top: S,
-    near: S,
-    far: S,
-) -> Matrix4<S> {
+pub fn frustum<S: BaseFloat>(left: S, right: S, bottom: S, top: S, near: S, far: S) -> Matrix4<S> {
     let two = S::one() + S::one();
     let zero = S::zero();
     let rl = right - left;
