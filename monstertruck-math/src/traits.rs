@@ -93,6 +93,11 @@ pub trait EuclideanSpace:
     fn to_vec(self) -> Self::Diff;
     /// Creates a point from a vector from the origin.
     fn from_vec(v: Self::Diff) -> Self;
+    /// Returns the midpoint between two points.
+    fn midpoint(self, other: Self) -> Self {
+        let two = Self::Scalar::one() + Self::Scalar::one();
+        Self::from_vec((self.to_vec() + other.to_vec()) / two)
+    }
 }
 
 /// Trait matching cgmath's `MetricSpace`.
@@ -308,5 +313,12 @@ impl<S: BaseFloat> Transform<na::Point3<S>> for types::Matrix4<S> {
     fn transform_point(&self, point: na::Point3<S>) -> na::Point3<S> {
         let h = self.0 * point.to_homogeneous();
         na::Point3::new(h[0] / h[3], h[1] / h[3], h[2] / h[3])
+    }
+}
+
+impl<S: BaseFloat> Transform<na::Point2<S>> for types::Matrix3<S> {
+    fn transform_point(&self, point: na::Point2<S>) -> na::Point2<S> {
+        let h = self.0 * na::Vector3::new(point[0], point[1], S::one());
+        na::Point2::new(h[0] / h[2], h[1] / h[2])
     }
 }
