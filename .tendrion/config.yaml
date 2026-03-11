@@ -21,3 +21,4 @@ commit_docs: true
 test_commands:
   - cargo test
   - cargo nextest run
+  - cargo doc
