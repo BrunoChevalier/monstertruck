@@ -670,7 +670,8 @@ impl ParametricSurface3D for NurbsSurface<Vector4> {
         let pt = self.0.evaluate(u, v);
         let ud = self.0.derivative_u(u, v);
         let vd = self.0.derivative_v(u, v);
-        rat_der(&[pt, ud]).cross(rat_der(&[pt, vd])).normalize()
+        let cross: Vector3 = rat_der(&[pt, ud]).cross(&rat_der(&[pt, vd]));
+        cross.normalize()
     }
 }
 

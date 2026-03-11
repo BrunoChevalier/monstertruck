@@ -50,13 +50,14 @@ fn u_control_points<S: ParametricSurface3D>(
     weight: f64,
 ) -> (Vector4, Vector4) {
     let uv: Vector2 = basis.iter().zip(side_control_points).map(pmul).sum();
-    let sders = surface.ders(1, uv.x, uv.y);
+    let sders = surface.ders(1, uv[0], uv[1]);
     let (p, uder, vder) = (sders[0][0], sders[1][0], sders[0][1]);
     let duv: Vector2 = dbasis.iter().zip(side_control_points).map(pmul).sum();
-    let cder = (uder * duv.x + vder * duv.y).normalize();
-    let axis = cder.cross(uder.cross(vder).normalize());
+    let cder = (uder * duv[0] + vder * duv[1]).normalize();
+    let cross_uv: Vector3 = uder.cross(&vder);
+    let axis: Vector3 = cder.cross(&cross_uv.normalize());
     let tuv: Vector2 = basis.iter().zip(tangent_vecs).map(tmul).sum();
-    let wq = weight * p + (axis * tuv.x + cder * tuv.y) / 3.0;
+    let wq = weight * p + (axis * tuv[0] + cder * tuv[1]) / 3.0;
     (p.extend(1.0), wq.extend(weight))
 }
 
@@ -96,7 +97,7 @@ mod subders {
     fn n_ders(s_ders: &SurfaceDers<Vector3>, uv_ders: &CurveDers<Vector2>) -> CurveDers<Vector3> {
         let uders = s_ders.uder().composite_ders(uv_ders);
         let vders = s_ders.vder().composite_ders(uv_ders);
-        let lnders = uders.combinatorial_ders(&vders, Vector3::cross);
+        let lnders = uders.combinatorial_ders(&vders, |a: Vector3, b: Vector3| a.cross(&b));
         let homog = lnders.element_wise_derivatives(&lnders.abs_ders(), Vector3::extend);
         homog.rat_ders()
     }
@@ -108,7 +109,7 @@ mod subders {
     ) -> CurveDers<Vector3> {
         use std::ops::Add;
         let v_axis_ders = v_axis_ders(p_ders);
-        let u_axis_ders = v_axis_ders.combinatorial_ders(n_ders, Vector3::cross);
+        let u_axis_ders = v_axis_ders.combinatorial_ders(n_ders, |a: Vector3, b: Vector3| a.cross(&b));
         let wp_ders = w_ders.combinatorial_ders(p_ders, |w, p| w * p);
         let aders = b_ders.combinatorial_ders(&u_axis_ders, |v, p| v[0] * p) / 3.0;
         let bders = b_ders.combinatorial_ders(&v_axis_ders, |v, p| v[1] * p) / 3.0;
@@ -155,9 +156,9 @@ where
             b1_ders[order] = basis.iter().zip(&self.tangent_vecs1).map(tmul).sum();
             w_ders[order] = basis.iter().zip(&self.weights).map(tmul).sum();
         });
-        let Vector2 { x: u0, y: v0 } = uv0_ders[0];
+        let (u0, v0) = (uv0_ders[0][0], uv0_ders[0][1]);
         let s0_ders = self.surface0.derivatives(max_order + 1, u0, v0);
-        let Vector2 { x: u1, y: v1 } = uv1_ders[0];
+        let (u1, v1) = (uv1_ders[0][0], uv1_ders[0][1]);
         let s1_ders = self.surface1.derivatives(max_order + 1, u1, v1);
 
         let (lift_p0_ders, lift_q0_ders) =
@@ -200,7 +201,7 @@ where
         let (pt0, pt1) = u_control_points(&basis, &dbasis, striple0, weight);
         let (pt3, pt2) = u_control_points(&basis, &dbasis, striple1, weight);
         let b = bezier_3rd_basis(0, u);
-        Point3::from_homogeneous(b[0] * pt0 + b[1] * pt1 + b[2] * pt2 + b[3] * pt3)
+        Point3::from_homogeneous(b[0] * pt0 + b[1] * pt1 + b[2] * pt2 + b[3] * pt3).unwrap()
     }
     fn derivative_u(&self, u: f64, v: f64) -> Self::Vector {
         self.derivative_mn(1, 0, u, v)
@@ -232,7 +233,8 @@ where
 {
     fn normal(&self, u: f64, v: f64) -> Vector3 {
         let ders = self.derivatives(1, u, v);
-        ders[1][0].cross(ders[0][1]).normalize()
+        let cross: Vector3 = ders[1][0].cross(&ders[0][1]);
+        cross.normalize()
     }
 }
 
@@ -300,36 +302,36 @@ where
             for &(v, cc) in &ccs {
                 let mut nurbs: NurbsCurve<Vector4> = cc.to_same_geometry();
                 nurbs.elevate_degree();
-                raw_weights.push((v, Point1::new(nurbs.control_point(1).w)));
+                raw_weights.push((v, Point1::new(nurbs.control_point(1)[3])));
 
                 let der0 = nurbs.der(0.0);
                 let cder0 = pcurve0.der(v).normalize();
                 let uv0 = cc.contact_point0().uv;
-                let n0 = fillet_surface.surface0.normal(uv0.x, uv0.y);
-                let handle0 = cder0.cross(n0);
+                let n0 = fillet_surface.surface0.normal(uv0[0], uv0[1]);
+                let handle0: Vector3 = cder0.cross(&n0);
                 let mat0 = Matrix3::from_cols(handle0, cder0, n0);
                 // SAFETY: `mat0` columns are cross-product of curve tangent and normal,
                 // the curve tangent, and the surface normal -- linearly independent at
                 // non-degenerate contact points.
                 let vec0 = mat0.invert().unwrap() * der0;
-                raw_tangent_vecs0.push((v, vec0.truncate()));
+                raw_tangent_vecs0.push((v, Vector2::new(vec0[0], vec0[1])));
 
                 let der1 = -nurbs.der(1.0);
                 let cder1 = pcurve1.der(v).normalize();
                 let uv1 = cc.contact_point1().uv;
-                let n1 = fillet_surface.surface1.normal(uv1.x, uv1.y);
-                let handle1 = cder1.cross(n1);
+                let n1 = fillet_surface.surface1.normal(uv1[0], uv1[1]);
+                let handle1: Vector3 = cder1.cross(&n1);
                 let mat1 = Matrix3::from_cols(handle1, cder1, n1);
                 // SAFETY: same reasoning as `mat0` above.
                 let vec1 = mat1.invert().unwrap() * der1;
-                raw_tangent_vecs1.push((v, vec1.truncate()));
+                raw_tangent_vecs1.push((v, Vector2::new(vec1[0], vec1[1])));
             }
 
             let tangent_curve0 = BsplineCurve::interpolate(knot_vec.clone(), raw_tangent_vecs0);
             let tangent_curve1 = BsplineCurve::interpolate(knot_vec.clone(), raw_tangent_vecs1);
             let weights_curve = BsplineCurve::interpolate(knot_vec.clone(), raw_weights);
             let weights_points = weights_curve.destruct().1;
-            let weights = weights_points.into_iter().map(|x| x.x).collect();
+            let weights = weights_points.into_iter().map(|x| x[0]).collect();
 
             let approx = ApproxFilletSurface {
                 knot_vec,
@@ -386,20 +388,20 @@ mod tests {
         let surface = ApproxFilletSurface {
             knot_vec: KnotVector::bezier_knot(1),
             surface0: Plane::xy(),
-            side_control_points0: vec![(-1.0, 0.0).into(), (-1.0, 1.0).into()],
-            tangent_vecs0: vec![(f64::sqrt(2.0), 0.0).into(); 2],
+            side_control_points0: vec![Point2::new(-1.0, 0.0), Point2::new(-1.0, 1.0)],
+            tangent_vecs0: vec![Vector2::new(f64::sqrt(2.0), 0.0); 2],
             surface1: Plane::yz(),
-            side_control_points1: vec![(0.0, -1.0).into(), (1.0, -1.0).into()],
-            tangent_vecs1: vec![(-f64::sqrt(2.0), 0.0).into(); 2],
+            side_control_points1: vec![Point2::new(0.0, -1.0), Point2::new(1.0, -1.0)],
+            tangent_vecs1: vec![Vector2::new(-f64::sqrt(2.0), 0.0); 2],
             weights: vec![(1.0 + f64::sqrt(2.0)) / 3.0; 2],
         };
         let w = 1.0 / f64::sqrt(2.0);
         let nurbs_surface = NurbsSurface::new(BsplineSurface::<Vector4>::new(
             (KnotVector::bezier_knot(2), KnotVector::bezier_knot(1)),
             vec![
-                vec![(-1.0, 0.0, 0.0, 1.0).into(), (-1.0, 1.0, 0.0, 1.0).into()],
-                vec![(0.0, 0.0, 0.0, w).into(), (0.0, w, 0.0, w).into()],
-                vec![(0.0, 0.0, -1.0, 1.0).into(), (0.0, 1.0, -1.0, 1.0).into()],
+                vec![Vector4::new(-1.0, 0.0, 0.0, 1.0), Vector4::new(-1.0, 1.0, 0.0, 1.0)],
+                vec![Vector4::new(0.0, 0.0, 0.0, w), Vector4::new(0.0, w, 0.0, w)],
+                vec![Vector4::new(0.0, 0.0, -1.0, 1.0), Vector4::new(0.0, 1.0, -1.0, 1.0)],
             ],
         ));
 
@@ -431,11 +433,11 @@ mod tests {
         let surface = ApproxFilletSurface {
             knot_vec: KnotVector::bezier_knot(2),
             surface0,
-            side_control_points0: vec![(0.8, 0.0).into(), (0.5, 0.5).into(), (0.8, 1.0).into()],
-            tangent_vecs0: vec![(0.2, -0.1).into(), (0.4, 0.0).into(), (0.2, 0.1).into()],
+            side_control_points0: vec![Point2::new(0.8, 0.0), Point2::new(0.5, 0.5), Point2::new(0.8, 1.0)],
+            tangent_vecs0: vec![Vector2::new(0.2, -0.1), Vector2::new(0.4, 0.0), Vector2::new(0.2, 0.1)],
             surface1,
-            side_control_points1: vec![(0.0, 0.8).into(), (0.5, 0.5).into(), (1.0, 0.8).into()],
-            tangent_vecs1: vec![(-0.2, -0.1).into(), (-0.4, 0.0).into(), (-0.2, 0.1).into()],
+            side_control_points1: vec![Point2::new(0.0, 0.8), Point2::new(0.5, 0.5), Point2::new(1.0, 0.8)],
+            tangent_vecs1: vec![Vector2::new(-0.2, -0.1), Vector2::new(-0.4, 0.0), Vector2::new(-0.2, 0.1)],
             weights: vec![1.0, 2.0, 1.0],
         };
 

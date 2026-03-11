@@ -24,7 +24,7 @@ impl Revolution {
     }
     #[inline(always)]
     fn contains(self, p: Point3) -> bool {
-        (p - self.origin).cross(self.axis).so_small()
+        (p - self.origin).cross(&self.axis).so_small()
     }
     #[inline(always)]
     fn proj_point(&self, p: Point3) -> Point2 {
@@ -35,7 +35,7 @@ impl Revolution {
     }
     #[inline(always)]
     fn proj_vector(&self, p: Point3, v: Vector3) -> Vector2 {
-        let r = self.proj_point(p).y;
+        let r = self.proj_point(p)[1];
         let vz = v.dot(self.axis);
         let vxy = v - vz * self.axis;
         let vq = (p - self.origin).dot(vxy) / r;
@@ -43,7 +43,7 @@ impl Revolution {
     }
     #[inline(always)]
     fn proj_vector2(&self, p: Point3, v: Vector3, v2: Vector3) -> Vector2 {
-        let r = self.proj_point(p).y;
+        let r = self.proj_point(p)[1];
         let v2z = v2.dot(self.axis);
         let v2xy = v2 - v2z * self.axis;
         let vz = v.dot(self.axis);
@@ -58,7 +58,7 @@ impl Revolution {
         let hp = (p - p.dot(self.axis) * self.axis).normalize();
         let hq = (q - q.dot(self.axis) * self.axis).normalize();
         let t = f64::acos(f64::clamp(hp.dot(hq), -1.0, 1.0));
-        match hp.cross(hq).dot(self.axis) < 0.0 {
+        match hp.cross(&hq).dot(self.axis) < 0.0 {
             false => t,
             true => 2.0 * PI - t,
         }
@@ -136,26 +136,29 @@ impl<C: ParametricCurve3D + BoundedCurve> ParametricSurface3D for RevolutedCurve
         let (u0, u1) = self.curve.range_tuple();
         let (uder, vder) = if u.near(&u0) {
             let pt = self.curve.evaluate(u);
-            let radius = self.axis().cross(pt - self.origin());
+            let radius: Vector3 = self.axis().cross(&(pt - self.origin()));
             if radius.so_small() {
                 let uder = self.curve.der(u);
-                (uder, self.axis().cross(uder))
+                let cross: Vector3 = self.axis().cross(&uder);
+                (uder, cross)
             } else {
                 (self.derivative_u(u, v), self.derivative_v(u, v))
             }
         } else if u.near(&u1) {
             let pt = self.curve.evaluate(u);
-            let radius = self.axis().cross(pt - self.origin());
+            let radius: Vector3 = self.axis().cross(&(pt - self.origin()));
             if radius.so_small() {
                 let uder = self.curve.der(u);
-                (uder, uder.cross(self.axis()))
+                let cross: Vector3 = uder.cross(&self.axis());
+                (uder, cross)
             } else {
                 (self.derivative_u(u, v), self.derivative_v(u, v))
             }
         } else {
             (self.derivative_u(u, v), self.derivative_v(u, v))
         };
-        uder.cross(vder).normalize()
+        let cross: Vector3 = uder.cross(&vder);
+        cross.normalize()
     }
 }
 
@@ -388,7 +391,7 @@ impl<C: ParametricCurve3D + BoundedCurve> SearchNearestParameter<D2> for Revolut
         let (t0, t1) = self.curve.range_tuple();
         let on_axis = move |o: Point3, normal: Vector3| {
             let op = point - o;
-            op.cross(self.revolution.axis).so_small() && op.dot(normal) >= 0.0
+            op.cross(&self.revolution.axis).so_small() && op.dot(normal) >= 0.0
         };
         if self.is_front_fixed() && on_axis(self.curve.front(), self.normal(t0, 0.0)) {
             match hint.into() {
@@ -533,7 +536,7 @@ where
             .1
             .into_iter()
             .fold(0.0, |max2, pt| {
-                let h = self.revolution.proj_point(pt).y;
+                let h = self.revolution.proj_point(pt)[1];
                 f64::max(max2, h)
             })
             .sqrt();
@@ -562,16 +565,16 @@ fn from_axis_angle_derivation(n: usize, axis: Vector3, angle: Rad<f64>) -> Matri
     #[allow(clippy::deprecated_cfg_attr)]
     #[cfg_attr(rustfmt, rustfmt_skip)]
     Matrix3::new(
-        _1subc * axis.x * axis.x + c,
-        _1subc * axis.x * axis.y + s * axis.z,
-        _1subc * axis.x * axis.z - s * axis.y,
+        _1subc * axis[0] * axis[0] + c,
+        _1subc * axis[0] * axis[1] + s * axis[2],
+        _1subc * axis[0] * axis[2] - s * axis[1],
 
-        _1subc * axis.x * axis.y - s * axis.z,
-        _1subc * axis.y * axis.y + c,
-        _1subc * axis.y * axis.z + s * axis.x,
+        _1subc * axis[0] * axis[1] - s * axis[2],
+        _1subc * axis[1] * axis[1] + c,
+        _1subc * axis[1] * axis[2] + s * axis[0],
 
-        _1subc * axis.x * axis.z + s * axis.y,
-        _1subc * axis.y * axis.z - s * axis.x,
-        _1subc * axis.z * axis.z + c,
+        _1subc * axis[0] * axis[2] + s * axis[1],
+        _1subc * axis[1] * axis[2] - s * axis[0],
+        _1subc * axis[2] * axis[2] + c,
     )
 }

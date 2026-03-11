@@ -183,7 +183,7 @@ pub const fn inv_or_zero(delta: f64) -> f64 {
 
 // This code is modified version of https://the-algorithms.com/algorithm/gaussian-elimination?lang=rust
 mod gaussian_elimination {
-    use monstertruck_core::cgmath64::cgmath::BaseFloat;
+    use monstertruck_core::BaseFloat;
 
     // Gaussian Elimination of Quadratic Matrices
     // Takes an augmented matrix as input, returns vector of results

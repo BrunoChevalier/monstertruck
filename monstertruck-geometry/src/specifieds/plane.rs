@@ -38,7 +38,8 @@ impl Plane {
     /// ```
     #[inline(always)]
     pub fn normal(&self) -> Vector3 {
-        self.u_axis().cross(self.v_axis()).normalize()
+        let cross: Vector3 = self.u_axis().cross(&self.v_axis());
+        cross.normalize()
     }
     /// Gets the parameter of `pt` in plane's matrix.
     /// # Examples
@@ -205,7 +206,7 @@ impl IncludeCurve<NurbsCurve<Vector4>> for Plane {
             if pt[3].so_small() {
                 true
             } else {
-                let pt = Point3::from_homogeneous(*pt);
+                let pt = Point3::from_homogeneous(*pt).unwrap();
                 (pt - origin).dot(normal).so_small()
             }
         })
@@ -219,7 +220,7 @@ impl ParameterDivision2D for Plane {
     }
 }
 
-impl<T: Transform3<Scalar = f64>> Transformed<T> for Plane {
+impl<T: Transform<Point3>> Transformed<T> for Plane {
     #[inline(always)]
     fn transform_by(&mut self, trans: T) {
         self.o = trans.transform_point(self.o);

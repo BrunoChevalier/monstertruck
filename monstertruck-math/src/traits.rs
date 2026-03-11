@@ -120,12 +120,22 @@ pub trait SquareMatrix: Sized {
     fn invert(&self) -> Option<Self>;
     /// Creates a diagonal matrix (cgmath's `from_value`).
     fn from_value(value: Self::Scalar) -> Self;
+    /// Returns the transpose of the matrix.
+    fn transpose(&self) -> Self;
+    /// Returns the determinant of the matrix.
+    fn determinant(&self) -> Self::Scalar;
 }
 
 /// Trait matching cgmath's `Transform`.
-pub trait Transform<P> {
+pub trait Transform<P>: Sized {
+    /// The vector type associated with the point type (typically the `Diff` of EuclideanSpace).
+    type Vector;
     /// Transforms a point.
     fn transform_point(&self, point: P) -> P;
+    /// Transforms a vector (direction only, no translation component).
+    fn transform_vector(&self, v: Self::Vector) -> Self::Vector;
+    /// Returns the inverse transform, or `None` if the matrix is singular.
+    fn inverse_transform(&self) -> Option<Self>;
 }
 
 // ---- VectorSpace impls for nalgebra vectors ----
@@ -259,6 +269,14 @@ impl<S: BaseFloat> SquareMatrix for types::Matrix2<S> {
     fn from_value(value: S) -> Self {
         types::Matrix2::from_value(value)
     }
+    #[inline]
+    fn transpose(&self) -> Self {
+        types::Matrix2(self.0.transpose())
+    }
+    #[inline]
+    fn determinant(&self) -> S {
+        self.0.determinant()
+    }
 }
 
 impl<S: BaseFloat> SquareMatrix for types::Matrix3<S> {
@@ -275,6 +293,14 @@ impl<S: BaseFloat> SquareMatrix for types::Matrix3<S> {
     fn from_value(value: S) -> Self {
         types::Matrix3::from_value(value)
     }
+    #[inline]
+    fn transpose(&self) -> Self {
+        types::Matrix3(self.0.transpose())
+    }
+    #[inline]
+    fn determinant(&self) -> S {
+        self.0.determinant()
+    }
 }
 
 impl<S: BaseFloat> SquareMatrix for types::Matrix4<S> {
@@ -290,6 +316,14 @@ impl<S: BaseFloat> SquareMatrix for types::Matrix4<S> {
     #[inline]
     fn from_value(value: S) -> Self {
         types::Matrix4::from_value(value)
+    }
+    #[inline]
+    fn transpose(&self) -> Self {
+        types::Matrix4(self.0.transpose())
+    }
+    #[inline]
+    fn determinant(&self) -> S {
+        self.0.determinant()
     }
 }
 
@@ -310,15 +344,45 @@ impl<S: BaseFloat> VectorSpace for types::Matrix4<S> {
 // ---- Transform impls ----
 
 impl<S: BaseFloat> Transform<na::Point3<S>> for types::Matrix4<S> {
+    type Vector = na::Vector3<S>;
     fn transform_point(&self, point: na::Point3<S>) -> na::Point3<S> {
         let h = self.0 * point.to_homogeneous();
         na::Point3::new(h[0] / h[3], h[1] / h[3], h[2] / h[3])
     }
+    fn transform_vector(&self, v: na::Vector3<S>) -> na::Vector3<S> {
+        let m = self.0.fixed_view::<3, 3>(0, 0);
+        m * v
+    }
+    fn inverse_transform(&self) -> Option<Self> {
+        self.0.try_inverse().map(types::Matrix4)
+    }
 }
 
 impl<S: BaseFloat> Transform<na::Point2<S>> for types::Matrix3<S> {
+    type Vector = na::Vector2<S>;
     fn transform_point(&self, point: na::Point2<S>) -> na::Point2<S> {
         let h = self.0 * na::Vector3::new(point[0], point[1], S::one());
         na::Point2::new(h[0] / h[2], h[1] / h[2])
+    }
+    fn transform_vector(&self, v: na::Vector2<S>) -> na::Vector2<S> {
+        let m = self.0.fixed_view::<2, 2>(0, 0);
+        m * v
+    }
+    fn inverse_transform(&self) -> Option<Self> {
+        self.0.try_inverse().map(types::Matrix3)
+    }
+}
+
+impl<S: BaseFloat> Transform<na::Point3<S>> for types::Matrix3<S> {
+    type Vector = na::Vector3<S>;
+    fn transform_point(&self, point: na::Point3<S>) -> na::Point3<S> {
+        let v = self.0 * point.coords;
+        na::Point3::from(v)
+    }
+    fn transform_vector(&self, v: na::Vector3<S>) -> na::Vector3<S> {
+        self.0 * v
+    }
+    fn inverse_transform(&self) -> Option<Self> {
+        self.0.try_inverse().map(types::Matrix3)
     }
 }

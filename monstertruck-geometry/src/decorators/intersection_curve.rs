@@ -15,13 +15,15 @@ where
     S0: ParametricSurface3D + SearchNearestParameter<D2, Point = Point3>,
     S1: ParametricSurface3D + SearchNearestParameter<D2, Point = Point3>,
 {
-    let function = move |Vector4 { x, y, z, w }| {
+    let function = move |v: Vector4| {
+        let (x, y, z, w) = (v[0], v[1], v[2], v[3]);
         let ders0 = surface0.ders(1, x, y);
         let (pt0, uder0, vder0) = (ders0[0][0], ders0[1][0], ders0[0][1]);
         let ders1 = surface1.ders(1, z, w);
         let (pt1, uder1, vder1) = (ders1[0][0], ders1[1][0], ders1[0][1]);
+        let mid_vec = (pt0 + pt1) / 2.0 - plane_point.to_vec();
         CalcOutput {
-            value: (pt0 - pt1).extend(plane_normal.dot((pt0 + pt1) / 2.0 - plane_point.to_vec())),
+            value: (pt0 - pt1).extend(plane_normal.dot(mid_vec)),
             derivation: Matrix4::from_cols(
                 uder0.extend(plane_normal.dot(uder0) / 2.0),
                 vder0.extend(plane_normal.dot(vder0) / 2.0),
@@ -32,8 +34,8 @@ where
     };
     let (x, y) = hint0.or_else(|| surface0.search_nearest_parameter(plane_point, hint0, trials))?;
     let (z, w) = hint1.or_else(|| surface1.search_nearest_parameter(plane_point, hint1, trials))?;
-    let res = newton::solve(function, Vector4 { x, y, z, w }, trials);
-    let Vector4 { x, y, z, w } = match res {
+    let res = newton::solve(function, Vector4::new(x, y, z, w), trials);
+    let v_res = match res {
         Ok(res) => res,
         Err(_) => {
             let pt0 = surface0.subs(x, y);
@@ -44,7 +46,8 @@ where
             // when surfaces are coplanar or tangent.
             // If the points are close enough and normals are parallel (indicating
             // coplanarity), accept the initial guess as a valid intersection point.
-            if pt0.near(&pt1) && n0.cross(n1).magnitude() < TOLERANCE {
+            let cross: Vector3 = n0.cross(&n1);
+            if pt0.near(&pt1) && cross.magnitude() < TOLERANCE {
                 let point = pt0.midpoint(pt1);
                 return Some((point, Point2::new(x, y), Point2::new(z, w)));
             } else {
@@ -52,6 +55,7 @@ where
             }
         }
     };
+    let (x, y, z, w) = (v_res[0], v_res[1], v_res[2], v_res[3]);
     let point = surface0.subs(x, y).midpoint(surface1.subs(z, w));
     Some((point, Point2::new(x, y), Point2::new(z, w)))
 }
@@ -139,7 +143,8 @@ where
         trials: usize,
     ) -> Option<(Point3, Point2, Point2)> {
         let (surface0, surface1) = (self.surface0(), self.surface1());
-        let function = |Vector4 { x, y, z, w }| {
+        let function = |v: Vector4| {
+            let (x, y, z, w) = (v[0], v[1], v[2], v[3]);
             let ders0 = surface0.ders(2, x, y);
             let (pt0, uder0, vder0, uuder0, uvder0, vvder0) = (
                 ders0[0][0],
@@ -159,12 +164,12 @@ where
                 ders1[0][2],
             );
             let diff = (pt0 + pt1) / 2.0 - point.to_vec();
-            let (n0, n1) = (uder0.cross(vder0), uder1.cross(vder1));
-            let n = n0.cross(n1);
-            let n_xder = (uuder0.cross(vder0) + uder0.cross(uvder0)).cross(n1);
-            let n_yder = (uvder0.cross(vder0) + uder0.cross(vvder0)).cross(n1);
-            let n_zder = n0.cross(uuder1.cross(vder1) + uder1.cross(uvder1));
-            let n_wder = n0.cross(uvder1.cross(vder1) + uder1.cross(vvder1));
+            let (n0, n1): (Vector3, Vector3) = (uder0.cross(&vder0), uder1.cross(&vder1));
+            let n: Vector3 = n0.cross(&n1);
+            let n_xder: Vector3 = (uuder0.cross(&vder0) + uder0.cross(&uvder0)).cross(&n1);
+            let n_yder: Vector3 = (uvder0.cross(&vder0) + uder0.cross(&vvder0)).cross(&n1);
+            let n_zder: Vector3 = n0.cross(&(uuder1.cross(&vder1) + uder1.cross(&uvder1)));
+            let n_wder: Vector3 = n0.cross(&(uvder1.cross(&vder1) + uder1.cross(&vvder1)));
             CalcOutput {
                 value: (pt0 - pt1).extend(n.dot(diff)),
                 derivation: Matrix4::from_cols(
@@ -177,8 +182,9 @@ where
         };
         let (x, y) = hint0.or_else(|| surface0.search_nearest_parameter(point, hint0, trials))?;
         let (z, w) = hint1.or_else(|| surface1.search_nearest_parameter(point, hint1, trials))?;
-        let Vector4 { x, y, z, w } =
-            newton::solve(function, Vector4 { x, y, z, w }, trials).ok()?;
+        let v_res =
+            newton::solve(function, Vector4::new(x, y, z, w), trials).ok()?;
+        let (x, y, z, w) = (v_res[0], v_res[1], v_res[2], v_res[3]);
         let point = surface0.subs(x, y).midpoint(surface1.subs(z, w));
         Some((point, Point2::new(x, y), Point2::new(z, w)))
     }
@@ -204,7 +210,7 @@ fn curve_der_n(
 ) -> Vector3 {
     let mat = Matrix3::from_cols(s0normal, s1normal, leaders[1]).transpose();
     let sub = leaders.element_wise_ders(cders, |x, y| x - y);
-    let suml = leaders.der().combinatorial_der(&sub, Vector3::dot, n);
+    let suml = leaders.der().combinatorial_der(&sub, |a: Vector3, b: Vector3| a.dot(b), n);
     let b = Vector3::new(s0normal.dot(sum0), s1normal.dot(sum1), suml);
     // SAFETY: the matrix columns are two surface normals and the leader curve tangent,
     // which are linearly independent at a transversal intersection point.
@@ -223,8 +229,8 @@ fn uv_der_n(
     // SAFETY: the matrix columns are the surface partial derivatives and normal,
     // which are linearly independent at a regular surface point.
     let uv_der_n = mat.invert().unwrap() * b;
-    debug_assert!(uv_der_n.z.abs() < 1.0e-4, "{}", uv_der_n.z.abs());
-    Vector2::new(uv_der_n.x, uv_der_n.y)
+    debug_assert!(uv_der_n[2].abs() < 1.0e-4, "{}", uv_der_n[2].abs());
+    Vector2::new(uv_der_n[0], uv_der_n[1])
 }
 
 fn der_routine(
@@ -273,9 +279,9 @@ where
             Some(triple) => triple,
             None => return leader.der(t),
         };
-        let (n0, n1) = (surface0.normal(uv0.x, uv0.y), surface1.normal(uv1.x, uv1.y));
-        let n = n0.cross(n1);
-        let k = (l_der.magnitude2() - (c - l).dot(l_der2)) / n.dot(l_der);
+        let (n0, n1) = (surface0.normal(uv0[0], uv0[1]), surface1.normal(uv1[0], uv1[1]));
+        let n: Vector3 = n0.cross(&n1);
+        let k = (l_der.magnitude2() - (c.to_vec() - l).dot(l_der2)) / n.dot(l_der);
         n * k
     }
     #[inline(always)]
@@ -314,10 +320,10 @@ where
             leader,
         } = self;
         let info = DerRoutineImmutableArgs {
-            s0ders: surface0.ders(n, uv0.x, uv0.y),
-            s0normal: surface0.normal(uv0.x, uv0.y),
-            s1ders: surface1.ders(n, uv1.x, uv1.y),
-            s1normal: surface1.normal(uv1.x, uv1.y),
+            s0ders: surface0.ders(n, uv0[0], uv0[1]),
+            s0normal: surface0.normal(uv0[0], uv0[1]),
+            s1ders: surface1.ders(n, uv1[0], uv1[1]),
+            s1normal: surface1.normal(uv1[0], uv1[1]),
             leaders: leader.ders(n + 1, t),
         };
         (1..=n).for_each(|i| der_routine(&info, &mut uv0ders, &mut uv1ders, &mut cders, i));
@@ -455,8 +461,8 @@ mod double_projection_tests {
         let idx = if n[idx].abs() < n[2].abs() { idx } else { 2 };
         let mut e = Vector3::zero();
         e[idx] = 1.0;
-        let x = n.cross(e).normalize();
-        (x, n.cross(x))
+        let x: Vector3 = n.cross(&e).normalize();
+        (x, n.cross(&x))
     }
 
     fn exec_plane_case(c0: [f64; 3], n0: [f64; 2], c1: [f64; 3], n1: [f64; 2]) -> PResult {
@@ -468,15 +474,15 @@ mod double_projection_tests {
         let n1 = get_one_vector(n1);
         let (x, y) = create_axis(n1);
         let plane1 = Plane::new(c1, c1 + x, c1 + y);
-        let n = n0.cross(n1).normalize();
+        let n: Vector3 = n0.cross(&n1).normalize();
         let mut o = None;
         for i in 0..10 {
             let t = i as f64;
             let p = Point3::origin() + t * n;
             let (q, p0, p1) = double_projection(&plane0, None, &plane1, None, p, n, 100)
                 .unwrap_or_else(|| panic!("plane0: {plane0:?}\nplane1: {plane1:?}\n p: {p:?}"));
-            prop_assert_near!(q, plane0.subs(p0.x, p0.y));
-            prop_assert_near!(q, plane1.subs(p1.x, p1.y));
+            prop_assert_near!(q, plane0.subs(p0[0], p0[1]));
+            prop_assert_near!(q, plane1.subs(p1[0], p1[1]));
             if let Some(o) = o {
                 prop_assert_near!(q.distance2(o), t * t);
             } else {
@@ -505,8 +511,8 @@ mod double_projection_tests {
         let n = Vector3::new(-f64::sin(t), f64::cos(t), 0.0);
         let (q, p0, p1) = double_projection(&sphere0, None, &sphere1, None, p, n, 100)
             .unwrap_or_else(|| panic!("p: {p:?}"));
-        prop_assert_near!(q, sphere0.subs(p0.x, p0.y));
-        prop_assert_near!(q, sphere1.subs(p1.x, p1.y));
+        prop_assert_near!(q, sphere0.subs(p0[0], p0[1]));
+        prop_assert_near!(q, sphere1.subs(p1[0], p1[1]));
         prop_assert_near!(q, Point3::new(f64::cos(t), f64::sin(t), 0.0));
         Ok(())
     }

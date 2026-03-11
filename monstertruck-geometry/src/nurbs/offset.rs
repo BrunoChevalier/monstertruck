@@ -138,12 +138,12 @@ pub fn curve_offset_3d(
                 let perp_len = perp.magnitude();
                 if perp_len.so_small() {
                     // Normal is parallel to tangent — use cross product fallback.
-                    let alt = if t_hat.x.abs() < 0.9 {
+                    let alt = if t_hat[0].abs() < 0.9 {
                         Vector3::unit_x()
                     } else {
                         Vector3::unit_y()
                     };
-                    t_hat.cross(alt).normalize()
+                    { let c: Vector3 = t_hat.cross(&alt); c.normalize() }
                 } else {
                     perp / perp_len
                 }
@@ -220,7 +220,7 @@ pub fn surface_offset(
                     let pt = surface.subs(u, v);
                     let du = surface.uder(u, v);
                     let dv = surface.vder(u, v);
-                    let cross = du.cross(dv);
+                    let cross: Vector3 = du.cross(&dv);
                     let cross_len = cross.magnitude();
 
                     let normal = if cross_len.so_small() {

@@ -211,7 +211,7 @@ pub trait ParametricSurface3D: ParametricSurface<Point = Point3, Vector = Vector
     #[inline(always)]
     fn normal(&self, u: f64, v: f64) -> Vector3 {
         self.derivative_u(u, v)
-            .cross(self.derivative_v(u, v))
+            .cross(&self.derivative_v(u, v))
             .normalize()
     }
     /// Returns the derivation by `u` of the normal vector at `(u, v)`.
@@ -220,8 +220,8 @@ pub trait ParametricSurface3D: ParametricSurface<Point = Point3, Vector = Vector
         let vder = self.derivative_v(u, v);
         let uuder = self.derivative_uu(u, v);
         let uvder = self.derivative_uv(u, v);
-        let cross = uder.cross(vder);
-        let cross_uder = uuder.cross(vder) + uder.cross(uvder);
+        let cross: Vector3 = uder.cross(&vder);
+        let cross_uder: Vector3 = uuder.cross(&vder) + uder.cross(&uvder);
         let abs = cross.magnitude();
         let abs_uder = cross.dot(cross_uder) / abs;
         (cross_uder * abs - cross * abs_uder) / (abs * abs)
@@ -232,8 +232,8 @@ pub trait ParametricSurface3D: ParametricSurface<Point = Point3, Vector = Vector
         let vder = self.derivative_v(u, v);
         let uvder = self.derivative_uv(u, v);
         let vvder = self.derivative_vv(u, v);
-        let cross = uder.cross(vder);
-        let cross_vder = uvder.cross(vder) + uder.cross(vvder);
+        let cross: Vector3 = uder.cross(&vder);
+        let cross_vder: Vector3 = uvder.cross(&vder) + uder.cross(&vvder);
         let abs = cross.magnitude();
         let abs_vder = cross.dot(cross_vder) / abs;
         (cross_vder * abs - cross * abs_vder) / (abs * abs)

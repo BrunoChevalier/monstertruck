@@ -84,7 +84,8 @@ where
 impl<C: ParametricCurve3D> ParametricSurface3D for ExtrudedCurve<C, Vector3> {
     #[inline(always)]
     fn normal(&self, u: f64, _: f64) -> C::Vector {
-        self.curve.der(u).cross(self.vector).normalize()
+        let cross: Vector3 = self.curve.der(u).cross(&self.vector);
+        cross.normalize()
     }
 }
 

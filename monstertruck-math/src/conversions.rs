@@ -177,6 +177,74 @@ impl_cast_point!(1);
 impl_cast_point!(2);
 impl_cast_point!(3);
 
+// ---- Cast for matrix wrappers ----
+
+macro_rules! impl_cast_matrix {
+    ($mtype:ident, $na_type:ident, $dim:expr) => {
+        impl<S: BaseFloat, T: BaseFloat> Cast<T> for crate::types::$mtype<S>
+        where
+            T: num_traits::NumCast,
+            S: num_traits::NumCast,
+        {
+            type Output = crate::types::$mtype<T>;
+            fn cast(self) -> Option<Self::Output> {
+                let mut out = na::$na_type::<T>::zeros();
+                for i in 0..$dim {
+                    for j in 0..$dim {
+                        out[(i, j)] = T::from(self.0[(i, j)])?;
+                    }
+                }
+                Some(crate::types::$mtype(out))
+            }
+        }
+    };
+}
+
+impl_cast_matrix!(Matrix2, Matrix2, 2);
+impl_cast_matrix!(Matrix3, Matrix3, 3);
+impl_cast_matrix!(Matrix4, Matrix4, 4);
+
+/// Extension trait providing cgmath-compatible unit vector constructors.
+pub trait UnitVectors: Sized {
+    /// Returns the unit vector along the X axis.
+    fn unit_x() -> Self;
+    /// Returns the unit vector along the Y axis.
+    fn unit_y() -> Self;
+    /// Returns the unit vector along the Z axis (3D+ only).
+    fn unit_z() -> Self;
+}
+
+impl<S: BaseFloat> UnitVectors for na::Vector3<S> {
+    #[inline]
+    fn unit_x() -> Self {
+        na::Vector3::new(S::one(), S::zero(), S::zero())
+    }
+    #[inline]
+    fn unit_y() -> Self {
+        na::Vector3::new(S::zero(), S::one(), S::zero())
+    }
+    #[inline]
+    fn unit_z() -> Self {
+        na::Vector3::new(S::zero(), S::zero(), S::one())
+    }
+}
+
+impl<S: BaseFloat> UnitVectors for na::Vector2<S> {
+    #[inline]
+    fn unit_x() -> Self {
+        na::Vector2::new(S::one(), S::zero())
+    }
+    #[inline]
+    fn unit_y() -> Self {
+        na::Vector2::new(S::zero(), S::one())
+    }
+    #[inline]
+    fn unit_z() -> Self {
+        // 2D vectors don't have a Z axis; return zero for compatibility.
+        na::Vector2::new(S::zero(), S::zero())
+    }
+}
+
 // ---- Convenience constructors ----
 // cgmath supports `(x, y, z).into()` for vectors.
 // nalgebra does NOT provide these due to orphan rules,

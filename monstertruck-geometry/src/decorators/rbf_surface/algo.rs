@@ -1,7 +1,9 @@
 use super::*;
 const MUL: fn(f64, f64) -> f64 = f64::mul;
-const DOT: fn(Vector3, Vector3) -> f64 = Vector3::dot;
-const CROSS: fn(Vector3, Vector3) -> Vector3 = Vector3::cross;
+fn dot_val(a: Vector3, b: Vector3) -> f64 { <Vector3 as InnerSpace>::dot(a, b) }
+const DOT: fn(Vector3, Vector3) -> f64 = dot_val;
+fn cross_val(a: Vector3, b: Vector3) -> Vector3 { a.cross(&b) }
+const CROSS: fn(Vector3, Vector3) -> Vector3 = cross_val;
 
 impl<C, S0, S1, R> RbfSurface<C, S0, S1, R>
 where
@@ -56,9 +58,9 @@ where
         rders: &CurveDers<f64>,
         n: usize,
     ) -> CenterContactDers {
-        let Point2 { x: u0, y: v0 } = cc.contact_point0.uv;
+        let (u0, v0) = (cc.contact_point0.uv[0], cc.contact_point0.uv[1]);
         let mut s0info = SurfaceInfo::new(&self.surface0, (u0, v0), n + 1);
-        let Point2 { x: u1, y: v1 } = cc.contact_point1.uv;
+        let (u1, v1) = (cc.contact_point1.uv[0], cc.contact_point1.uv[1]);
         let mut s1info = SurfaceInfo::new(&self.surface1, (u1, v1), n + 1);
 
         let cders = self.edge_curve.ders(n + 1, cc.t);
@@ -197,7 +199,7 @@ impl VderInfo {
         });
         let daxis = axis_ders[1];
         let dangle = angle_ders[1] * u;
-        let drot = daxis.x * dm[0] + daxis.y * dm[1] + daxis.z * dm[2] + dangle * dm[3];
+        let drot = daxis[0] * dm[0] + daxis[1] * dm[1] + daxis[2] * dm[2] + dangle * dm[3];
         dc + drot * cp0 + rot * (dp0 - dc)
     }
     pub(super) fn uvder(&self, u: f64) -> Vector3 {
@@ -213,9 +215,9 @@ impl VderInfo {
         let rot_uv = dangle * rot_der_n([0, 0, 0, 1], axis, angle * u)
             + angle * dangle * u * rot_der_n([0, 0, 0, 2], axis, angle * u);
         let rot_axis = angle
-            * (daxis.x * rot_der_n([1, 0, 0, 1], axis, angle * u)
-                + daxis.y * rot_der_n([0, 1, 0, 1], axis, angle * u)
-                + daxis.z * rot_der_n([0, 0, 1, 1], axis, angle * u));
+            * (daxis[0] * rot_der_n([1, 0, 0, 1], axis, angle * u)
+                + daxis[1] * rot_der_n([0, 1, 0, 1], axis, angle * u)
+                + daxis[2] * rot_der_n([0, 0, 1, 1], axis, angle * u));
 
         let cp0 = cc_ders.contact0_ders[0] - cc_ders.center_ders[0];
         let dcp0 = cc_ders.contact0_ders[1] - cc_ders.center_ders[1];
@@ -286,7 +288,7 @@ impl SurfaceInfo {
         vderders[0] = ders[0][1];
 
         let mut crossders = CurveDers::new(n);
-        crossders[0] = uderders[0].cross(vderders[0]);
+        crossders[0] = uderders[0].cross(&vderders[0]);
 
         let mut abs_crossders = CurveDers::new(n);
         abs_crossders[0] = crossders[0].magnitude();
@@ -385,48 +387,48 @@ fn rot_der_n(orders: [usize; 4], axis: Vector3, angle: f64) -> Matrix3 {
     let k = -c + if orders[3] == 0 { 1.0 } else { 0.0 };
     match orders {
         [0, 0, 0, _] => Matrix3::new(
-            k * axis.x * axis.x + c,
-            k * axis.x * axis.y + s * axis.z,
-            k * axis.x * axis.z - s * axis.y,
-            k * axis.x * axis.y - s * axis.z,
-            k * axis.y * axis.y + c,
-            k * axis.y * axis.z + s * axis.x,
-            k * axis.x * axis.z + s * axis.y,
-            k * axis.y * axis.z - s * axis.x,
-            k * axis.z * axis.z + c,
+            k * axis[0] * axis[0] + c,
+            k * axis[0] * axis[1] + s * axis[2],
+            k * axis[0] * axis[2] - s * axis[1],
+            k * axis[0] * axis[1] - s * axis[2],
+            k * axis[1] * axis[1] + c,
+            k * axis[1] * axis[2] + s * axis[0],
+            k * axis[0] * axis[2] + s * axis[1],
+            k * axis[1] * axis[2] - s * axis[0],
+            k * axis[2] * axis[2] + c,
         ),
         [1, 0, 0, _] => Matrix3::new(
-            2.0 * axis.x * k,
-            axis.y * k,
-            axis.z * k,
-            axis.y * k,
+            2.0 * axis[0] * k,
+            axis[1] * k,
+            axis[2] * k,
+            axis[1] * k,
             0.0,
             s,
-            axis.z * k,
+            axis[2] * k,
             -s,
             0.0,
         ),
         [0, 1, 0, _] => Matrix3::new(
             0.0,
-            axis.x * k,
+            axis[0] * k,
             -s,
-            axis.x * k,
-            2.0 * axis.y * k,
-            axis.z * k,
+            axis[0] * k,
+            2.0 * axis[1] * k,
+            axis[2] * k,
             s,
-            axis.z * k,
+            axis[2] * k,
             0.0,
         ),
         [0, 0, 1, _] => Matrix3::new(
             0.0,
             s,
-            axis.x * k,
+            axis[0] * k,
             -s,
             0.0,
-            axis.y * k,
-            axis.x * k,
-            axis.y * k,
-            2.0 * axis.z * k,
+            axis[1] * k,
+            axis[0] * k,
+            axis[1] * k,
+            2.0 * axis[2] * k,
         ),
         [2, 0, 0, _] => Matrix3::new(2.0 * k, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
         [0, 2, 0, _] => Matrix3::new(0.0, 0.0, 0.0, 0.0, 2.0 * k, 0.0, 0.0, 0.0, 0.0),

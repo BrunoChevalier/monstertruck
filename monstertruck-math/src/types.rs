@@ -93,6 +93,21 @@ impl<S: na::Scalar> From<Matrix4<S>> for na::Matrix4<S> {
 // ---- cgmath-compatible constructors (column-major arg order) ----
 
 impl<S: na::Scalar + Copy> Matrix2<S> {
+    /// Returns the transpose of the matrix.
+    #[inline]
+    pub fn transpose(self) -> Self {
+        Matrix2(self.0.transpose())
+    }
+
+    /// Returns the determinant of the matrix.
+    #[inline]
+    pub fn determinant(&self) -> S
+    where
+        S: na::RealField,
+    {
+        self.0.determinant()
+    }
+
     /// Creates a 2x2 matrix from column-major arguments (cgmath convention).
     ///
     /// Arguments: `c0r0, c0r1, c1r0, c1r1` where `cXrY` = column X, row Y.
@@ -194,6 +209,72 @@ impl<S: na::Scalar + Copy> Matrix3<S> {
             S::zero(), S::zero(), S::one(),
         )
     }
+
+    /// Creates a rotation matrix from an axis and angle (cgmath's `from_axis_angle`).
+    #[inline]
+    pub fn from_axis_angle(axis: Vector3<S>, angle: Rad<S>) -> Self
+    where
+        S: na::RealField,
+    {
+        let rot = na::Rotation3::from_axis_angle(
+            &na::Unit::new_normalize(axis),
+            angle.0,
+        );
+        Matrix3(*rot.matrix())
+    }
+
+    /// Returns the transpose of the matrix.
+    #[inline]
+    pub fn transpose(self) -> Self {
+        Matrix3(self.0.transpose())
+    }
+
+    /// Returns the determinant of the matrix.
+    #[inline]
+    pub fn determinant(&self) -> S
+    where
+        S: na::RealField,
+    {
+        self.0.determinant()
+    }
+
+    /// Transforms a vector (matrix-vector multiplication, no translation).
+    #[inline]
+    pub fn transform_vector(&self, v: Vector3<S>) -> Vector3<S>
+    where
+        S: na::RealField,
+    {
+        self.0 * v
+    }
+
+    /// Iwasawa (QR-like) decomposition: returns `Some((orthogonal, scaling, upper))`.
+    ///
+    /// The scaling matrix `K` is a diagonal matrix whose diagonal entries
+    /// give the scale factors.
+    #[inline]
+    pub fn iwasawa_decomposition(self) -> Option<(Matrix3<S>, Matrix3<S>, Matrix3<S>)>
+    where
+        S: na::RealField,
+    {
+        let qr = self.0.qr();
+        let q = qr.q();
+        let r = qr.r();
+        // K = diagonal of R
+        let mut k = na::Matrix3::<S>::zeros();
+        k[(0, 0)] = r[(0, 0)].clone();
+        k[(1, 1)] = r[(1, 1)].clone();
+        k[(2, 2)] = r[(2, 2)].clone();
+        // Upper unitriangular: K^-1 * R (normalize R rows by diagonal)
+        let mut u = na::Matrix3::<S>::identity();
+        if !k[(0, 0)].is_zero() {
+            u[(0, 1)] = r[(0, 1)].clone() / k[(0, 0)].clone();
+            u[(0, 2)] = r[(0, 2)].clone() / k[(0, 0)].clone();
+        }
+        if !k[(1, 1)].is_zero() {
+            u[(1, 2)] = r[(1, 2)].clone() / k[(1, 1)].clone();
+        }
+        Some((Matrix3(q), Matrix3(k), Matrix3(u)))
+    }
 }
 
 impl<S: na::Scalar + Copy> Matrix4<S> {
@@ -282,6 +363,61 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
     {
         let rot = na::Rotation3::from_axis_angle(&na::Vector3::z_axis(), angle.0);
         Matrix4(rot.to_homogeneous())
+    }
+
+    /// Returns the transpose of the matrix.
+    #[inline]
+    pub fn transpose(self) -> Self {
+        Matrix4(self.0.transpose())
+    }
+
+    /// Returns the determinant of the matrix.
+    #[inline]
+    pub fn determinant(&self) -> S
+    where
+        S: na::RealField,
+    {
+        self.0.determinant()
+    }
+
+    /// Transforms a vector (rotation/scale only, ignoring translation).
+    /// This multiplies the upper-left 3x3 by the vector.
+    #[inline]
+    pub fn transform_vector(&self, v: Vector3<S>) -> Vector3<S>
+    where
+        S: na::RealField,
+    {
+        let m = self.0.fixed_view::<3, 3>(0, 0);
+        m * v
+    }
+
+    /// Iwasawa (QR-like) decomposition: returns `Some((orthogonal, scaling, upper))`.
+    ///
+    /// The scaling matrix `K` is a diagonal matrix whose diagonal entries
+    /// give the scale factors.
+    #[inline]
+    pub fn iwasawa_decomposition(self) -> Option<(Matrix4<S>, Matrix4<S>, Matrix4<S>)>
+    where
+        S: na::RealField,
+    {
+        let qr = self.0.qr();
+        let q = qr.q();
+        let r = qr.r();
+        // K = diagonal of R
+        let mut k = na::Matrix4::<S>::zeros();
+        for i in 0..4 {
+            k[(i, i)] = r[(i, i)].clone();
+        }
+        // Upper unitriangular
+        let mut u = na::Matrix4::<S>::identity();
+        for i in 0..4 {
+            if !k[(i, i)].is_zero() {
+                for j in (i + 1)..4 {
+                    u[(i, j)] = r[(i, j)].clone() / k[(i, i)].clone();
+                }
+            }
+        }
+        Some((Matrix4(q), Matrix4(k), Matrix4(u)))
     }
 
     /// Creates a non-uniform scaling matrix.
@@ -483,6 +619,25 @@ impl_matrix_ops!(Matrix2, na::Matrix2<S>, Vector2<S>);
 impl_matrix_ops!(Matrix3, na::Matrix3<S>, Vector3<S>);
 impl_matrix_ops!(Matrix4, na::Matrix4<S>, Vector4<S>);
 
+// scalar * Matrix (reverse order, f64 * MatrixN -> MatrixN)
+macro_rules! impl_scalar_mul_matrix {
+    ($mtype:ident, $scalar:ty) => {
+        impl std::ops::Mul<$mtype<$scalar>> for $scalar {
+            type Output = $mtype<$scalar>;
+            #[inline]
+            fn mul(self, rhs: $mtype<$scalar>) -> $mtype<$scalar> {
+                $mtype(rhs.0 * self)
+            }
+        }
+    };
+}
+impl_scalar_mul_matrix!(Matrix2, f64);
+impl_scalar_mul_matrix!(Matrix3, f64);
+impl_scalar_mul_matrix!(Matrix4, f64);
+impl_scalar_mul_matrix!(Matrix2, f32);
+impl_scalar_mul_matrix!(Matrix3, f32);
+impl_scalar_mul_matrix!(Matrix4, f32);
+
 // Matrix4 * Point3 (Transform).
 impl<S: na::RealField> std::ops::Mul<Point3<S>> for Matrix4<S> {
     type Output = Point3<S>;
@@ -561,5 +716,166 @@ impl<S: std::ops::Div<Output = S>> std::ops::Div<S> for Rad<S> {
     type Output = Self;
     fn div(self, rhs: S) -> Self::Output {
         Rad(self.0 / rhs)
+    }
+}
+
+// ---- Rad trigonometric methods (cgmath compatibility) ----
+
+impl<S: num_traits::Float> Rad<S> {
+    /// Returns the tangent of the angle.
+    #[inline]
+    pub fn tan(self) -> S {
+        self.0.tan()
+    }
+    /// Returns the sine of the angle.
+    #[inline]
+    pub fn sin(self) -> S {
+        self.0.sin()
+    }
+    /// Returns the cosine of the angle.
+    #[inline]
+    pub fn cos(self) -> S {
+        self.0.cos()
+    }
+    /// Returns (sin, cos) of the angle.
+    #[inline]
+    pub fn sin_cos(self) -> (S, S) {
+        self.0.sin_cos()
+    }
+}
+
+// ---- Column-index access for matrices (cgmath convention) ----
+//
+// cgmath's `matrix[col_index]` returned a column vector reference.
+// nalgebra uses `(row, col)` tuple indexing. These impls bridge the gap.
+
+// Safety rationale for column indexing:
+// nalgebra stores matrices in column-major order. Each column of an NxN matrix
+// is stored as N contiguous elements. `na::VectorN<S>` (= `SVector<S, N>`) is
+// a `Matrix<S, Const<N>, Const<1>, ArrayStorage<S, N, 1>>` which is
+// `#[repr(C)]` over `[[S; N]; 1]`, i.e. N contiguous `S` values -- exactly
+// matching the memory layout of one column inside the parent matrix.
+// Therefore the pointer cast from the start of a column to `&VectorN<S>` is
+// safe and well-aligned.
+
+#[allow(unsafe_code)]
+impl<S: na::Scalar> std::ops::Index<usize> for Matrix4<S> {
+    type Output = Vector4<S>;
+    #[inline(always)]
+    fn index(&self, col: usize) -> &Vector4<S> {
+        let ptr = self.0.column(col).as_ptr() as *const Vector4<S>;
+        unsafe { &*ptr }
+    }
+}
+
+#[allow(unsafe_code)]
+impl<S: na::Scalar> std::ops::IndexMut<usize> for Matrix4<S> {
+    #[inline(always)]
+    fn index_mut(&mut self, col: usize) -> &mut Vector4<S> {
+        let ptr = self.0.column_mut(col).as_mut_ptr() as *mut Vector4<S>;
+        unsafe { &mut *ptr }
+    }
+}
+
+#[allow(unsafe_code)]
+impl<S: na::Scalar> std::ops::Index<usize> for Matrix3<S> {
+    type Output = Vector3<S>;
+    #[inline(always)]
+    fn index(&self, col: usize) -> &Vector3<S> {
+        let ptr = self.0.column(col).as_ptr() as *const Vector3<S>;
+        unsafe { &*ptr }
+    }
+}
+
+#[allow(unsafe_code)]
+impl<S: na::Scalar> std::ops::IndexMut<usize> for Matrix3<S> {
+    #[inline(always)]
+    fn index_mut(&mut self, col: usize) -> &mut Vector3<S> {
+        let ptr = self.0.column_mut(col).as_mut_ptr() as *mut Vector3<S>;
+        unsafe { &mut *ptr }
+    }
+}
+
+#[allow(unsafe_code)]
+impl<S: na::Scalar> std::ops::Index<usize> for Matrix2<S> {
+    type Output = Vector2<S>;
+    #[inline(always)]
+    fn index(&self, col: usize) -> &Vector2<S> {
+        let ptr = self.0.column(col).as_ptr() as *const Vector2<S>;
+        unsafe { &*ptr }
+    }
+}
+
+#[allow(unsafe_code)]
+impl<S: na::Scalar> std::ops::IndexMut<usize> for Matrix2<S> {
+    #[inline(always)]
+    fn index_mut(&mut self, col: usize) -> &mut Vector2<S> {
+        let ptr = self.0.column_mut(col).as_mut_ptr() as *mut Vector2<S>;
+        unsafe { &mut *ptr }
+    }
+}
+
+// ---- From<Matrix2> for Matrix3 (cgmath compatibility) ----
+
+impl<S: na::Scalar + num_traits::Zero + num_traits::One> From<Matrix2<S>> for Matrix3<S> {
+    #[inline]
+    fn from(m: Matrix2<S>) -> Self {
+        let z = S::zero();
+        let o = S::one();
+        Matrix3(na::Matrix3::new(
+            m.0[(0, 0)].clone(), m.0[(0, 1)].clone(), z.clone(),
+            m.0[(1, 0)].clone(), m.0[(1, 1)].clone(), z,
+            S::zero(), S::zero(), o,
+        ))
+    }
+}
+
+// ---- From<Matrix3> for Matrix4 (cgmath compatibility) ----
+//
+// cgmath allowed `Matrix4::from(mat3)` to embed a 3x3 rotation into a 4x4 homogeneous matrix.
+
+impl<S: na::Scalar + num_traits::Zero + num_traits::One> From<Matrix3<S>> for Matrix4<S> {
+    #[inline]
+    fn from(m: Matrix3<S>) -> Self {
+        let z = S::zero();
+        let o = S::one();
+        Matrix4(na::Matrix4::new(
+            m.0[(0, 0)].clone(), m.0[(0, 1)].clone(), m.0[(0, 2)].clone(), z.clone(),
+            m.0[(1, 0)].clone(), m.0[(1, 1)].clone(), m.0[(1, 2)].clone(), z.clone(),
+            m.0[(2, 0)].clone(), m.0[(2, 1)].clone(), m.0[(2, 2)].clone(), z,
+            S::zero(), S::zero(), S::zero(), o,
+        ))
+    }
+}
+
+// ---- Into<[[S; N]; N]> for matrix wrappers (GPU/bytemuck compatibility) ----
+
+impl<S: na::Scalar + Copy> From<Matrix4<S>> for [[S; 4]; 4] {
+    #[inline]
+    fn from(m: Matrix4<S>) -> Self {
+        // nalgebra stores column-major, so column(i) gives [r0, r1, r2, r3].
+        [
+            [m.0[(0, 0)], m.0[(1, 0)], m.0[(2, 0)], m.0[(3, 0)]],
+            [m.0[(0, 1)], m.0[(1, 1)], m.0[(2, 1)], m.0[(3, 1)]],
+            [m.0[(0, 2)], m.0[(1, 2)], m.0[(2, 2)], m.0[(3, 2)]],
+            [m.0[(0, 3)], m.0[(1, 3)], m.0[(2, 3)], m.0[(3, 3)]],
+        ]
+    }
+}
+
+// ---- Matrix4 additional constructors (cgmath compatibility) ----
+
+impl<S: na::Scalar + Copy> Matrix4<S> {
+    /// Creates a Matrix4 from an axis and angle (cgmath's `from_axis_angle`).
+    #[inline]
+    pub fn from_axis_angle(axis: Vector3<S>, angle: Rad<S>) -> Self
+    where
+        S: na::RealField,
+    {
+        let rot = na::Rotation3::from_axis_angle(
+            &na::Unit::new_normalize(axis),
+            angle.0,
+        );
+        Matrix4(rot.to_homogeneous())
     }
 }

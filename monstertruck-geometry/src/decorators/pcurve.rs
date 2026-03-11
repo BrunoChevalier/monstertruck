@@ -33,11 +33,12 @@ where
     C: ParametricCurve2D,
     S: ParametricSurface,
     S::Point: ControlPoint<f64, Diff = S::Vector>,
-    S::Vector: VectorSpace<Scalar = f64> + ElementWise,
+    S::Vector: VectorSpace<Scalar = f64> + MulElementWise,
 {
     fn der3(&self, t: f64) -> S::Vector {
         let cders = self.curve.ders(3, t);
-        let [Vector2 { x: u, y: v }, der, der2, der3] = cders.to_array::<4>();
+        let [pt, der, der2, der3] = cders.to_array::<4>();
+        let (u, v) = (pt[0], pt[1]);
         let surface = self.surface();
         surface.der_mn(3, 0, u, v) * (der[0] * der[0] * der[0])
             + surface.der_mn(2, 1, u, v) * (der[0] * der[0] * der[1] * 3.0)
@@ -56,7 +57,7 @@ where
     C: ParametricCurve2D,
     S: ParametricSurface,
     S::Point: ControlPoint<f64, Diff = S::Vector>,
-    S::Vector: VectorSpace<Scalar = f64> + ElementWise,
+    S::Vector: VectorSpace<Scalar = f64> + MulElementWise,
 {
     type Point = S::Point;
     type Vector = S::Vector;
@@ -72,7 +73,7 @@ where
             _ => {}
         }
         let cders = self.curve.ders(n, t);
-        let Vector2 { x: u, y: v } = cders[0];
+        let (u, v) = (cders[0][0], cders[0][1]);
 
         let sders = self.surface.ders(n, u, v);
         sders.composite_der(&cders, n)
@@ -82,7 +83,7 @@ where
             panic!("the order of derivation must be under {MAX_DER_ORDER}.");
         }
         let cders = self.curve.ders(n, t);
-        let Vector2 { x: u, y: v } = cders[0];
+        let (u, v) = (cders[0][0], cders[0][1]);
         let sders = self.surface.ders(n, u, v);
         sders.composite_ders(&cders)
     }
@@ -153,18 +154,18 @@ where
         let shint = match hint {
             SearchParameterHint1D::Parameter(hint) => {
                 let p = self.curve.subs(hint);
-                SearchParameterHint2D::Parameter(p.x, p.y)
+                SearchParameterHint2D::Parameter(p[0], p[1])
             }
             SearchParameterHint1D::Range(x, y) => {
                 let p = self.curve.subs(y);
                 let ranges = (0..PRESEARCH_DIVISION).fold(
-                    ((p.x, p.x), (p.y, p.y)),
+                    ((p[0], p[0]), (p[1], p[1])),
                     |((x0, x1), (y0, y1)), i| {
                         let t = x + (y - x) * i as f64 / PRESEARCH_DIVISION as f64;
                         let p = self.curve.subs(t);
                         (
-                            (f64::min(x0, p.x), f64::max(x1, p.x)),
-                            (f64::min(y0, p.y), f64::max(y1, p.y)),
+                            (f64::min(x0, p[0]), f64::max(x1, p[0])),
+                            (f64::min(y0, p[1]), f64::max(y1, p[1])),
                         )
                     },
                 );
@@ -212,7 +213,7 @@ where
         + MetricSpace<Metric = f64>
         + HashGen<f64>
         + ControlPoint<f64, Diff = S::Vector>,
-    S::Vector: VectorSpace<Scalar = f64> + ElementWise,
+    S::Vector: VectorSpace<Scalar = f64> + MulElementWise,
 {
     type Point = S::Point;
     fn parameter_division(&self, range: (f64, f64), tol: f64) -> (Vec<f64>, Vec<S::Point>) {

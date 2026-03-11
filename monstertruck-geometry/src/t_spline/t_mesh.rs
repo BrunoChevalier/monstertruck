@@ -2202,7 +2202,7 @@ impl Tmesh<Point3> {
         let suv = self.analytical_der_mn(1, 1, u, v);
         let svv = self.analytical_der_mn(0, 2, u, v);
 
-        let normal = su.cross(sv);
+        let normal: Vector3 = su.cross(&sv);
         let normal_len = normal.magnitude();
         if normal_len.so_small() {
             0.0

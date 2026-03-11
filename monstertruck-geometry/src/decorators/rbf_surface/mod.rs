@@ -100,7 +100,7 @@ macro_rules! impl_radius_1dim {
         impl RadiusFunction for $ty {
             #[inline]
             fn der_n(&self, n: usize, t: f64) -> f64 {
-                PcurveTrait::der_n(self, n, t).x
+                PcurveTrait::der_n(self, n, t)[0]
             }
         }
     };
@@ -127,7 +127,7 @@ impl From<(Point3, Point2)> for ContactPoint {
 impl From<ContactPoint> for (Point3, (f64, f64)) {
     #[inline]
     fn from(cp: ContactPoint) -> Self {
-        (cp.point, (cp.uv.x, cp.uv.y))
+        (cp.point, (cp.uv[0], cp.uv[1]))
     }
 }
 
@@ -283,7 +283,7 @@ where
 
         let cp0 = cc.contact_point0.point - cc.center;
         let cp = point - cc.center;
-        let u = cp.angle(cp0).0 / cc.angle.0;
+        let u = cp.angle(&cp0) / cc.angle.0;
         match cp.magnitude2().near(&cp0.magnitude2()) {
             true => Some((u, v)),
             false => None,

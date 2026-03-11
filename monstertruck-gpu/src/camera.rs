@@ -3,13 +3,16 @@ use crate::*;
 // Since cgmath assumes a normalized view volume in OpenGL,
 // this conversion is necessary to handle it with wgpu.
 // cf https://sotrh.github.io/learn-wgpu/beginner/tutorial6-uniforms/#a-perspective-camera
+// Constructed lazily because Matrix4::new is not const.
 #[rustfmt::skip]
-pub const OPENGL_TO_WGPU_MATRIX: Matrix4 = Matrix4::new(
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 0.5, 0.0,
-    0.0, 0.0, 0.5, 1.0,
-);
+fn opengl_to_wgpu_matrix() -> Matrix4 {
+    Matrix4::new(
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 0.5, 0.0,
+        0.0, 0.0, 0.5, 1.0,
+    )
+}
 
 impl Ray {
     /// Returns the origin of the ray
@@ -51,7 +54,8 @@ impl Camera {
     /// ```
     #[inline(always)]
     pub fn position(&self) -> Point3 {
-        Point3::from_vec(self.matrix[3].truncate())
+        let col = self.matrix[3];
+        Point3::new(col[0], col[1], col[2])
     }
 
     /// Returns the eye direction of camera.
@@ -71,7 +75,8 @@ impl Camera {
     /// ```
     #[inline(always)]
     pub fn eye_direction(&self) -> Vector3 {
-        -self.matrix[2].truncate()
+        let col = self.matrix[2];
+        -Vector3::new(col[0], col[1], col[2])
     }
 
     /// Returns the direction of the head vector, the y-axis of the camera matrix.
@@ -89,7 +94,8 @@ impl Camera {
     /// ```
     #[inline(always)]
     pub fn head_direction(&self) -> Vector3 {
-        self.matrix[1].truncate()
+        let col = self.matrix[1];
+        Vector3::new(col[0], col[1], col[2])
     }
 
     /// Returns the projection matrix into the normalized view volume.
@@ -179,7 +185,7 @@ impl Camera {
             }
         };
         // SAFETY: camera matrix is a rigid-body transform (Euclidean group), always invertible.
-        OPENGL_TO_WGPU_MATRIX * normal_projection * self.matrix.invert().unwrap()
+        opengl_to_wgpu_matrix() * normal_projection * self.matrix.invert().unwrap()
     }
 
     #[inline(always)]
@@ -285,8 +291,8 @@ impl Camera {
                     .projection(1.0)
                     .invert()
                     .expect("non-invertible projection");
-                let x = mat.transform_point(Point3::new(coord.x, coord.y, 0.5));
-                let y = mat.transform_point(Point3::new(coord.x, coord.y, 1.0));
+                let x = mat.transform_point(Point3::new(coord[0], coord[1], 0.5));
+                let y = mat.transform_point(Point3::new(coord[0], coord[1], 1.0));
                 Ray {
                     origin: self.position(),
                     direction: (y - x).normalize(),
@@ -294,10 +300,12 @@ impl Camera {
             }
             ProjectionMethod::Parallel { screen_size } => {
                 let a = screen_size / 2.0;
-                let axis_x = self.matrix[0].truncate() * a;
-                let axis_y = self.matrix[1].truncate() * a;
+                let col0 = self.matrix[0];
+                let axis_x = Vector3::new(col0[0], col0[1], col0[2]) * a;
+                let col1 = self.matrix[1];
+                let axis_y = Vector3::new(col1[0], col1[1], col1[2]) * a;
                 Ray {
-                    origin: self.position() + coord.x * axis_x + coord.y * axis_y,
+                    origin: self.position() + coord[0] * axis_x + coord[1] * axis_y,
                     direction: self.eye_direction(),
                 }
             }
@@ -362,13 +370,13 @@ impl Camera {
             .map(|p| inv_dir.transform_point(*p))
             .collect::<BoundingBox<_>>();
         let (center, diag) = (bbox.center(), bbox.diagonal());
-        let screen_size = f64::max(diag.x / aspect, diag.y);
-        let position = Vector3::new(center.x, center.y, center.z + diag.z / 2.0 + near_clip);
+        let screen_size = f64::max(diag[0] / aspect, diag[1]);
+        let position = Vector3::new(center[0], center[1], center[2] + diag[2] / 2.0 + near_clip);
         Self {
             matrix: Matrix4::from(direction) * Matrix4::from_translation(position),
             method: ProjectionMethod::Parallel { screen_size },
             near_clip,
-            far_clip: near_clip + diag.z,
+            far_clip: near_clip + diag[2],
         }
     }
 
@@ -441,12 +449,12 @@ impl Camera {
 
         for p in points {
             let p = inv_dir.transform_point(*p);
-            x_min = f64::min(x_min, p.x - tan * p.z * aspect);
-            x_max = f64::max(x_max, p.x + tan * p.z * aspect);
-            y_min = f64::min(y_min, p.y - tan * p.z);
-            y_max = f64::max(y_max, p.y + tan * p.z);
-            z_min = f64::min(z_min, p.z);
-            z_max = f64::max(z_max, p.z);
+            x_min = f64::min(x_min, p[0] - tan * p[2] * aspect);
+            x_max = f64::max(x_max, p[0] + tan * p[2] * aspect);
+            y_min = f64::min(y_min, p[1] - tan * p[2]);
+            y_max = f64::max(y_max, p[1] + tan * p[2]);
+            z_min = f64::min(z_min, p[2]);
+            z_max = f64::max(z_max, p[2]);
         }
 
         let z_x = (x_max - x_min) / (2.0 * tan) / aspect;
@@ -455,8 +463,8 @@ impl Camera {
         Camera {
             matrix: Matrix4::from(direction) * Matrix4::from_translation(position),
             method: ProjectionMethod::Perspective { fov },
-            near_clip: position.z - z_max,
-            far_clip: position.z - z_min,
+            near_clip: position[2] - z_max,
+            far_clip: position[2] - z_min,
         }
     }
 }

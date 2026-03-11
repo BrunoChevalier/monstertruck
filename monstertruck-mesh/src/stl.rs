@@ -235,11 +235,12 @@ impl Iterator for PolygonMeshStlFaceIterator<'_> {
     fn next(&mut self) -> Option<StlFace> {
         self.faces.next().map(|face| {
             let p = array![i => self.positions[face[i].pos]; 3];
-            let n = (p[1] - p[0]).cross(p[2] - p[0]).normalize();
+            let cross = (p[1] - p[0]).cross(&(p[2] - p[0]));
+            let n: monstertruck_core::cgmath64::Vector3 = cross.normalize();
             // SAFETY: cast from f64 to f32 only fails for NaN, which valid geometry never produces.
-            let normal = n.cast().unwrap().into();
+            let normal = [n[0] as f32, n[1] as f32, n[2] as f32];
             // SAFETY: cast from f64 to f32 only fails for NaN, which valid geometry never produces.
-            let vertices = array![i => p[i].cast().unwrap().into(); 3];
+            let vertices = array![i => [p[i][0] as f32, p[i][1] as f32, p[i][2] as f32]; 3];
             StlFace { normal, vertices }
         })
     }

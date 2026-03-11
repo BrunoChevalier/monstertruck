@@ -1818,16 +1818,16 @@ fn rotation_between(from: Vector3, to: Vector3) -> Matrix3 {
 
     // Nearly anti-parallel — rotate 180 degrees around an arbitrary perpendicular axis.
     if (dot + 1.0).abs() < TOLERANCE {
-        let perp = if f.x.abs() < 0.9 {
+        let perp = if f[0].abs() < 0.9 {
             Vector3::unit_x()
         } else {
             Vector3::unit_y()
         };
-        let axis = f.cross(perp).normalize();
+        let axis: Vector3 = f.cross(&perp).normalize();
         return Matrix3::from_axis_angle(axis, Rad(std::f64::consts::PI));
     }
 
-    let axis = f.cross(t).normalize();
+    let axis: Vector3 = f.cross(&t).normalize();
     let angle = Rad(dot.acos());
     Matrix3::from_axis_angle(axis, angle)
 }

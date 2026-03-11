@@ -56,21 +56,22 @@ impl SearchNearestParameterVector for Vector2 {
     fn subs<S>(
         surface: &S,
         point: Point2,
-        Vector2 { x: u, y: v }: Vector2,
+        param: Vector2,
     ) -> CalcOutput<Self, Matrix2>
     where
         S: ParametricSurface<Point = Point2, Vector = Vector2>,
     {
+        let (u, v) = (param[0], param[1]);
         CalcOutput {
             value: surface.evaluate(u, v) - point,
             derivation: Matrix2::from_cols(surface.derivative_u(u, v), surface.derivative_v(u, v)),
         }
     }
     fn into_param(self) -> (f64, f64) {
-        self.into()
+        (self[0], self[1])
     }
     fn from_param(param: (f64, f64)) -> Self {
-        param.into()
+        Vector2::new(param.0, param.1)
     }
 }
 
@@ -80,29 +81,30 @@ impl SearchNearestParameterVector for Vector3 {
     fn subs<S>(
         surface: &S,
         point: Self::Point,
-        Vector3 { x: u, y: v, z: w }: Vector3,
+        param: Vector3,
     ) -> CalcOutput<Self, Self::Matrix>
     where
         S: ParametricSurface<Point = Self::Point, Vector = Self>,
     {
+        let (u, v, w) = (param[0], param[1], param[2]);
         let diff = surface.evaluate(u, v) - point;
         let uder = surface.derivative_u(u, v);
         let vder = surface.derivative_v(u, v);
         let uuder = surface.derivative_uu(u, v);
         let uvder = surface.derivative_uv(u, v);
         let vvder = surface.derivative_vv(u, v);
-        let uv_cross = uder.cross(vder);
+        let uv_cross = uder.cross(&vder);
         CalcOutput {
             value: diff + uv_cross * w,
             derivation: Matrix3::from_cols(
-                uder + (uuder.cross(vder) + uder.cross(uvder)) * w,
-                vder + (uvder.cross(vder) + uder.cross(vvder)) * w,
+                uder + (uuder.cross(&vder) + uder.cross(&uvder)) * w,
+                vder + (uvder.cross(&vder) + uder.cross(&vvder)) * w,
                 uv_cross,
             ),
         }
     }
     fn into_param(self) -> (f64, f64) {
-        self.truncate().into()
+        (self[0], self[1])
     }
     fn from_param((u, v): (f64, f64)) -> Self {
         Self::new(u, v, 0.0)
@@ -142,11 +144,12 @@ impl SearchParameterVector for Vector2 {
     fn subs<S>(
         surface: &S,
         point: Point2,
-        Vector2 { x: u, y: v }: Vector2,
+        param: Vector2,
     ) -> CalcOutput<Vector2, Matrix2>
     where
         S: ParametricSurface<Point = Point2, Vector = Vector2>,
     {
+        let (u, v) = (param[0], param[1]);
         CalcOutput {
             value: surface.evaluate(u, v) - point,
             derivation: Matrix2::from_cols(surface.derivative_u(u, v), surface.derivative_v(u, v)),
@@ -159,11 +162,12 @@ impl SearchParameterVector for Vector3 {
     fn subs<S>(
         surface: &S,
         point: Self::Point,
-        Vector2 { x: u, y: v }: Vector2,
+        param: Vector2,
     ) -> CalcOutput<Vector2, Matrix2>
     where
         S: ParametricSurface<Point = Self::Point, Vector = Self>,
     {
+        let (u, v) = (param[0], param[1]);
         let diff = surface.evaluate(u, v) - point;
         let uder = surface.derivative_u(u, v);
         let vder = surface.derivative_v(u, v);
@@ -193,11 +197,14 @@ where
     S: ParametricSurface<Point = P, Vector = P::Diff>,
 {
     let function = move |param: Vector2| SearchParameterVector::subs(surface, point, param);
-    let res = newton::solve(function, hint.into(), trials);
+    let res = newton::solve(function, Vector2::new(hint.0, hint.1), trials);
     res.ok().and_then(
-        |Vector2 { x: u, y: v }| match surface.evaluate(u, v).near(&point) {
-            true => Some((u, v)),
-            false => None,
+        |param| {
+            let (u, v) = (param[0], param[1]);
+            match surface.evaluate(u, v).near(&point) {
+                true => Some((u, v)),
+                false => None,
+            }
         },
     )
 }
@@ -214,16 +221,20 @@ where
     C: ParametricCurve3D,
     S: ParametricSurface3D,
 {
-    let function = move |Vector3 { x, y, z }| CalcOutput {
-        value: surface.evaluate(x, y) - curve.evaluate(z),
-        derivation: Matrix3::from_cols(
-            surface.derivative_u(x, y),
-            surface.derivative_v(x, y),
-            -curve.derivative(z),
-        ),
+    let function = move |param: Vector3| {
+        let (x, y, z) = (param[0], param[1], param[2]);
+        CalcOutput {
+            value: surface.evaluate(x, y) - curve.evaluate(z),
+            derivation: Matrix3::from_cols(
+                surface.derivative_u(x, y),
+                surface.derivative_v(x, y),
+                -curve.derivative(z),
+            ),
+        }
     };
     let hint = Vector3::new(hint0.0, hint0.1, hint1);
-    let Vector3 { x, y, z } = newton::solve(function, hint, trials).ok()?;
+    let result = newton::solve(function, hint, trials).ok()?;
+    let (x, y, z) = (result[0], result[1], result[2]);
     match surface.evaluate(x, y).near(&curve.evaluate(z)) {
         true => Some(((x, y), z)),
         false => None,

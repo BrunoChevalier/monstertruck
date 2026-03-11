@@ -65,11 +65,11 @@ impl ContactCircle {
         let (vec0, vec1) = (p0 - center, p1 - center);
         Some(Self {
             center,
-            axis: vec0.cross(vec1).normalize(),
-            angle: vec0.angle(vec1),
+            axis: { let c: Vector3 = vec0.cross(&vec1); c.normalize() },
+            angle: Rad(vec0.angle(&vec1)),
             t,
-            contact_point0: (p0, (u0, v0).into()).into(),
-            contact_point1: (p1, (u1, v1).into()).into(),
+            contact_point0: (p0, Point2::new(u0, v0)).into(),
+            contact_point1: (p1, Point2::new(u1, v1)).into(),
         })
     }
 }
@@ -104,7 +104,7 @@ impl ToSameGeometry<NurbsCurve<Vector4>> for ContactCircle {
         let (sin2, cos2) = (self.angle / 2.0).sin_cos();
         let x_axis = self.contact_point0.point - self.center;
         let z_axis = self.axis;
-        let y_axis = z_axis.cross(x_axis);
+        let y_axis: Vector3 = z_axis.cross(&x_axis);
         let mat = Matrix4::from_cols(
             x_axis.extend(0.0),
             y_axis.extend(0.0),
@@ -134,7 +134,7 @@ fn contact_points(
     radius: f64,
 ) -> (Point3, Point3, Point3) {
     let ((p, der), (p0, n0), (p1, n1)) = (point_on_curve, plane0, plane1);
-    let sign = f64::signum(n0.cross(n1).dot(der));
+    let sign = f64::signum({ let c: Vector3 = n0.cross(&n1); c.dot(der) });
     let mat = Matrix3::from_cols(der, n0, n1).transpose();
     let vec = Vector3::new(
         der.dot(p.to_vec()),
@@ -165,6 +165,6 @@ fn next_point(
     // SAFETY: the matrix is the first fundamental form of a regular surface,
     // which is positive definite and therefore invertible.
     let del = mat.invert().unwrap() * vec;
-    let (u, v) = (u + del.x, v + del.y);
+    let (u, v) = (u + del[0], v + del[1]);
     (surface.evaluate(u, v), (u, v))
 }

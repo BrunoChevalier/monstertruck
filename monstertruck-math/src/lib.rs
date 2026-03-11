@@ -39,7 +39,7 @@ pub use traits::{
 };
 
 // Re-export conversion traits at crate root.
-pub use conversions::{Cast, Extend, MulElementWise, ToHomogeneous, Truncate};
+pub use conversions::{Cast, Extend, MulElementWise, ToHomogeneous, Truncate, UnitVectors};
 
 // Re-export approx traits (cgmath re-exports these).
 pub use approx::AbsDiffEq;
@@ -53,7 +53,7 @@ pub use nalgebra;
 /// Prelude module mimicking `cgmath::prelude::*`.
 pub mod prelude {
     //! Convenient re-exports of commonly used traits.
-    pub use crate::conversions::{Cast, Extend, MulElementWise, ToHomogeneous, Truncate};
+    pub use crate::conversions::{Cast, Extend, MulElementWise, ToHomogeneous, Truncate, UnitVectors};
     pub use crate::traits::{
         BaseFloat, EuclideanSpace, InnerSpace, MetricSpace, One, SquareMatrix, Transform,
         VectorSpace, Zero,

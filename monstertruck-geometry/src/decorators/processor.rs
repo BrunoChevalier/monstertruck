@@ -2,6 +2,16 @@ use super::*;
 use algo::surface::SearchNearestParameterVector;
 use monstertruck_traits::ParametricCurve as PcurveTrait;
 
+impl<E, T> Processor<E, T> {
+    #[inline(always)]
+    fn sign(&self) -> f64 {
+        match self.orientation {
+            true => 1.0,
+            false => -1.0,
+        }
+    }
+}
+
 impl<E, T: One> Processor<E, T> {
     /// Creates new processor
     #[inline(always)]
@@ -39,14 +49,6 @@ impl<E, T: One> Processor<E, T> {
     #[inline(always)]
     pub const fn orientation(&self) -> bool {
         self.orientation
-    }
-
-    #[inline(always)]
-    fn sign(&self) -> f64 {
-        match self.orientation {
-            true => 1.0,
-            false => -1.0,
-        }
     }
 
     /// apply the function to the entity geometry
@@ -117,7 +119,7 @@ where
     C: BoundedCurve,
     C::Point: EuclideanSpace<Diff = C::Vector>,
     C::Vector: VectorSpace<Scalar = f64>,
-    T: Transform<C::Point> + Clone,
+    T: Transform<C::Point, Vector = C::Vector> + Clone,
 {
     type Point = C::Point;
     type Vector = C::Vector;
@@ -161,7 +163,7 @@ where
     C: BoundedCurve,
     C::Point: EuclideanSpace<Diff = C::Vector>,
     C::Vector: VectorSpace<Scalar = f64>,
-    T: Transform<C::Point> + Clone,
+    T: Transform<C::Point, Vector = C::Vector> + Clone,
 {
 }
 
@@ -170,7 +172,7 @@ where
     C: BoundedCurve + Cut,
     C::Point: EuclideanSpace<Diff = C::Vector>,
     C::Vector: VectorSpace<Scalar = f64>,
-    T: Transform<C::Point> + Clone,
+    T: Transform<C::Point, Vector = C::Vector> + Clone,
 {
     fn cut(&mut self, t: f64) -> Self {
         let t = self.get_curve_parameter(t);
@@ -190,7 +192,7 @@ impl<S, T> ParametricSurface for Processor<S, T>
 where
     S: ParametricSurface,
     S::Point: EuclideanSpace<Scalar = f64, Diff = S::Vector>,
-    T: Transform<S::Point> + SquareMatrix<Scalar = f64> + Clone,
+    T: Transform<S::Point, Vector = S::Vector> + SquareMatrix<Scalar = f64> + Clone,
 {
     type Point = S::Point;
     type Vector = S::Vector;
@@ -298,7 +300,7 @@ where
 impl<S, T> ParametricSurface3D for Processor<S, T>
 where
     S: ParametricSurface3D,
-    T: Transform<Point3> + SquareMatrix<Scalar = f64> + Clone,
+    T: Transform<Point3, Vector = Vector3> + SquareMatrix<Scalar = f64> + Clone,
 {
     #[inline(always)]
     fn normal(&self, u: f64, v: f64) -> Self::Vector {
@@ -307,9 +309,10 @@ where
             true => self.entity.normal(u, v),
             false => -self.entity.normal(v, u),
         };
-        let n = transtrans
-            .inverse_transform_vector(n)
+        let inv_trans = transtrans
+            .invert()
             .expect("invalid transform");
+        let n = inv_trans.transform_vector(n);
         (n / self.transform.determinant()).normalize()
     }
 }
@@ -317,7 +320,7 @@ where
 impl<S, T> BoundedSurface for Processor<S, T>
 where
     S: BoundedSurface<Point = Point3, Vector = Vector3>,
-    T: Transform<S::Point> + SquareMatrix<Scalar = f64> + Clone,
+    T: Transform<S::Point, Vector = S::Vector> + SquareMatrix<Scalar = f64> + Clone,
 {
 }
 
@@ -544,7 +547,7 @@ where
     E: BoundedCurve<Point = P> + SearchNearestParameter<D1, Point = P>,
     P: EuclideanSpace<Scalar = f64, Diff = E::Vector>,
     E::Vector: InnerSpace<Scalar = f64> + Tolerance,
-    T: Transform<P> + Clone,
+    T: Transform<P, Vector = E::Vector> + Clone,
 {
     type Point = P;
     fn search_nearest_parameter<H: Into<SearchParameterHint1D>>(
@@ -568,7 +571,7 @@ where
     E: ParametricSurface<Point = P> + SearchNearestParameter<D2, Point = P>,
     P: EuclideanSpace<Scalar = f64, Diff = E::Vector> + MetricSpace<Metric = f64> + Tolerance,
     E::Vector: SearchNearestParameterVector<Point = P>,
-    T: Transform<P> + SquareMatrix<Scalar = f64> + Clone,
+    T: Transform<P, Vector = E::Vector> + SquareMatrix<Scalar = f64> + Clone,
 {
     type Point = P;
     fn search_nearest_parameter<H: Into<SearchParameterHint2D>>(
