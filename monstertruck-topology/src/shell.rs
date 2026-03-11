@@ -68,9 +68,9 @@ impl<P, C, S> Shell<P, C, S> {
     #[inline(always)]
     pub fn face_par_iter(&self) -> FaceParallelIter<'_, P, C, S>
     where
-        P: Send,
-        C: Send,
-        S: Send,
+        P: Send + Sync,
+        C: Send + Sync,
+        S: Send + Sync,
     {
         self.par_iter()
     }
@@ -79,9 +79,9 @@ impl<P, C, S> Shell<P, C, S> {
     #[inline(always)]
     pub fn face_par_iter_mut(&mut self) -> FaceParallelIterMut<'_, P, C, S>
     where
-        P: Send,
-        C: Send,
-        S: Send,
+        P: Send + Sync,
+        C: Send + Sync,
+        S: Send + Sync,
     {
         self.par_iter_mut()
     }
@@ -90,9 +90,9 @@ impl<P, C, S> Shell<P, C, S> {
     #[inline(always)]
     pub fn face_into_par_iter(self) -> FaceParallelIntoIter<P, C, S>
     where
-        P: Send,
-        C: Send,
-        S: Send,
+        P: Send + Sync,
+        C: Send + Sync,
+        S: Send + Sync,
     {
         self.into_par_iter()
     }
@@ -107,9 +107,9 @@ impl<P, C, S> Shell<P, C, S> {
     #[inline(always)]
     pub fn edge_par_iter(&self) -> impl ParallelIterator<Item = Edge<P, C>> + '_
     where
-        P: Send,
-        C: Send,
-        S: Send,
+        P: Send + Sync,
+        C: Send + Sync,
+        S: Send + Sync,
     {
         self.face_par_iter().flat_map(Face::boundaries).flatten()
     }
@@ -124,9 +124,9 @@ impl<P, C, S> Shell<P, C, S> {
     #[inline(always)]
     pub fn vertex_par_iter(&self) -> impl ParallelIterator<Item = Vertex<P>> + '_
     where
-        P: Send,
-        C: Send,
-        S: Send,
+        P: Send + Sync,
+        C: Send + Sync,
+        S: Send + Sync,
     {
         self.edge_par_iter().map(|edge| edge.front().clone())
     }
@@ -583,7 +583,7 @@ impl<P, C, S> Shell<P, C, S> {
                     .iter()
                     .map(|wire| wire.sub_try_mapped(&mut edge_map))
                     .collect::<Option<Vec<_>>>()?;
-                let surface = surface_mapping(&*face.surface.lock())?;
+                let surface = surface_mapping(&*face.surface.read())?;
                 let mut new_face = Face::debug_new(wires, surface);
                 if !face.orientation() {
                     new_face.invert();
@@ -677,7 +677,7 @@ impl<P, C, S> Shell<P, C, S> {
                     .iter()
                     .map(|wire| wire.sub_mapped(&mut edge_map))
                     .collect();
-                let surface = surface_mapping(&*face.surface.lock());
+                let surface = surface_mapping(&*face.surface.read());
                 let mut new_face = Face::debug_new(wires, surface);
                 if !face.orientation() {
                     new_face.invert();
@@ -1235,7 +1235,9 @@ impl<P: Debug, C: Debug, S: Debug> Debug for DebugDisplay<'_, Shell<P, C, S>, Sh
     }
 }
 
-impl<P: Send, C: Send, S: Send> FromParallelIterator<Face<P, C, S>> for Shell<P, C, S> {
+impl<P: Send + Sync, C: Send + Sync, S: Send + Sync> FromParallelIterator<Face<P, C, S>>
+    for Shell<P, C, S>
+{
     fn from_par_iter<I>(par_iter: I) -> Self
     where
         I: IntoParallelIterator<Item = Face<P, C, S>>,
@@ -1244,7 +1246,7 @@ impl<P: Send, C: Send, S: Send> FromParallelIterator<Face<P, C, S>> for Shell<P,
     }
 }
 
-impl<P: Send, C: Send, S: Send> IntoParallelIterator for Shell<P, C, S> {
+impl<P: Send + Sync, C: Send + Sync, S: Send + Sync> IntoParallelIterator for Shell<P, C, S> {
     type Item = Face<P, C, S>;
     type Iter = FaceParallelIntoIter<P, C, S>;
     fn into_par_iter(self) -> Self::Iter {
@@ -1252,7 +1254,9 @@ impl<P: Send, C: Send, S: Send> IntoParallelIterator for Shell<P, C, S> {
     }
 }
 
-impl<'a, P: Send + 'a, C: Send + 'a, S: Send + 'a> IntoParallelRefIterator<'a> for Shell<P, C, S> {
+impl<'a, P: Send + Sync + 'a, C: Send + Sync + 'a, S: Send + Sync + 'a> IntoParallelRefIterator<'a>
+    for Shell<P, C, S>
+{
     type Item = &'a Face<P, C, S>;
     type Iter = FaceParallelIter<'a, P, C, S>;
     fn par_iter(&'a self) -> Self::Iter {
@@ -1260,8 +1264,8 @@ impl<'a, P: Send + 'a, C: Send + 'a, S: Send + 'a> IntoParallelRefIterator<'a> f
     }
 }
 
-impl<'a, P: Send + 'a, C: Send + 'a, S: Send + 'a> IntoParallelRefMutIterator<'a>
-    for Shell<P, C, S>
+impl<'a, P: Send + Sync + 'a, C: Send + Sync + 'a, S: Send + Sync + 'a>
+    IntoParallelRefMutIterator<'a> for Shell<P, C, S>
 {
     type Item = &'a mut Face<P, C, S>;
     type Iter = FaceParallelIterMut<'a, P, C, S>;
@@ -1270,7 +1274,9 @@ impl<'a, P: Send + 'a, C: Send + 'a, S: Send + 'a> IntoParallelRefMutIterator<'a
     }
 }
 
-impl<P: Send, C: Send, S: Send> ParallelExtend<Face<P, C, S>> for Shell<P, C, S> {
+impl<P: Send + Sync, C: Send + Sync, S: Send + Sync> ParallelExtend<Face<P, C, S>>
+    for Shell<P, C, S>
+{
     fn par_extend<I>(&mut self, par_iter: I)
     where
         I: IntoParallelIterator<Item = Face<P, C, S>>,

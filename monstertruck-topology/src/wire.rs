@@ -39,8 +39,8 @@ impl<P, C> Wire<P, C> {
     #[inline(always)]
     pub fn edge_par_iter(&self) -> EdgeParallelIter<'_, P, C>
     where
-        P: Send,
-        C: Send,
+        P: Send + Sync,
+        C: Send + Sync,
     {
         self.par_iter()
     }
@@ -48,8 +48,8 @@ impl<P, C> Wire<P, C> {
     #[inline(always)]
     pub fn edge_par_iter_mut(&mut self) -> EdgeParallelIterMut<'_, P, C>
     where
-        P: Send,
-        C: Send,
+        P: Send + Sync,
+        C: Send + Sync,
     {
         self.par_iter_mut()
     }
@@ -57,8 +57,8 @@ impl<P, C> Wire<P, C> {
     #[inline(always)]
     pub fn edge_into_par_iter(self) -> EdgeParallelIntoIter<P, C>
     where
-        P: Send,
-        C: Send,
+        P: Send + Sync,
+        C: Send + Sync,
     {
         self.into_par_iter()
     }
@@ -586,7 +586,7 @@ where
         let vertex0 = vertex_map.entry_or_insert(vf).clone()?;
         let vb = edge.absolute_back();
         let vertex1 = vertex_map.entry_or_insert(vb).clone()?;
-        let curve = curve_mapping(&*edge.curve.lock())?;
+        let curve = curve_mapping(&*edge.curve.read())?;
         Some(Edge::debug_new(&vertex0, &vertex1, curve))
     }
 }
@@ -604,7 +604,7 @@ where
         let vertex0 = vertex_map.entry_or_insert(vf).clone();
         let vb = edge.absolute_back();
         let vertex1 = vertex_map.entry_or_insert(vb).clone();
-        let curve = curve_mapping(&*edge.curve.lock());
+        let curve = curve_mapping(&*edge.curve.read());
         Edge::debug_new(&vertex0, &vertex1, curve)
     }
 }
@@ -866,7 +866,7 @@ impl<P: Debug, C: Debug> Debug for DebugDisplay<'_, Wire<P, C>, WireDisplayForma
     }
 }
 
-impl<P: Send, C: Send> FromParallelIterator<Edge<P, C>> for Wire<P, C> {
+impl<P: Send + Sync, C: Send + Sync> FromParallelIterator<Edge<P, C>> for Wire<P, C> {
     fn from_par_iter<I>(par_iter: I) -> Self
     where
         I: IntoParallelIterator<Item = Edge<P, C>>,
@@ -875,7 +875,7 @@ impl<P: Send, C: Send> FromParallelIterator<Edge<P, C>> for Wire<P, C> {
     }
 }
 
-impl<P: Send, C: Send> IntoParallelIterator for Wire<P, C> {
+impl<P: Send + Sync, C: Send + Sync> IntoParallelIterator for Wire<P, C> {
     type Item = Edge<P, C>;
     type Iter = EdgeParallelIntoIter<P, C>;
     fn into_par_iter(self) -> Self::Iter {
@@ -883,7 +883,7 @@ impl<P: Send, C: Send> IntoParallelIterator for Wire<P, C> {
     }
 }
 
-impl<'a, P: Send + 'a, C: Send + 'a> IntoParallelRefIterator<'a> for Wire<P, C> {
+impl<'a, P: Send + Sync + 'a, C: Send + Sync + 'a> IntoParallelRefIterator<'a> for Wire<P, C> {
     type Item = &'a Edge<P, C>;
     type Iter = EdgeParallelIter<'a, P, C>;
     fn par_iter(&'a self) -> Self::Iter {
@@ -891,7 +891,7 @@ impl<'a, P: Send + 'a, C: Send + 'a> IntoParallelRefIterator<'a> for Wire<P, C> 
     }
 }
 
-impl<'a, P: Send + 'a, C: Send + 'a> IntoParallelRefMutIterator<'a> for Wire<P, C> {
+impl<'a, P: Send + Sync + 'a, C: Send + Sync + 'a> IntoParallelRefMutIterator<'a> for Wire<P, C> {
     type Item = &'a mut Edge<P, C>;
     type Iter = EdgeParallelIterMut<'a, P, C>;
     fn par_iter_mut(&'a mut self) -> Self::Iter {
@@ -899,7 +899,7 @@ impl<'a, P: Send + 'a, C: Send + 'a> IntoParallelRefMutIterator<'a> for Wire<P, 
     }
 }
 
-impl<P: Send, C: Send> ParallelExtend<Edge<P, C>> for Wire<P, C> {
+impl<P: Send + Sync, C: Send + Sync> ParallelExtend<Edge<P, C>> for Wire<P, C> {
     fn par_extend<I>(&mut self, par_iter: I)
     where
         I: IntoParallelIterator<Item = Edge<P, C>>,

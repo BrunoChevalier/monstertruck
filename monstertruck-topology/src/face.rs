@@ -61,7 +61,7 @@ impl<P, C, S> Face<P, C, S> {
         Face {
             boundaries,
             orientation: true,
-            surface: Arc::new(Mutex::new(surface)),
+            surface: Arc::new(RwLock::new(surface)),
         }
     }
 
@@ -219,7 +219,7 @@ impl<P, C, S> Face<P, C, S> {
         S: Clone,
     {
         let surface = self.surface();
-        self.surface = Arc::new(Mutex::new(surface));
+        self.surface = Arc::new(RwLock::new(surface));
     }
 
     /// Returns an iterator over the edges.
@@ -432,7 +432,7 @@ impl<P, C, S> Face<P, C, S> {
             .iter()
             .map(|wire| wire.try_mapped(&mut point_mapping, &mut curve_mapping))
             .collect::<Option<Vec<_>>>()?;
-        let surface = surface_mapping(&*self.surface.lock())?;
+        let surface = surface_mapping(&*self.surface.read())?;
         let mut face = Face::debug_new(wires, surface);
         if !self.orientation() {
             face.invert();
@@ -504,7 +504,7 @@ impl<P, C, S> Face<P, C, S> {
             .iter()
             .map(|wire| wire.mapped(&mut point_mapping, &mut curve_mapping))
             .collect();
-        let surface = surface_mapping(&*self.surface.lock());
+        let surface = surface_mapping(&*self.surface.read());
         let mut face = Face::debug_new(wires, surface);
         if !self.orientation() {
             face.invert();
@@ -527,7 +527,7 @@ impl<P, C, S> Face<P, C, S> {
     where
         S: Clone,
     {
-        self.surface.lock().clone()
+        self.surface.read().clone()
     }
 
     /// Sets the surface of face.
@@ -556,7 +556,7 @@ impl<P, C, S> Face<P, C, S> {
     /// ```
     #[inline(always)]
     pub fn set_surface(&self, surface: S) {
-        *self.surface.lock() = surface;
+        *self.surface.write() = surface;
     }
 
     /// Inverts the direction of the face.
@@ -907,7 +907,7 @@ impl<P, C, S> Face<P, C, S> {
         let mut face0 = Face {
             boundaries: self.boundaries.clone(),
             orientation: self.orientation,
-            surface: Arc::new(Mutex::new(self.surface())),
+            surface: Arc::new(RwLock::new(self.surface())),
         };
         let boundary = &mut face0.boundaries[0];
         let i = boundary
@@ -930,7 +930,7 @@ impl<P, C, S> Face<P, C, S> {
         let face1 = Face {
             boundaries: vec![new_wire],
             orientation: self.orientation,
-            surface: Arc::new(Mutex::new(self.surface())),
+            surface: Arc::new(RwLock::new(self.surface())),
         };
         Some((face0, face1))
     }
@@ -1032,7 +1032,7 @@ impl<P, C, S> Face<P, C, S> {
         Some(Face {
             boundaries,
             orientation: self.orientation(),
-            surface: Arc::new(Mutex::new(surface)),
+            surface: Arc::new(RwLock::new(surface)),
         })
     }
 
@@ -1107,8 +1107,8 @@ impl<P, C, S: Clone + Invertible> Face<P, C, S> {
     #[inline(always)]
     pub fn oriented_surface(&self) -> S {
         match self.orientation {
-            true => self.surface.lock().clone(),
-            false => self.surface.lock().inverse(),
+            true => self.surface.read().clone(),
+            false => self.surface.read().inverse(),
         }
     }
 }
@@ -1123,10 +1123,10 @@ where
     /// and the geometry of edge.
     #[inline(always)]
     pub fn is_geometric_consistent(&self) -> bool {
-        let surface = &*self.surface.lock();
+        let surface = &*self.surface.read();
         self.boundary_iters().into_iter().flatten().all(|edge| {
             let edge_consist = edge.is_geometric_consistent();
-            let curve = &*edge.curve.lock();
+            let curve = &*edge.curve.read();
             let curve_consist = surface.include(curve);
             edge_consist && curve_consist
         })
@@ -1244,7 +1244,7 @@ impl<P: Debug, C: Debug, S: Debug> Debug for DebugDisplay<'_, Face<P, C, S>, Fac
                         .map(|wire| wire.display(wire_format))
                         .collect::<Vec<_>>(),
                 )
-                .field("entity", &MutexFmt(&self.entity.surface))
+                .field("entity", &RwLockFmt(&self.entity.surface))
                 .finish(),
             FaceDisplayFormat::BoundariesAndID { wire_format } => f
                 .debug_struct("Face")
@@ -1270,7 +1270,7 @@ impl<P: Debug, C: Debug, S: Debug> Debug for DebugDisplay<'_, Face<P, C, S>, Fac
                         .map(|wire| wire.display(wire_format))
                         .collect::<Vec<_>>(),
                 )
-                .field("entity", &MutexFmt(&self.entity.surface))
+                .field("entity", &RwLockFmt(&self.entity.surface))
                 .finish(),
             FaceDisplayFormat::LoopsListTuple { wire_format } => f
                 .debug_tuple("Face")
@@ -1293,7 +1293,7 @@ impl<P: Debug, C: Debug, S: Debug> Debug for DebugDisplay<'_, Face<P, C, S>, Fac
                 )
                 .finish(),
             FaceDisplayFormat::AsSurface => {
-                f.write_fmt(format_args!("{:?}", &MutexFmt(&self.entity.surface)))
+                f.write_fmt(format_args!("{:?}", &RwLockFmt(&self.entity.surface)))
             }
         }
     }

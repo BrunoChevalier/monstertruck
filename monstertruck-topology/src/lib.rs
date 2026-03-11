@@ -83,7 +83,7 @@
 
 use monstertruck_core::{id::Id, tolerance::*};
 use monstertruck_traits::*;
-use parking_lot::Mutex;
+use parking_lot::RwLock;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
@@ -107,7 +107,7 @@ const SEARCH_PARAMETER_TRIALS: usize = 100;
 /// ```
 #[derive(Debug)]
 pub struct Vertex<P> {
-    point: Arc<Mutex<P>>,
+    point: Arc<RwLock<P>>,
 }
 
 /// Edge, which consists two vertices.
@@ -126,7 +126,7 @@ pub struct Vertex<P> {
 pub struct Edge<P, C> {
     vertices: (Vertex<P>, Vertex<P>),
     orientation: bool,
-    curve: Arc<Mutex<C>>,
+    curve: Arc<RwLock<C>>,
 }
 
 /// Wire, a path or cycle which consists some edges.
@@ -157,7 +157,7 @@ pub struct Wire<P, C> {
 pub struct Face<P, C, S> {
     boundaries: Vec<Wire<P, C>>,
     orientation: bool,
-    surface: Arc<Mutex<S>>,
+    surface: Arc<RwLock<S>>,
 }
 
 /// Shell, a connected compounded faces.
@@ -220,7 +220,7 @@ impl<T> RemoveTry<T> for Result<T> {
 /// assert_ne!(entity, v.point());
 /// assert_eq!(v_id, v.id());
 /// ```
-pub type VertexId<P> = Id<Mutex<P>>;
+pub type VertexId<P> = Id<RwLock<P>>;
 
 /// The id that does not depend on the direction of the edge.
 /// # Examples
@@ -232,7 +232,7 @@ pub type VertexId<P> = Id<Mutex<P>>;
 /// assert_ne!(edge0, edge1);
 /// assert_eq!(edge0.id(), edge1.id());
 /// ```
-pub type EdgeId<C> = Id<Mutex<C>>;
+pub type EdgeId<C> = Id<RwLock<C>>;
 
 /// The id that does not depend on the direction of the face.
 /// # Examples
@@ -252,7 +252,7 @@ pub type EdgeId<C> = Id<Mutex<C>>;
 /// assert_eq!(face0.id(), face1.id());
 /// assert_ne!(face0.id(), face2.id());
 /// ```
-pub type FaceId<S> = Id<Mutex<S>>;
+pub type FaceId<S> = Id<RwLock<S>>;
 
 /// Renamed to [`VertexId`] per RFC 430 (C-CASE).
 #[deprecated(note = "renamed to VertexId per RFC 430 (C-CASE)")]
@@ -424,11 +424,11 @@ pub mod format {
     }
 
     #[derive(Clone)]
-    pub(super) struct MutexFmt<'a, T>(pub &'a Mutex<T>);
+    pub(super) struct RwLockFmt<'a, T>(pub &'a RwLock<T>);
 
-    impl<T: Debug> Debug for MutexFmt<'_, T> {
+    impl<T: Debug> Debug for RwLockFmt<'_, T> {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-            f.write_fmt(format_args!("{:?}", self.0.lock()))
+            f.write_fmt(format_args!("{:?}", self.0.read()))
         }
     }
 }

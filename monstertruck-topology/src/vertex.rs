@@ -14,7 +14,7 @@ impl<P> Vertex<P> {
     #[inline(always)]
     pub fn new(point: P) -> Vertex<P> {
         Vertex {
-            point: Arc::new(Mutex::new(point)),
+            point: Arc::new(RwLock::new(point)),
         }
     }
 
@@ -40,7 +40,7 @@ impl<P> Vertex<P> {
     where
         P: Clone,
     {
-        self.point.lock().clone()
+        self.point.read().clone()
     }
 
     /// Sets the point of vertex.
@@ -63,7 +63,7 @@ impl<P> Vertex<P> {
     /// ```
     #[inline(always)]
     pub fn set_point(&self, point: P) {
-        *self.point.lock() = point;
+        *self.point.write() = point;
     }
 
     /// Returns vertex whose point is converted by `point_mapping`.
@@ -76,7 +76,7 @@ impl<P> Vertex<P> {
         &self,
         mut point_mapping: impl FnMut(&P) -> Option<Q>,
     ) -> Option<Vertex<Q>> {
-        Some(Vertex::new(point_mapping(&*self.point.lock())?))
+        Some(Vertex::new(point_mapping(&*self.point.read())?))
     }
 
     /// Returns vertex whose point is converted by `point_mapping`.
@@ -93,7 +93,7 @@ impl<P> Vertex<P> {
     #[doc(hidden)]
     #[inline(always)]
     pub fn mapped<Q>(&self, mut point_mapping: impl FnMut(&P) -> Q) -> Vertex<Q> {
-        Vertex::new(point_mapping(&*self.point.lock()))
+        Vertex::new(point_mapping(&*self.point.read()))
     }
 
     /// Returns the id of the vertex.
@@ -192,17 +192,17 @@ impl<P: Debug> Debug for DebugDisplay<'_, Vertex<P>, VertexDisplayFormat> {
             VertexDisplayFormat::Full => f
                 .debug_struct("Vertex")
                 .field("id", &Arc::as_ptr(&self.entity.point))
-                .field("entity", &MutexFmt(&self.entity.point))
+                .field("entity", &RwLockFmt(&self.entity.point))
                 .finish(),
             VertexDisplayFormat::IDTuple => {
                 f.debug_tuple("Vertex").field(&self.entity.id()).finish()
             }
             VertexDisplayFormat::PointTuple => f
                 .debug_tuple("Vertex")
-                .field(&MutexFmt(&self.entity.point))
+                .field(&RwLockFmt(&self.entity.point))
                 .finish(),
             VertexDisplayFormat::AsPoint => {
-                f.write_fmt(format_args!("{:?}", &MutexFmt(&self.entity.point)))
+                f.write_fmt(format_args!("{:?}", &RwLockFmt(&self.entity.point)))
             }
         }
     }

@@ -42,7 +42,7 @@ impl<P, C> Edge<P, C> {
         Edge {
             vertices: (front.clone(), back.clone()),
             orientation: true,
-            curve: Arc::new(Mutex::new(curve)),
+            curve: Arc::new(RwLock::new(curve)),
         }
     }
 
@@ -262,7 +262,7 @@ impl<P, C> Edge<P, C> {
     where
         C: Clone,
     {
-        self.curve.lock().clone()
+        self.curve.read().clone()
     }
 
     /// Set the curve.
@@ -286,7 +286,7 @@ impl<P, C> Edge<P, C> {
     /// ```
     #[inline(always)]
     pub fn set_curve(&self, curve: C) {
-        *self.curve.lock() = curve;
+        *self.curve.write() = curve;
     }
 
     /// Returns the id that does not depend on the direction of the edge.
@@ -341,8 +341,8 @@ impl<P, C> Edge<P, C> {
         C: Clone + Invertible,
     {
         match self.orientation {
-            true => self.curve.lock().clone(),
-            false => self.curve.lock().inverse(),
+            true => self.curve.read().clone(),
+            false => self.curve.read().inverse(),
         }
     }
 
@@ -360,7 +360,7 @@ impl<P, C> Edge<P, C> {
     ) -> Option<Edge<Q, D>> {
         let v0 = self.absolute_front().try_mapped(&mut point_mapping)?;
         let v1 = self.absolute_back().try_mapped(&mut point_mapping)?;
-        let curve = curve_mapping(&*self.curve.lock())?;
+        let curve = curve_mapping(&*self.curve.read())?;
         let mut edge = Edge::debug_new(&v0, &v1, curve);
         if !self.orientation() {
             edge.invert();
@@ -397,7 +397,7 @@ impl<P, C> Edge<P, C> {
     ) -> Edge<Q, D> {
         let v0 = self.absolute_front().mapped(&mut point_mapping);
         let v1 = self.absolute_back().mapped(&mut point_mapping);
-        let curve = curve_mapping(&*self.curve.lock());
+        let curve = curve_mapping(&*self.curve.read());
         let mut edge = Edge::debug_new(&v0, &v1, curve);
         if edge.orientation() != self.orientation() {
             edge.invert();
@@ -413,11 +413,11 @@ impl<P, C> Edge<P, C> {
         P: Tolerance,
         C: BoundedCurve<Point = P>,
     {
-        let curve = self.curve.lock();
+        let curve = self.curve.read();
         let geom_front = curve.front();
         let geom_back = curve.back();
-        let top_front = self.absolute_front().point.lock();
-        let top_back = self.absolute_back().point.lock();
+        let top_front = self.absolute_front().point.read();
+        let top_back = self.absolute_back().point.read();
         geom_front.near(&*top_front) && geom_back.near(&*top_back)
     }
 
@@ -430,12 +430,12 @@ impl<P, C> Edge<P, C> {
         let edge0 = Edge {
             vertices: (self.absolute_front().clone(), vertex.clone()),
             orientation: self.orientation,
-            curve: Arc::new(Mutex::new(curve0)),
+            curve: Arc::new(RwLock::new(curve0)),
         };
         let edge1 = Edge {
             vertices: (vertex.clone(), self.absolute_back().clone()),
             orientation: self.orientation,
-            curve: Arc::new(Mutex::new(curve1)),
+            curve: Arc::new(RwLock::new(curve1)),
         };
         match self.orientation {
             true => (edge0, edge1),
@@ -613,7 +613,7 @@ impl<P: Debug, C: Debug> Debug for DebugDisplay<'_, Edge<P, C>, EdgeDisplayForma
                         self.entity.back().display(vertex_format),
                     ),
                 )
-                .field("entity", &MutexFmt(&self.entity.curve))
+                .field("entity", &RwLockFmt(&self.entity.curve))
                 .finish(),
             EdgeDisplayFormat::VerticesTupleAndID { vertex_format } => f
                 .debug_struct("Edge")
@@ -635,7 +635,7 @@ impl<P: Debug, C: Debug> Debug for DebugDisplay<'_, Edge<P, C>, EdgeDisplayForma
                         self.entity.back().display(vertex_format),
                     ),
                 )
-                .field("entity", &MutexFmt(&self.entity.curve))
+                .field("entity", &RwLockFmt(&self.entity.curve))
                 .finish(),
             EdgeDisplayFormat::VerticesTupleStruct { vertex_format } => f
                 .debug_tuple("Edge")
@@ -648,7 +648,7 @@ impl<P: Debug, C: Debug> Debug for DebugDisplay<'_, Edge<P, C>, EdgeDisplayForma
                 self.entity.back().display(vertex_format),
             )),
             EdgeDisplayFormat::AsCurve => {
-                f.write_fmt(format_args!("{:?}", &MutexFmt(&self.entity.curve)))
+                f.write_fmt(format_args!("{:?}", &RwLockFmt(&self.entity.curve)))
             }
         }
     }
