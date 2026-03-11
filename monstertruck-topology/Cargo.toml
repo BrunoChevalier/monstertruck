@@ -27,3 +27,8 @@ monstertruck-traits = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "rwlock_contention"
+harness = false
