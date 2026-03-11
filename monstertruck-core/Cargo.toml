@@ -12,11 +12,12 @@ keywords = ["truck", "graphics"]
 categories = ["graphics"]
 
 [dependencies]
-cgmath = { workspace = true }
-matext4cgmath = { workspace = true }
+monstertruck-math = { workspace = true }
+num-traits = "0.2"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+cgmath = { workspace = true }
 proptest = { workspace = true }

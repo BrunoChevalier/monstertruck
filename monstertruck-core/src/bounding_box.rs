@@ -1,4 +1,5 @@
-use cgmath::*;
+use monstertruck_math::prelude::*;
+use monstertruck_math::*;
 use serde::*;
 use std::cmp::Ordering;
 use std::ops::Index;

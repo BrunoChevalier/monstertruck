@@ -1,5 +1,6 @@
 use crate::cgmath_extend_traits::*;
-use cgmath::*;
+use monstertruck_math::prelude::*;
+use monstertruck_math::*;
 use num_traits::NumCast;
 use std::fmt::Debug;
 
@@ -206,22 +207,22 @@ impl<V> CurveDerivatives<V> {
     ///
     /// // curve0(t) = (cos(t), sin(t))
     /// let raw_derivs0: [Vector2; 3] = [
-    ///     (f64::cos(t), f64::sin(t)).into(),
-    ///     (-f64::sin(t), f64::cos(t)).into(),
-    ///     (-f64::cos(t), -f64::sin(t)).into(),
+    ///     Vector2::new(f64::cos(t), f64::sin(t)),
+    ///     Vector2::new(-f64::sin(t), f64::cos(t)),
+    ///     Vector2::new(-f64::cos(t), -f64::sin(t)),
     /// ];
     /// let derivs0 = CurveDerivatives::try_from(raw_derivs0).map_err(anyhow::Error::msg)?;
     ///
     /// // curve1(t) = cos(t) * (cos(t), sin(t))
     /// let raw_derivs1: [Vector2; 3] = [
-    ///     ((1.0 + f64::cos(2.0 * t)) / 2.0, f64::sin(2.0 * t) / 2.0).into(),
-    ///     (-f64::sin(2.0 * t), f64::cos(2.0 * t)).into(),
-    ///     (-2.0 * f64::cos(2.0 * t), -2.0 * f64::sin(2.0 * t)).into(),
+    ///     Vector2::new((1.0 + f64::cos(2.0 * t)) / 2.0, f64::sin(2.0 * t) / 2.0),
+    ///     Vector2::new(-f64::sin(2.0 * t), f64::cos(2.0 * t)),
+    ///     Vector2::new(-2.0 * f64::cos(2.0 * t), -2.0 * f64::sin(2.0 * t)),
     /// ];
     /// let derivs1 = CurveDerivatives::try_from(raw_derivs1).map_err(anyhow::Error::msg)?;
     ///
     /// // curve0(t).dot(curve1(t)) = cos(t)
-    /// let res = derivs0.combinatorial_derivative(&derivs1, Vector2::dot, 2);
+    /// let res = derivs0.combinatorial_derivative(&derivs1, InnerSpace::dot, 2);
     /// let ans = -f64::cos(t);
     ///
     /// assert_near2!(res, ans);
@@ -275,22 +276,22 @@ impl<V> CurveDerivatives<V> {
     ///
     /// // curve0(t) = (cos(t), sin(t))
     /// let raw_derivs0: [Vector2; 3] = [
-    ///     (f64::cos(t), f64::sin(t)).into(),
-    ///     (-f64::sin(t), f64::cos(t)).into(),
-    ///     (-f64::cos(t), -f64::sin(t)).into(),
+    ///     Vector2::new(f64::cos(t), f64::sin(t)),
+    ///     Vector2::new(-f64::sin(t), f64::cos(t)),
+    ///     Vector2::new(-f64::cos(t), -f64::sin(t)),
     /// ];
     /// let derivs0 = CurveDerivatives::try_from(raw_derivs0).map_err(anyhow::Error::msg)?;
     ///
     /// // curve1(t) = cos(t) * (cos(t), sin(t))
     /// let raw_derivs1: [Vector2; 3] = [
-    ///     ((1.0 + f64::cos(2.0 * t)) / 2.0, f64::sin(2.0 * t) / 2.0).into(),
-    ///     (-f64::sin(2.0 * t), f64::cos(2.0 * t)).into(),
-    ///     (-2.0 * f64::cos(2.0 * t), -2.0 * f64::sin(2.0 * t)).into(),
+    ///     Vector2::new((1.0 + f64::cos(2.0 * t)) / 2.0, f64::sin(2.0 * t) / 2.0),
+    ///     Vector2::new(-f64::sin(2.0 * t), f64::cos(2.0 * t)),
+    ///     Vector2::new(-2.0 * f64::cos(2.0 * t), -2.0 * f64::sin(2.0 * t)),
     /// ];
     /// let derivs1 = CurveDerivatives::try_from(raw_derivs1).map_err(anyhow::Error::msg)?;
     ///
     /// // curve0(t).dot(curve1(t)) = cos(t)
-    /// let res = derivs0.combinatorial_derivatives(&derivs1, Vector2::dot);
+    /// let res = derivs0.combinatorial_derivatives(&derivs1, InnerSpace::dot);
     /// let raw_ans: [f64; 3] = [f64::cos(t), -f64::sin(t), -f64::cos(t)];
     /// let ans = CurveDerivatives::try_from(raw_ans).map_err(anyhow::Error::msg)?;
     ///
@@ -692,21 +693,21 @@ impl<V> SurfaceDerivatives<V> {
     /// let raw_derivs: &[&[Vector4]] = &[
     ///     &[
     ///         // u-rank = 0, v-rank = 0
-    ///         (u * u * u * v * v, u * u * v * v * v, u * v, u).into(),
+    ///         Vector4::new(u * u * u * v * v, u * u * v * v * v, u * v, u),
     ///         // u-rank = 0, v-rank = 1
-    ///         (2.0 * u * u * u * v, 3.0 * u * u * v * v, u, 0.0).into(),
+    ///         Vector4::new(2.0 * u * u * u * v, 3.0 * u * u * v * v, u, 0.0),
     ///         // u-rank = 0, v-rank = 2
-    ///         (2.0 * u * u * u, 6.0 * u * u * v, 0.0, 0.0).into(),
+    ///         Vector4::new(2.0 * u * u * u, 6.0 * u * u * v, 0.0, 0.0),
     ///     ],
     ///     &[
     ///         // u-rank = 1, v-rank = 0
-    ///         (3.0 * u * u * v * v, 2.0 * u * v * v * v, v, 1.0).into(),
+    ///         Vector4::new(3.0 * u * u * v * v, 2.0 * u * v * v * v, v, 1.0),
     ///         // u-rank = 1, v-rank = 1
-    ///         (6.0 * u * u * v, 6.0 * u * v * v, 1.0, 0.0).into(),
+    ///         Vector4::new(6.0 * u * u * v, 6.0 * u * v * v, 1.0, 0.0),
     ///     ],
     ///     &[
     ///         // u-rank = 2, v-rank = 0
-    ///         (6.0 * u * v * v, 2.0 * v * v * v, 0.0, 0.0).into(),
+    ///         Vector4::new(6.0 * u * v * v, 2.0 * v * v * v, 0.0, 0.0),
     ///     ],
     /// ];
     /// let mut derivs = SurfaceDerivatives::try_from(raw_derivs).map_err(anyhow::Error::msg)?;
@@ -716,21 +717,21 @@ impl<V> SurfaceDerivatives<V> {
     /// let raw_ans: &[&[Vector3]] = &[
     ///     &[
     ///         // u-rank = 0, v-rank = 0
-    ///         (u * u * v * v, u * v * v * v, v).into(),
+    ///         Vector3::new(u * u * v * v, u * v * v * v, v),
     ///         // u-rank = 0, v-rank = 1
-    ///         (2.0 * u * u * v, 3.0 * u * v * v, 1.0).into(),
+    ///         Vector3::new(2.0 * u * u * v, 3.0 * u * v * v, 1.0),
     ///         // u-rank = 0, v-rank = 2
-    ///         (2.0 * u * u, 6.0 * u * v, 0.0).into(),
+    ///         Vector3::new(2.0 * u * u, 6.0 * u * v, 0.0),
     ///     ],
     ///     &[
     ///         // u-rank = 1, v-rank = 0
-    ///         (2.0 * u * v * v, v * v * v, 0.0).into(),
+    ///         Vector3::new(2.0 * u * v * v, v * v * v, 0.0),
     ///         // u-rank = 1, v-rank = 1
-    ///         (4.0 * u * v, 3.0 * v * v, 0.0).into(),
+    ///         Vector3::new(4.0 * u * v, 3.0 * v * v, 0.0),
     ///     ],
     ///     &[
     ///         // u-rank = 2, v-rank = 0
-    ///         (2.0 * v * v, 0.0, 0.0).into(),
+    ///         Vector3::new(2.0 * v * v, 0.0, 0.0),
     ///     ],
     /// ];
     /// let mut ans_derivs = SurfaceDerivatives::try_from(raw_ans).map_err(anyhow::Error::msg)?;
@@ -791,17 +792,17 @@ impl<V> SurfaceDerivatives<V> {
     /// // s(u, v) = u^3 + v, c(t) = (t, t^2), s(c(t)) = t^3 + t^2
     ///
     /// let raw_cderivs: [Vector2; 3] = [
-    ///     (t, t * t).into(),
-    ///     (1.0, 2.0 * t).into(),
-    ///     (0.0, 2.0).into(),
+    ///     Vector2::new(t, t * t),
+    ///     Vector2::new(1.0, 2.0 * t),
+    ///     Vector2::new(0.0, 2.0),
     /// ];
     /// let cderivs = CurveDerivatives::try_from(raw_cderivs).map_err(anyhow::Error::msg)?;
     ///
-    /// let Vector2 { x: u, y: v } = cderivs[0];
+    /// let (u, v) = (cderivs[0][0], cderivs[0][1]);
     /// let raw_derivs: &[&[Vector1]] = &[
-    ///     &[(u * u * u + v,).into(), (1.0,).into(), (0.0,).into()],
-    ///     &[(3.0 * u * u,).into(), (0.0,).into()],
-    ///     &[(6.0 * u,).into()],
+    ///     &[Vector1::new(u * u * u + v), Vector1::new(1.0), Vector1::new(0.0)],
+    ///     &[Vector1::new(3.0 * u * u), Vector1::new(0.0)],
+    ///     &[Vector1::new(6.0 * u)],
     /// ];
     /// let sderivs = SurfaceDerivatives::try_from(raw_derivs).map_err(anyhow::Error::msg)?;
     ///
@@ -862,25 +863,25 @@ impl<V> SurfaceDerivatives<V> {
     /// // s(u, v) = u^3 + v, c(t) = (t, t^2), s(c(t)) = t^3 + t^2
     ///
     /// let raw_cderivs: [Vector2; 3] = [
-    ///     (t, t * t).into(),
-    ///     (1.0, 2.0 * t).into(),
-    ///     (0.0, 2.0).into(),
+    ///     Vector2::new(t, t * t),
+    ///     Vector2::new(1.0, 2.0 * t),
+    ///     Vector2::new(0.0, 2.0),
     /// ];
     /// let cderivs = CurveDerivatives::try_from(raw_cderivs).map_err(anyhow::Error::msg)?;
     ///
-    /// let Vector2 { x: u, y: v } = cderivs[0];
+    /// let (u, v) = (cderivs[0][0], cderivs[0][1]);
     /// let raw_derivs: &[&[Vector1]] = &[
-    ///     &[(u * u * u + v,).into(), (1.0,).into(), (0.0,).into()],
-    ///     &[(3.0 * u * u,).into(), (0.0,).into()],
-    ///     &[(6.0 * u,).into()],
+    ///     &[Vector1::new(u * u * u + v), Vector1::new(1.0), Vector1::new(0.0)],
+    ///     &[Vector1::new(3.0 * u * u), Vector1::new(0.0)],
+    ///     &[Vector1::new(6.0 * u)],
     /// ];
     /// let sderivs = SurfaceDerivatives::try_from(raw_derivs).map_err(anyhow::Error::msg)?;
     /// let derivs = sderivs.composite_derivatives(&cderivs);
     ///
     /// let raw_ans: &[Vector1] = &[
-    ///     (t * t * t + t * t,).into(),
-    ///     (3.0 * t * t + 2.0 * t,).into(),
-    ///     (6.0 * t + 2.0,).into(),
+    ///     Vector1::new(t * t * t + t * t),
+    ///     Vector1::new(3.0 * t * t + 2.0 * t),
+    ///     Vector1::new(6.0 * t + 2.0),
     /// ];
     /// let ans = CurveDerivatives::try_from(raw_ans).map_err(anyhow::Error::msg)?;
     /// assert_eq!(derivs, ans);

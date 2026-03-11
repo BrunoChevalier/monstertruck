@@ -1,5 +1,5 @@
 use crate::cgmath64::*;
-use cgmath::AbsDiffEq;
+use monstertruck_math::AbsDiffEq;
 use std::fmt::Debug;
 
 /// general tolerance

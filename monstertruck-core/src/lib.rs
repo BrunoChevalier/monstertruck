@@ -1,4 +1,4 @@
-//! Basic structs and traits: importing cgmath, curve and surface traits, tolerance
+//! Basic structs and traits: importing monstertruck-math, curve and surface traits, tolerance
 
 #![cfg_attr(not(debug_assertions), deny(warnings))]
 #![deny(clippy::all, rust_2018_idioms)]
@@ -33,14 +33,18 @@ pub mod tolerance;
 
 pub use crate::cgmath_extend_traits::*;
 pub use crate::derivatives::*;
-pub use cgmath::prelude::*;
-pub use cgmath::{Deg, Rad, frustum, ortho, perspective};
-pub use matext4cgmath::*;
+pub use monstertruck_math::prelude::*;
+pub use monstertruck_math::{Deg, Rad, frustum, ortho, perspective};
+
+// Re-export nalgebra for downstream crates that need it.
+pub use monstertruck_math::nalgebra;
+// Re-export num_traits for downstream crates.
+pub use monstertruck_math::num_traits;
 
 macro_rules! f64_type {
     ($typename: ident) => {
         /// redefinition, scalar = `f64`.
-        pub type $typename = cgmath::$typename<f64>;
+        pub type $typename = monstertruck_math::$typename<f64>;
     };
     ($a: ident, $($b: ident), *) => {
         f64_type!($a);

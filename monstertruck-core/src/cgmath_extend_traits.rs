@@ -1,4 +1,5 @@
-use cgmath::*;
+use monstertruck_math::prelude::*;
+use monstertruck_math::*;
 
 /// declare control point
 pub mod control_point {
@@ -144,9 +145,10 @@ pub mod control_point {
 /// # Examples
 /// ```
 /// use monstertruck_core::cgmath64::*;
-/// assert_eq!(Vector4::new(8.0, 6.0, 4.0, 2.0).truncate(), Vector3::new(8.0, 6.0, 4.0));
-/// assert_eq!(Vector4::new(8.0, 6.0, 4.0, 2.0).weight(), 2.0);
-/// assert_eq!(Vector4::new(8.0, 6.0, 4.0, 2.0).to_point(), Point3::new(4.0, 3.0, 2.0));
+/// let v = Vector4::new(8.0, 6.0, 4.0, 2.0);
+/// assert_eq!(Homogeneous::truncate(v), Vector3::new(8.0, 6.0, 4.0));
+/// assert_eq!(Homogeneous::weight(v), 2.0);
+/// assert_eq!(Homogeneous::to_point(v), Point3::new(4.0, 3.0, 2.0));
 /// assert_eq!(Vector4::from_point(Point3::new(4.0, 3.0, 2.0)), Vector4::new(4.0, 3.0, 2.0, 1.0));
 /// ```
 pub trait Homogeneous: VectorSpace {
@@ -280,27 +282,27 @@ pub fn rat_ders<V: Homogeneous>(ders: &[V], evals: &mut [<V::Point as EuclideanS
 /// let ders: [[Vector4; 3]; 3] = [
 ///     [
 ///         // u-rank = 0, v-rank = 0
-///         (u * u * u * v * v, u * u * v * v * v, u * v, u).into(),
+///         Vector4::new(u * u * u * v * v, u * u * v * v * v, u * v, u),
 ///         // u-rank = 0, v-rank = 1
-///         (2.0 * u * u * u * v, 3.0 * u * u * v * v, u, 0.0).into(),
+///         Vector4::new(2.0 * u * u * u * v, 3.0 * u * u * v * v, u, 0.0),
 ///         // u-rank = 0, v-rank = 2
-///         (2.0 * u * u * u, 6.0 * u * u * v, 0.0, 0.0).into(),
+///         Vector4::new(2.0 * u * u * u, 6.0 * u * u * v, 0.0, 0.0),
 ///     ],
 ///     [
 ///         // u-rank = 1, v-rank = 0
-///         (3.0 * u * u * v * v, 2.0 * u * v * v * v, v, 1.0).into(),
+///         Vector4::new(3.0 * u * u * v * v, 2.0 * u * v * v * v, v, 1.0),
 ///         // u-rank = 1, v-rank = 1
-///         (6.0 * u * u * v, 6.0 * u * v * v, 1.0, 0.0).into(),
+///         Vector4::new(6.0 * u * u * v, 6.0 * u * v * v, 1.0, 0.0),
 ///         // u-rank = 1, v-rank = 2
-///         (6.0 * u * u, 12.0 * u * v, 0.0, 0.0).into(),
+///         Vector4::new(6.0 * u * u, 12.0 * u * v, 0.0, 0.0),
 ///     ],
 ///     [
 ///         // u-rank = 2, v-rank = 0
-///         (6.0 * u * v * v, 2.0 * v * v * v, 0.0, 0.0).into(),
+///         Vector4::new(6.0 * u * v * v, 2.0 * v * v * v, 0.0, 0.0),
 ///         // u-rank = 2, v-rank = 1
-///         (12.0 * u * v, 6.0 * v * v, 0.0, 0.0).into(),
+///         Vector4::new(12.0 * u * v, 6.0 * v * v, 0.0, 0.0),
 ///         // u-rank = 2, v-rank = 2
-///         (12.0 * u, 12.0 * v, 0.0, 0.0).into(),
+///         Vector4::new(12.0 * u, 12.0 * v, 0.0, 0.0),
 ///     ],
 /// ];
 ///
@@ -372,27 +374,27 @@ where
 /// let ders: [[Vector4; 3]; 3] = [
 ///     [
 ///         // u-rank = 0, v-rank = 0
-///         (u * u * u * v * v, u * u * v * v * v, u * v, u).into(),
+///         Vector4::new(u * u * u * v * v, u * u * v * v * v, u * v, u),
 ///         // u-rank = 0, v-rank = 1
-///         (2.0 * u * u * u * v, 3.0 * u * u * v * v, u, 0.0).into(),
+///         Vector4::new(2.0 * u * u * u * v, 3.0 * u * u * v * v, u, 0.0),
 ///         // u-rank = 0, v-rank = 2
-///         (2.0 * u * u * u, 6.0 * u * u * v, 0.0, 0.0).into(),
+///         Vector4::new(2.0 * u * u * u, 6.0 * u * u * v, 0.0, 0.0),
 ///     ],
 ///     [
 ///         // u-rank = 1, v-rank = 0
-///         (3.0 * u * u * v * v, 2.0 * u * v * v * v, v, 1.0).into(),
+///         Vector4::new(3.0 * u * u * v * v, 2.0 * u * v * v * v, v, 1.0),
 ///         // u-rank = 1, v-rank = 1
-///         (6.0 * u * u * v, 6.0 * u * v * v, 1.0, 0.0).into(),
+///         Vector4::new(6.0 * u * u * v, 6.0 * u * v * v, 1.0, 0.0),
 ///         // u-rank = 1, v-rank = 2
-///         (6.0 * u * u, 12.0 * u * v, 0.0, 0.0).into(),
+///         Vector4::new(6.0 * u * u, 12.0 * u * v, 0.0, 0.0),
 ///     ],
 ///     [
 ///         // u-rank = 2, v-rank = 0
-///         (6.0 * u * v * v, 2.0 * v * v * v, 0.0, 0.0).into(),
+///         Vector4::new(6.0 * u * v * v, 2.0 * v * v * v, 0.0, 0.0),
 ///         // u-rank = 2, v-rank = 1
-///         (12.0 * u * v, 6.0 * v * v, 0.0, 0.0).into(),
+///         Vector4::new(12.0 * u * v, 6.0 * v * v, 0.0, 0.0),
 ///         // u-rank = 2, v-rank = 2
-///         (12.0 * u, 12.0 * v, 0.0, 0.0).into(),
+///         Vector4::new(12.0 * u, 12.0 * v, 0.0, 0.0),
 ///     ],
 /// ];
 /// // evals must be initialized by zero.
@@ -403,27 +405,27 @@ where
 /// let ans: [[Vector3; 3]; 3] = [
 ///     [
 ///         // u-rank = 0, v-rank = 0
-///         (u * u * v * v, u * v * v * v, v).into(),
+///         Vector3::new(u * u * v * v, u * v * v * v, v),
 ///         // u-rank = 0, v-rank = 1
-///         (2.0 * u * u * v, 3.0 * u * v * v, 1.0).into(),
+///         Vector3::new(2.0 * u * u * v, 3.0 * u * v * v, 1.0),
 ///         // u-rank = 0, v-rank = 2
-///         (2.0 * u * u, 6.0 * u * v, 0.0).into(),
+///         Vector3::new(2.0 * u * u, 6.0 * u * v, 0.0),
 ///     ],
 ///     [
 ///         // u-rank = 1, v-rank = 0
-///         (2.0 * u * v * v, v * v * v, 0.0).into(),
+///         Vector3::new(2.0 * u * v * v, v * v * v, 0.0),
 ///         // u-rank = 1, v-rank = 1
-///         (4.0 * u * v, 3.0 * v * v, 0.0).into(),
+///         Vector3::new(4.0 * u * v, 3.0 * v * v, 0.0),
 ///         // u-rank = 1, v-rank = 2
-///         (4.0 * u, 6.0 * v, 0.0).into(),
+///         Vector3::new(4.0 * u, 6.0 * v, 0.0),
 ///     ],
 ///     [
 ///         // u-rank = 2, v-rank = 0
-///         (2.0 * v * v, 0.0, 0.0).into(),
+///         Vector3::new(2.0 * v * v, 0.0, 0.0),
 ///         // u-rank = 2, v-rank = 1
-///         (4.0 * v, 0.0, 0.0).into(),
+///         Vector3::new(4.0 * v, 0.0, 0.0),
 ///         // u-rank = 2, v-rank = 2
-///         (4.0, 0.0, 0.0).into(),
+///         Vector3::new(4.0, 0.0, 0.0),
 ///     ],
 /// ];
 /// assert_eq!(evals, ans);
@@ -477,7 +479,7 @@ impl<S: BaseFloat> Homogeneous for Vector3<S> {
     type Point = Point2<S>;
     #[inline(always)]
     fn truncate(self) -> Vector2<S> {
-        self.truncate()
+        Truncate::truncate(self)
     }
     #[inline(always)]
     fn weight(self) -> S {
@@ -493,7 +495,7 @@ impl<S: BaseFloat> Homogeneous for Vector4<S> {
     type Point = Point3<S>;
     #[inline(always)]
     fn truncate(self) -> Vector3<S> {
-        self.truncate()
+        Truncate::truncate(self)
     }
     #[inline(always)]
     fn weight(self) -> S {
@@ -501,7 +503,7 @@ impl<S: BaseFloat> Homogeneous for Vector4<S> {
     }
     #[inline(always)]
     fn from_point(point: Self::Point) -> Self {
-        point.to_homogeneous()
+        ToHomogeneous::to_homogeneous(point)
     }
 }
 

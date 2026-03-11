@@ -1,4 +1,4 @@
-use cgmath::num_traits::{Float, FromPrimitive};
+use num_traits::{Float, FromPrimitive};
 
 // SAFETY: Converts finite f64 constants to `S`. All constants used in this
 // module are well within the representable range of any `Float + FromPrimitive`
@@ -354,7 +354,7 @@ impl<S: Float + FromPrimitive> HashGen<S> for [S; 1] {
 
 macro_rules! derive_hashgen {
     ($from: ty, $into: ty) => {
-        impl<S: Float + FromPrimitive> HashGen<S> for $from {
+        impl<S: Float + FromPrimitive + std::fmt::Debug + Copy + PartialEq + 'static> HashGen<S> for $from {
             fn hash1(seed: Self) -> S {
                 <$into>::hash1(seed.into())
             }
@@ -371,7 +371,7 @@ macro_rules! derive_hashgen {
     };
 }
 
-use cgmath::*;
+use monstertruck_math::*;
 derive_hashgen!(Point1<S>, [S; 1]);
 derive_hashgen!(Point2<S>, [S; 2]);
 derive_hashgen!(Point3<S>, [S; 3]);
