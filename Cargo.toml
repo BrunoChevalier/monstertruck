@@ -8,6 +8,7 @@ members = [
     "monstertruck-core",
     "monstertruck-derive",
     "monstertruck-geometry",
+    "monstertruck-math",
     "monstertruck-traits",
     "monstertruck-wasm",
     "monstertruck-meshing",
@@ -44,6 +45,7 @@ itertools = "0.14"
 js-sys = "0.3"
 log = "0.4"
 matext4cgmath = "0.1"
+nalgebra = { version = "0.33", features = ["serde-serialize"] }
 naga = { version = "27", features = ["wgsl-in"] }
 parking_lot = "0.12"
 pollster = "0.4"
@@ -80,6 +82,7 @@ monstertruck-mesh = { version = "0.1", path = "monstertruck-mesh" }
 monstertruck-meshing = { version = "0.1", path = "monstertruck-meshing" }
 monstertruck-modeling = { version = "0.1", path = "monstertruck-modeling" }
 monstertruck-gpu = { version = "0.1", path = "monstertruck-gpu" }
+monstertruck-math = { version = "0.1", path = "monstertruck-math" }
 monstertruck-render = { version = "0.1", path = "monstertruck-render" }
 monstertruck-solid = { version = "0.1", path = "monstertruck-solid" }
 monstertruck-step = { version = "0.1", path = "monstertruck-step" }
