@@ -209,7 +209,7 @@ fn fs_main(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
                             alpha_to_coverage_enabled: false,
                         },
                         label: None,
-                        multiview: None,
+                        multiview_mask: None,
                         cache: None,
                     }),
             )
@@ -238,7 +238,7 @@ fn fs_main(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
     }
 
     fn create_module(device: &Device, shader: &str) -> Option<ShaderModule> {
-        use naga::{front::wgsl, valid::*};
+        use ::naga::{front::wgsl, valid::*};
         let mut source = BASE_PREFIX.to_string();
         source += shader;
         source += BASE_SHADER;

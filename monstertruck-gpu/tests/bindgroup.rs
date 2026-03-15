@@ -8,12 +8,14 @@ const PICTURE_WIDTH: u32 = 256;
 const PICTURE_HEIGHT: u32 = 256;
 const PICTURE_ASP: f64 = PICTURE_WIDTH as f64 / PICTURE_HEIGHT as f64;
 
-const CAMERA_MATRIX: Matrix4 = Matrix4::from_cols(
-    Vector4::new(1.0, 2.1, 3.2, 4.3),
-    Vector4::new(5.4, 6.5, 7.6, 8.7),
-    Vector4::new(9.8, 10.9, 11.0, 12.0),
-    Vector4::new(13.0, 14.0, 15.0, 16.23),
-);
+fn camera_matrix() -> Matrix4 {
+    Matrix4::from_cols(
+        Vector4::new(1.0, 2.1, 3.2, 4.3),
+        Vector4::new(5.4, 6.5, 7.6, 8.7),
+        Vector4::new(9.8, 10.9, 11.0, 12.0),
+        Vector4::new(13.0, 14.0, 15.0, 16.23),
+    )
+}
 const CAMERA_FOV: Rad<f64> = Rad(std::f64::consts::PI / 4.0);
 const CAMERA_NEARCLIP: f64 = 0.1;
 const CAMERA_FARCLIP: f64 = 10.0;
@@ -44,7 +46,7 @@ fn exec_bind_group_test(backend: Backends, out_dir: &str) {
     let out_dir = String::from(out_dir);
     std::fs::create_dir_all(&out_dir).unwrap();
     let camera = Camera {
-        matrix: CAMERA_MATRIX,
+        matrix: camera_matrix(),
         method: ProjectionMethod::perspective(CAMERA_FOV),
         near_clip: CAMERA_NEARCLIP,
         far_clip: CAMERA_FARCLIP,
