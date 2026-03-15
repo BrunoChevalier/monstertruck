@@ -4,7 +4,8 @@
 //! Tests are skipped gracefully if no GPU adapter is available.
 
 use monstertruck_gpu::compute::{
-    GpuTessellator, GpuTessellatorError, NurbsSurfaceData, TessellationResult, MAX_DEGREE,
+    AdaptiveResult, GpuTessellator, GpuTessellatorError, NurbsSurfaceData, TessellationResult,
+    MAX_DEGREE,
 };
 use monstertruck_gpu::DeviceHandler;
 
@@ -309,4 +310,40 @@ fn test_degenerate_surface() {
             assert!(vert[c].abs() < 1e-6, "Degenerate vertex not at origin.");
         }
     }
+}
+
+#[test]
+fn test_adaptive_refinement() {
+    let handler = match try_init_device() {
+        Some(h) => h,
+        None => {
+            eprintln!("Skipping test_adaptive_refinement: no GPU adapter available.");
+            return;
+        }
+    };
+
+    let tess = GpuTessellator::new(&handler);
+    // Use the sphere octant which has varying curvature.
+    let data = sphere_octant_data();
+
+    // Run adaptive tessellation with a tight tolerance to force refinement.
+    let result: AdaptiveResult = tess.tessellate_adaptive(&data, 8, 8, 0.01).unwrap();
+
+    // The adaptive result should have more points than the coarse grid.
+    let coarse_count = 8u32 * 8;
+    assert!(
+        result.total_vertices() as u32 > coarse_count,
+        "Adaptive tessellation should produce more vertices ({}) than coarse grid ({coarse_count}).",
+        result.total_vertices()
+    );
+
+    // Verify the coarse pass has the expected dimensions.
+    assert_eq!(result.coarse.grid_u, 8);
+    assert_eq!(result.coarse.grid_v, 8);
+
+    // Verify that at least one refinement pass occurred.
+    assert!(
+        !result.refinements.is_empty(),
+        "Adaptive tessellation should have at least one refinement pass."
+    );
 }

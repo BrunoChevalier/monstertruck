@@ -30,12 +30,17 @@ web-time = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+criterion = { workspace = true }
 env_logger = { workspace = true }
 image = { workspace = true }
 log = { workspace = true }
 naga = { workspace = true }
 pollster = { workspace = true }
 rayon = { workspace = true }
+
+[[bench]]
+name = "gpu_vs_cpu_tessellation"
+harness = false
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 proptest = { workspace = true }
