@@ -8,6 +8,7 @@ pkg/
 dist/
 wasm-pack.log
 node_modules/
+resources/
 
 *.step
 *.stp
