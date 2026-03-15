@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 8 | Approval-needed: 0 | Total: 8
+**Summary:** Auto-fixes: 9 | Approval-needed: 0 | Total: 9
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -55,4 +55,11 @@
 **Category:** dependency
 **Description:** Downstream crates (geometry, meshing, modeling, solid) have pre-existing solver module compilation errors unrelated to RwLock migration -- cannot verify downstream tests
 **Files changed:** monstertruck-geometry/src/specifieds/hyperbola.rs, monstertruck-geometry/src/specifieds/parabola.rs
+**Status:** applied
+
+### [2026-03-15T21:21:21.797Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing compilation errors in monstertruck-gpu: multiview->multiview_mask, naga ambiguity, const fn incompatibility. Fixing to unblock tests.
+**Files changed:** none
 **Status:** applied
