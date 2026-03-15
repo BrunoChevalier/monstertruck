@@ -418,6 +418,7 @@ pub trait Rendered {
 
 mod buffer_handler;
 mod camera;
+pub mod compute;
 mod light;
 #[doc(hidden)]
 pub mod rendered_macros;
