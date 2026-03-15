@@ -354,7 +354,9 @@ impl<S: Float + FromPrimitive> HashGen<S> for [S; 1] {
 
 macro_rules! derive_hashgen {
     ($from: ty, $into: ty) => {
-        impl<S: Float + FromPrimitive + std::fmt::Debug + Copy + PartialEq + 'static> HashGen<S> for $from {
+        impl<S: Float + FromPrimitive + std::fmt::Debug + Copy + PartialEq + 'static> HashGen<S>
+            for $from
+        {
             fn hash1(seed: Self) -> S {
                 <$into>::hash1(seed.into())
             }

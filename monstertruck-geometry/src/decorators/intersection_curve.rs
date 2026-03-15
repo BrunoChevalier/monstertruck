@@ -182,8 +182,7 @@ where
         };
         let (x, y) = hint0.or_else(|| surface0.search_nearest_parameter(point, hint0, trials))?;
         let (z, w) = hint1.or_else(|| surface1.search_nearest_parameter(point, hint1, trials))?;
-        let v_res =
-            newton::solve(function, Vector4::new(x, y, z, w), trials).ok()?;
+        let v_res = newton::solve(function, Vector4::new(x, y, z, w), trials).ok()?;
         let (x, y, z, w) = (v_res[0], v_res[1], v_res[2], v_res[3]);
         let point = surface0.subs(x, y).midpoint(surface1.subs(z, w));
         Some((point, Point2::new(x, y), Point2::new(z, w)))
@@ -210,7 +209,9 @@ fn curve_der_n(
 ) -> Vector3 {
     let mat = Matrix3::from_cols(s0normal, s1normal, leaders[1]).transpose();
     let sub = leaders.element_wise_ders(cders, |x, y| x - y);
-    let suml = leaders.der().combinatorial_der(&sub, |a: Vector3, b: Vector3| a.dot(b), n);
+    let suml = leaders
+        .der()
+        .combinatorial_der(&sub, |a: Vector3, b: Vector3| a.dot(b), n);
     let b = Vector3::new(s0normal.dot(sum0), s1normal.dot(sum1), suml);
     // SAFETY: the matrix columns are two surface normals and the leader curve tangent,
     // which are linearly independent at a transversal intersection point.
@@ -279,7 +280,10 @@ where
             Some(triple) => triple,
             None => return leader.der(t),
         };
-        let (n0, n1) = (surface0.normal(uv0[0], uv0[1]), surface1.normal(uv1[0], uv1[1]));
+        let (n0, n1) = (
+            surface0.normal(uv0[0], uv0[1]),
+            surface1.normal(uv1[0], uv1[1]),
+        );
         let n: Vector3 = n0.cross(&n1);
         let k = (l_der.magnitude2() - (c.to_vec() - l).dot(l_der2)) / n.dot(l_der);
         n * k

@@ -1,8 +1,12 @@
 use super::*;
 const MUL: fn(f64, f64) -> f64 = f64::mul;
-fn dot_val(a: Vector3, b: Vector3) -> f64 { <Vector3 as InnerSpace>::dot(a, b) }
+fn dot_val(a: Vector3, b: Vector3) -> f64 {
+    <Vector3 as InnerSpace>::dot(a, b)
+}
 const DOT: fn(Vector3, Vector3) -> f64 = dot_val;
-fn cross_val(a: Vector3, b: Vector3) -> Vector3 { a.cross(&b) }
+fn cross_val(a: Vector3, b: Vector3) -> Vector3 {
+    a.cross(&b)
+}
 const CROSS: fn(Vector3, Vector3) -> Vector3 = cross_val;
 
 impl<C, S0, S1, R> RbfSurface<C, S0, S1, R>

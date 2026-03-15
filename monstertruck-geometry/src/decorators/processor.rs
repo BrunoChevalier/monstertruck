@@ -309,9 +309,7 @@ where
             true => self.entity.normal(u, v),
             false => -self.entity.normal(v, u),
         };
-        let inv_trans = transtrans
-            .invert()
-            .expect("invalid transform");
+        let inv_trans = transtrans.invert().expect("invalid transform");
         let n = inv_trans.transform_vector(n);
         (n / self.transform.determinant()).normalize()
     }

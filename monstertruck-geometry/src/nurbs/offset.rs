@@ -143,7 +143,10 @@ pub fn curve_offset_3d(
                     } else {
                         Vector3::unit_y()
                     };
-                    { let c: Vector3 = t_hat.cross(&alt); c.normalize() }
+                    {
+                        let c: Vector3 = t_hat.cross(&alt);
+                        c.normalize()
+                    }
                 } else {
                     perp / perp_len
                 }

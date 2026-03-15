@@ -53,11 +53,7 @@ pub trait SearchNearestParameterVector: InnerSpace<Scalar = f64> + Tolerance {
 impl SearchNearestParameterVector for Vector2 {
     type Point = Point2;
     type Matrix = Matrix2;
-    fn subs<S>(
-        surface: &S,
-        point: Point2,
-        param: Vector2,
-    ) -> CalcOutput<Self, Matrix2>
+    fn subs<S>(surface: &S, point: Point2, param: Vector2) -> CalcOutput<Self, Matrix2>
     where
         S: ParametricSurface<Point = Point2, Vector = Vector2>,
     {
@@ -78,11 +74,7 @@ impl SearchNearestParameterVector for Vector2 {
 impl SearchNearestParameterVector for Vector3 {
     type Point = Point3;
     type Matrix = Matrix3;
-    fn subs<S>(
-        surface: &S,
-        point: Self::Point,
-        param: Vector3,
-    ) -> CalcOutput<Self, Self::Matrix>
+    fn subs<S>(surface: &S, point: Self::Point, param: Vector3) -> CalcOutput<Self, Self::Matrix>
     where
         S: ParametricSurface<Point = Self::Point, Vector = Self>,
     {
@@ -141,11 +133,7 @@ pub trait SearchParameterVector: InnerSpace<Scalar = f64> + Tolerance {
 
 impl SearchParameterVector for Vector2 {
     type Point = Point2;
-    fn subs<S>(
-        surface: &S,
-        point: Point2,
-        param: Vector2,
-    ) -> CalcOutput<Vector2, Matrix2>
+    fn subs<S>(surface: &S, point: Point2, param: Vector2) -> CalcOutput<Vector2, Matrix2>
     where
         S: ParametricSurface<Point = Point2, Vector = Vector2>,
     {
@@ -159,11 +147,7 @@ impl SearchParameterVector for Vector2 {
 
 impl SearchParameterVector for Vector3 {
     type Point = Point3;
-    fn subs<S>(
-        surface: &S,
-        point: Self::Point,
-        param: Vector2,
-    ) -> CalcOutput<Vector2, Matrix2>
+    fn subs<S>(surface: &S, point: Self::Point, param: Vector2) -> CalcOutput<Vector2, Matrix2>
     where
         S: ParametricSurface<Point = Self::Point, Vector = Self>,
     {
@@ -198,15 +182,13 @@ where
 {
     let function = move |param: Vector2| SearchParameterVector::subs(surface, point, param);
     let res = newton::solve(function, Vector2::new(hint.0, hint.1), trials);
-    res.ok().and_then(
-        |param| {
-            let (u, v) = (param[0], param[1]);
-            match surface.evaluate(u, v).near(&point) {
-                true => Some((u, v)),
-                false => None,
-            }
-        },
-    )
+    res.ok().and_then(|param| {
+        let (u, v) = (param[0], param[1]);
+        match surface.evaluate(u, v).near(&point) {
+            true => Some((u, v)),
+            false => None,
+        }
+    })
 }
 
 /// Searches the parameters of the intersection point of `surface` and `curve`.

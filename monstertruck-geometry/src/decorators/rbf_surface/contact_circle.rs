@@ -65,7 +65,10 @@ impl ContactCircle {
         let (vec0, vec1) = (p0 - center, p1 - center);
         Some(Self {
             center,
-            axis: { let c: Vector3 = vec0.cross(&vec1); c.normalize() },
+            axis: {
+                let c: Vector3 = vec0.cross(&vec1);
+                c.normalize()
+            },
             angle: Rad(vec0.angle(&vec1)),
             t,
             contact_point0: (p0, Point2::new(u0, v0)).into(),
@@ -134,7 +137,10 @@ fn contact_points(
     radius: f64,
 ) -> (Point3, Point3, Point3) {
     let ((p, der), (p0, n0), (p1, n1)) = (point_on_curve, plane0, plane1);
-    let sign = f64::signum({ let c: Vector3 = n0.cross(&n1); c.dot(der) });
+    let sign = f64::signum({
+        let c: Vector3 = n0.cross(&n1);
+        c.dot(der)
+    });
     let mat = Matrix3::from_cols(der, n0, n1).transpose();
     let vec = Vector3::new(
         der.dot(p.to_vec()),

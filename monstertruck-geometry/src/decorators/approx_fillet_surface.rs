@@ -109,7 +109,8 @@ mod subders {
     ) -> CurveDers<Vector3> {
         use std::ops::Add;
         let v_axis_ders = v_axis_ders(p_ders);
-        let u_axis_ders = v_axis_ders.combinatorial_ders(n_ders, |a: Vector3, b: Vector3| a.cross(&b));
+        let u_axis_ders =
+            v_axis_ders.combinatorial_ders(n_ders, |a: Vector3, b: Vector3| a.cross(&b));
         let wp_ders = w_ders.combinatorial_ders(p_ders, |w, p| w * p);
         let aders = b_ders.combinatorial_ders(&u_axis_ders, |v, p| v[0] * p) / 3.0;
         let bders = b_ders.combinatorial_ders(&v_axis_ders, |v, p| v[1] * p) / 3.0;
@@ -399,9 +400,15 @@ mod tests {
         let nurbs_surface = NurbsSurface::new(BsplineSurface::<Vector4>::new(
             (KnotVector::bezier_knot(2), KnotVector::bezier_knot(1)),
             vec![
-                vec![Vector4::new(-1.0, 0.0, 0.0, 1.0), Vector4::new(-1.0, 1.0, 0.0, 1.0)],
+                vec![
+                    Vector4::new(-1.0, 0.0, 0.0, 1.0),
+                    Vector4::new(-1.0, 1.0, 0.0, 1.0),
+                ],
                 vec![Vector4::new(0.0, 0.0, 0.0, w), Vector4::new(0.0, w, 0.0, w)],
-                vec![Vector4::new(0.0, 0.0, -1.0, 1.0), Vector4::new(0.0, 1.0, -1.0, 1.0)],
+                vec![
+                    Vector4::new(0.0, 0.0, -1.0, 1.0),
+                    Vector4::new(0.0, 1.0, -1.0, 1.0),
+                ],
             ],
         ));
 
@@ -433,11 +440,27 @@ mod tests {
         let surface = ApproxFilletSurface {
             knot_vec: KnotVector::bezier_knot(2),
             surface0,
-            side_control_points0: vec![Point2::new(0.8, 0.0), Point2::new(0.5, 0.5), Point2::new(0.8, 1.0)],
-            tangent_vecs0: vec![Vector2::new(0.2, -0.1), Vector2::new(0.4, 0.0), Vector2::new(0.2, 0.1)],
+            side_control_points0: vec![
+                Point2::new(0.8, 0.0),
+                Point2::new(0.5, 0.5),
+                Point2::new(0.8, 1.0),
+            ],
+            tangent_vecs0: vec![
+                Vector2::new(0.2, -0.1),
+                Vector2::new(0.4, 0.0),
+                Vector2::new(0.2, 0.1),
+            ],
             surface1,
-            side_control_points1: vec![Point2::new(0.0, 0.8), Point2::new(0.5, 0.5), Point2::new(1.0, 0.8)],
-            tangent_vecs1: vec![Vector2::new(-0.2, -0.1), Vector2::new(-0.4, 0.0), Vector2::new(-0.2, 0.1)],
+            side_control_points1: vec![
+                Point2::new(0.0, 0.8),
+                Point2::new(0.5, 0.5),
+                Point2::new(1.0, 0.8),
+            ],
+            tangent_vecs1: vec![
+                Vector2::new(-0.2, -0.1),
+                Vector2::new(-0.4, 0.0),
+                Vector2::new(-0.2, 0.1),
+            ],
             weights: vec![1.0, 2.0, 1.0],
         };
 

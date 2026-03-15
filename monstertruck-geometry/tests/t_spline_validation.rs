@@ -388,8 +388,8 @@ fn t_spline_validation_malformed_face_subdivide_error() {
         ],
     ];
 
-    let tnurcc = Tnurcc::try_new(points, faces)
-        .expect("Cube with isolated vertex should be constructable");
+    let tnurcc =
+        Tnurcc::try_new(points, faces).expect("Cube with isolated vertex should be constructable");
 
     // Subdividing should fail because vertex 8 has no radial edges.
     let result = tnurcc.to_tmesh(1);

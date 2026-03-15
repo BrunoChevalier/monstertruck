@@ -399,12 +399,8 @@ where
                     0.0
                 } else {
                     debug_assert!(
-                        cons.iter().all(|c| edge
-                            .read()
-                            .connection(*c)
-                            .read()
-                            .knot_interval
-                            >= 0.0),
+                        cons.iter()
+                            .all(|c| edge.read().connection(*c).read().knot_interval >= 0.0),
                         "Knot intervals must be non-negative"
                     );
                     cons.iter()
