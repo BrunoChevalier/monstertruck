@@ -256,19 +256,19 @@ impl<'a> GpuTessellator<'a> {
         let total_points = (grid_u * grid_v) as usize;
 
         // Create input buffers.
-        let cp_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let cp_buffer = self.device.create_buffer_init(&util::BufferInitDescriptor {
             label: Some("control_points"),
             contents: bytemuck::cast_slice(&surface.control_points),
             usage: BufferUsages::STORAGE,
         });
 
-        let knots_u_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let knots_u_buffer = self.device.create_buffer_init(&util::BufferInitDescriptor {
             label: Some("knots_u"),
             contents: bytemuck::cast_slice(&surface.knots_u),
             usage: BufferUsages::STORAGE,
         });
 
-        let knots_v_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let knots_v_buffer = self.device.create_buffer_init(&util::BufferInitDescriptor {
             label: Some("knots_v"),
             contents: bytemuck::cast_slice(&surface.knots_v),
             usage: BufferUsages::STORAGE,
@@ -288,7 +288,7 @@ impl<'a> GpuTessellator<'a> {
             _pad1: 0,
             _pad2: 0,
         };
-        let params_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let params_buffer = self.device.create_buffer_init(&util::BufferInitDescriptor {
             label: Some("params"),
             contents: bytemuck::bytes_of(&params),
             usage: BufferUsages::UNIFORM,
