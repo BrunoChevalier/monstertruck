@@ -54,6 +54,7 @@ The `monstertruck` kernel is split into independent crates so you only need to p
 
 ### Core & Geometry
 
+- [`monstertruck-math`](monstertruck-math/) – Math abstraction layer with nalgebra backend (and optional `cgmath64` compatibility shim).
 - [`monstertruck-core`](monstertruck-core/) – Core types and traits for linear algebra, curves, surfaces, and tolerances.
 - [`monstertruck-derive`](monstertruck-derive/) – Derive macros for geometric traits.
 - [`monstertruck-traits`](monstertruck-traits/) – Geometric trait definitions.
@@ -70,7 +71,7 @@ The `monstertruck` kernel is split into independent crates so you only need to p
 
 - [`monstertruck-mesh`](monstertruck-mesh/) – Polygon mesh data structures and algorithms.
 - [`monstertruck-meshing`](monstertruck-meshing/) – Tessellation and meshing algorithms for B-rep shapes.
-- [`monstertruck-gpu`](monstertruck-gpu/) – Graphics utility crate built on `wgpu`.
+- [`monstertruck-gpu`](monstertruck-gpu/) – Graphics utility crate built on `wgpu`, including a WebGPU compute-shader tessellator for NURBS surfaces.
 - [`monstertruck-render`](monstertruck-render/) – Shape and polygon mesh visualization.
 
 ### I/O & Bindings
@@ -122,6 +123,13 @@ The `monstertruck-core` crate provides:
 - **`solve_robust` / `solve_robust_1d`** -- Newton solver variants with Levenberg-Marquardt and bisection fallbacks for near-singular Jacobians.
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
+
+### Recent Changes (Phase 4)
+
+- **nalgebra math backend** -- The new `monstertruck-math` crate provides a nalgebra-backed linear algebra layer. `monstertruck-core` now uses nalgebra internally; a `cgmath64` compatibility shim is available for downstream crates that have not yet migrated.
+- **RwLock concurrency** -- Topology types (`Vertex`, `Edge`, `Face`) in `monstertruck-topology` have been migrated from `parking_lot::Mutex` to `parking_lot::RwLock`, reducing contention for concurrent read-heavy workloads.
+- **GPU compute tessellation** -- `monstertruck-gpu` includes a prototype `GpuTessellator` that evaluates NURBS surfaces on the GPU via a WGSL compute shader and WebGPU, with integration tests and GPU-vs-CPU benchmarks.
+- **T-spline validation fixes** -- `monstertruck-geometry` gained zero-knot-interval support and connection-parity verification for T-spline/T-NURCc meshes, along with 8 new validation tests.
 
 ## Dependency Graph
 
