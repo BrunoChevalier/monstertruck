@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 6 | Approval-needed: 0 | Total: 6
+**Summary:** Auto-fixes: 8 | Approval-needed: 0 | Total: 8
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -41,4 +41,18 @@
 **Category:** dependency
 **Description:** Exempt: Integration tests for plans 3-1 through 3-4 pass immediately because all underlying features are already implemented. TDD RED phase not applicable for cross-feature integration tests validating existing functionality.
 **Files changed:** monstertruck-solid/tests/feature_integration.rs
+**Status:** applied
+
+### [2026-03-15T20:52:24.894Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing euler_operators.rs compilation error from nalgebra migration (cross() API change) -- fixed borrow
+**Files changed:** monstertruck-topology/tests/euler_operators.rs
+**Status:** applied
+
+### [2026-03-15T20:52:30.430Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Downstream crates (geometry, meshing, modeling, solid) have pre-existing solver module compilation errors unrelated to RwLock migration -- cannot verify downstream tests
+**Files changed:** monstertruck-geometry/src/specifieds/hyperbola.rs, monstertruck-geometry/src/specifieds/parabola.rs
 **Status:** applied
