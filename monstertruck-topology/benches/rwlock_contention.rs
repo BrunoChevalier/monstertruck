@@ -1,3 +1,29 @@
+//! Contention benchmark for `RwLock`-based topology types.
+//!
+//! # Lock ordering
+//!
+//! The topology crate acquires multiple `RwLock` guards in two code paths.
+//! The consistent acquisition order prevents deadlocks:
+//!
+//! 1. **`Edge::is_geometric_consistent`** -- acquires `curve.read()`, then
+//!    `front.point.read()` and `back.point.read()`.
+//!    Order: **curve -> point**.
+//!
+//! 2. **`Face::is_geometric_consistent`** -- acquires `surface.read()`, then
+//!    iterates edges calling `edge.is_geometric_consistent()` (curve -> point)
+//!    and `edge.curve.read()`.
+//!    Order: **surface -> curve -> point**.
+//!
+//! All multi-lock acquisitions use read guards only. Since `parking_lot::RwLock`
+//! allows concurrent readers, read-read ordering cannot deadlock. Write access
+//! (`set_point`, `set_curve`, `set_surface`) acquires exactly one lock at a
+//! time, so no write-write ordering conflicts exist.
+//!
+//! **Re-entrance warning**: `parking_lot::RwLock` is NOT re-entrant. A thread
+//! holding a read guard that attempts a write guard on the same lock will
+//! deadlock. The `mapped`/`try_mapped` methods document this: "Accessing
+//! geometry elements directly in the closure will result in a deadlock."
+
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use monstertruck_topology::*;
 use rayon::prelude::*;

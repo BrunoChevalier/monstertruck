@@ -85,7 +85,7 @@ impl Concat<Segment> for Segment {
             ))
         } else if !self.ends.1.near(&rhs.ends.0)
             // by this condition, this is not correctly implementation of concat
-            || !(self.ends.1 - self.ends.0).cross(rhs.ends.1 - rhs.ends.0).so_small()
+            || !(self.ends.1 - self.ends.0).cross(&(rhs.ends.1 - rhs.ends.0)).so_small()
         {
             Err(ConcatError::DisconnectedPoints(self.ends.1, rhs.ends.0))
         } else {
