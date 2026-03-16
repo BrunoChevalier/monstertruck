@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 15 | Approval-needed: 0 | Total: 15
+**Summary:** Auto-fixes: 16 | Approval-needed: 0 | Total: 16
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -103,5 +103,12 @@
 **Type:** auto-fix
 **Category:** bug
 **Description:** 7 pre-existing fillet test failures (generic_fillet_identity, generic_fillet_mixed_surfaces, generic_fillet_modeling_types, generic_fillet_multi_chain, generic_fillet_unsupported, boolean_shell_converts_for_fillet, chamfer_serialization_round_trip) unrelated to seam averaging fix
+**Files changed:** monstertruck-solid/src/fillet/tests.rs
+**Status:** applied
+
+### [2026-03-16T15:14:13.088Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** 7 pre-existing test failures in fillet suite (generic_fillet_*, boolean_shell_converts_for_fillet, chamfer_serialization_round_trip) unrelated to plan 6-1 changes
 **Files changed:** monstertruck-solid/src/fillet/tests.rs
 **Status:** applied
