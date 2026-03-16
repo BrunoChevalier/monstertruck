@@ -27,10 +27,9 @@
 None
 
 ## Session
-**Chain:** active
-**Last Command:** /td:complete-milestone
-**Next Action:** Run /td:new-milestone to start next milestone
+**Last Command:** /td:chain-stop
+**Next Action:** Chain stopped. Run /td:status to see project state
 **Resume File:** None
 
 ---
-*Updated: 2026-03-16T09:09:23.310Z*
+*Updated: 2026-03-16T09:10:29.163Z*
