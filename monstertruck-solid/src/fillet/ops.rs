@@ -8,6 +8,7 @@ use super::integrate::{FilletResult, annotate_fillet_edges, ensure_seamless_vert
 use super::params::{FilletMode, FilletOptions, FilletProfile, RadiusSpec};
 use super::topology::*;
 use super::types::*;
+use super::validate;
 
 type Result<T> = std::result::Result<T, FilletError>;
 
@@ -290,7 +291,7 @@ pub fn fillet_along_wire(shell: &mut Shell, wire: &Wire, options: &FilletOptions
         }
     }
 
-    if closed {
+    let result = if closed {
         fillet_along_wire_closed(
             shell,
             wire,
@@ -306,7 +307,11 @@ pub fn fillet_along_wire(shell: &mut Shell, wire: &Wire, options: &FilletOptions
             &adjacent_faces,
             &fillet_surfaces,
         )
+    };
+    if result.is_ok() {
+        validate::debug_assert_topology(shell, "fillet_along_wire");
     }
+    result
 }
 
 /// Averages two homogeneous control points by dehomogenizing first, computing

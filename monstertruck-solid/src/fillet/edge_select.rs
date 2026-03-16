@@ -12,6 +12,7 @@ use super::error::FilletError;
 use super::ops;
 use super::params::{FilletOptions, RadiusSpec};
 use super::types::*;
+use super::validate;
 
 type Result<T> = std::result::Result<T, FilletError>;
 
@@ -571,7 +572,9 @@ pub fn fillet_edges(
             };
 
             match apply_single_edge_fillet(shell, first_eid, Some(face_a_idx), opts) {
-                Ok(()) => {}
+                Ok(()) => {
+                    validate::debug_assert_euler(shell, "fillet_edges/single_edge");
+                }
                 Err(FilletError::GeometryFailed { .. }) => continue,
                 Err(error) => return Err(error),
             }
@@ -684,7 +687,9 @@ pub fn fillet_edges(
                         Some(chain.shared_face_idx),
                         opts,
                     ) {
-                        Ok(()) => {}
+                        Ok(()) => {
+                            validate::debug_assert_euler(shell, "fillet_edges/single_edge");
+                        }
                         Err(FilletError::GeometryFailed { .. }) => {
                             chain_failed = true;
                             break;
@@ -699,6 +704,7 @@ pub fn fillet_edges(
             }
         }
     }
+    validate::debug_assert_topology(shell, "fillet_edges");
     Ok(())
 }
 
@@ -721,6 +727,7 @@ where
     let (mut internal_shell, internal_edge_ids) = convert_shell_in(shell, edges)?;
     let original_shell = internal_shell.clone();
     fillet_edges(&mut internal_shell, &internal_edge_ids, Some(options))?;
+    validate::debug_assert_topology(&internal_shell, "fillet_edges_generic");
     if internal_shell.shell_condition() != ShellCondition::Closed {
         if std::env::var_os("MT_FILLET_DEBUG").is_some() {
             eprintln!("debug fillet generic: rollback to original shell (non-closed result).");
