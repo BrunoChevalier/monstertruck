@@ -144,6 +144,12 @@ mod tests {
 
         super::super::edge_select::fillet_edges(&mut shell, &[edge_id], None).unwrap();
 
+        // The shell must remain closed after filleting a single edge.
+        assert_eq!(
+            shell.shell_condition(),
+            ShellCondition::Closed,
+            "Shell must remain Closed after filleting a single edge"
+        );
         assert!(
             euler_poincare_check(&shell),
             "Euler-Poincare must hold after filleting a closed box edge"
@@ -185,25 +191,60 @@ mod tests {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             debug_assert_topology(&shell, "corrupted_orientation_test");
         }));
+        let err =
+            result.expect_err("debug_assert_topology must panic on orientation-corrupted shell");
+        // Verify the panic message mentions orientation violation.
+        let msg = err
+            .downcast_ref::<String>()
+            .map(|s| s.as_str())
+            .or_else(|| err.downcast_ref::<&str>().copied())
+            .unwrap_or("");
         assert!(
-            result.is_err(),
-            "debug_assert_topology must panic on orientation-corrupted shell"
+            msg.contains("Orientation violation after"),
+            "expected orientation-violation panic, got: {msg}"
         );
     }
 
-    // -- Test 4: Euler-Poincare check guard logic --
+    // -- Test 4: Euler-Poincare guard logic --
+    //
+    // NOTE: A direct negative-case proof (euler_poincare_check returning
+    // false) is not constructible with the half-edge data structure.
+    // `Shell::shell_condition()` derives its result from edge-boundary
+    // analysis, so any topological change that would make V-E+F != 2 also
+    // changes the condition away from `Closed`, causing the guard to
+    // return `true` unconditionally. The false path can only be reached
+    // by an internal inconsistency between the boundary analysis and the
+    // actual vertex/edge/face counts, which cannot be manufactured through
+    // the public API. This test therefore validates the guard logic itself
+    // (closed shells pass, non-closed shells are skipped) and verifies the
+    // Euler characteristic for two distinct closed topologies (cube and
+    // tetrahedron).
 
-    /// Verifies the guard logic in `euler_poincare_check`:
-    /// - A valid closed box returns true (V-E+F=2).
-    /// - A 5-face open box (missing one face) is not Closed, so
-    ///   `euler_poincare_check` returns true unconditionally (guard skips
-    ///   the check for non-closed shells).
+    /// Verifies `euler_poincare_check` guard logic:
+    /// - A valid closed box (V=8, E=12, F=6, chi=2) returns true.
+    /// - A valid closed tetrahedron (V=4, E=6, F=4, chi=2) returns true.
+    /// - A 5-face open box is not [`ShellCondition::Closed`], so the guard
+    ///   returns true unconditionally without evaluating the characteristic.
     #[test]
-    fn euler_poincare_check_detects_invalid_chi() {
+    fn euler_poincare_guard_logic() {
         // Valid closed box: euler check passes.
         let shell = build_closed_box();
         assert_eq!(shell.shell_condition(), ShellCondition::Closed);
         assert!(euler_poincare_check(&shell));
+
+        // Valid closed tetrahedron: V=4, E=6, F=4, chi=2.
+        let tet = build_closed_tetrahedron();
+        assert_eq!(tet.shell_condition(), ShellCondition::Closed);
+        assert!(euler_poincare_check(&tet));
+        let (v, e, f) = count_vef(&tet);
+        assert_eq!(v, 4, "tetrahedron: 4 vertices");
+        assert_eq!(e, 6, "tetrahedron: 6 edges");
+        assert_eq!(f, 4, "tetrahedron: 4 faces");
+        assert_eq!(
+            v as isize - e as isize + f as isize,
+            2,
+            "tetrahedron: V-E+F must be 2"
+        );
 
         // Build a 5-face open box by dropping the last face.
         let open_shell = build_open_box_5face();
@@ -295,6 +336,63 @@ mod tests {
         ]
         .into();
         (shell, edge, v)
+    }
+
+    /// Builds a closed tetrahedron (4 triangular faces, 6 edges, 4 vertices).
+    fn build_closed_tetrahedron() -> Shell {
+        let p = [
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(0.5, 1.0, 0.0),
+            Point3::new(0.5, 0.5, 1.0),
+        ];
+        let v = Vertex::news(p);
+        let line = |i: usize, j: usize| {
+            let bsp = BsplineCurve::new(KnotVector::bezier_knot(1), vec![p[i], p[j]]);
+            Edge::new(&v[i], &v[j], NurbsCurve::from(bsp).into())
+        };
+        // 6 edges of a tetrahedron.
+        let edge = [
+            line(0, 1),
+            line(1, 2),
+            line(2, 0),
+            line(0, 3),
+            line(1, 3),
+            line(2, 3),
+        ];
+        let tri = |i: usize, j: usize, k: usize| {
+            // Bilinear patch degenerate to a triangle (one corner repeated).
+            let control_points = vec![vec![p[i], p[k]], vec![p[j], p[k]]];
+            let knot_vec = KnotVector::bezier_knot(1);
+            let bsp = BsplineSurface::new((knot_vec.clone(), knot_vec), control_points);
+            let wire: Wire = [i, j, k]
+                .into_iter()
+                .circular_tuple_windows()
+                .map(|(a, b)| {
+                    edge.iter()
+                        .find_map(|e| {
+                            if e.front() == &v[a] && e.back() == &v[b] {
+                                Some(e.clone())
+                            } else if e.back() == &v[a] && e.front() == &v[b] {
+                                Some(e.inverse())
+                            } else {
+                                None
+                            }
+                        })
+                        // SAFETY: All 6 edges present in the edge array.
+                        .unwrap()
+                })
+                .collect();
+            Face::new(vec![wire], bsp.into())
+        };
+        // 4 triangular faces with consistent outward orientation.
+        [
+            tri(0, 2, 1), // bottom (outward = -Z)
+            tri(0, 1, 3), // front
+            tri(1, 2, 3), // right
+            tri(2, 0, 3), // left
+        ]
+        .into()
     }
 
     /// Builds a 5-face open box (cube missing the bottom face).
