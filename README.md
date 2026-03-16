@@ -54,7 +54,7 @@ The `monstertruck` kernel is split into independent crates so you only need to p
 
 ### Core & Geometry
 
-- [`monstertruck-math`](monstertruck-math/) – Math abstraction layer with nalgebra backend (and optional `cgmath64` compatibility shim).
+- [`monstertruck-math`](monstertruck-math/) – Math abstraction layer with nalgebra backend, polynomial solvers, and optional `cgmath64` compatibility shim.
 - [`monstertruck-core`](monstertruck-core/) – Core types and traits for linear algebra, curves, surfaces, and tolerances.
 - [`monstertruck-derive`](monstertruck-derive/) – Derive macros for geometric traits.
 - [`monstertruck-traits`](monstertruck-traits/) – Geometric trait definitions.
@@ -124,7 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 4)
+### Recent Changes (Phase 5)
+
+- **Polynomial solvers** -- `monstertruck-math` now includes quadratic, cubic, and quartic polynomial solvers (ported from `matext4cgmath`), eliminating the legacy `cgmath` transitive dependency. These solvers are wired into `monstertruck-geometry` curve intersection call sites (hyperbola and parabola specifieds).
+- **Namespace collision fix** -- Resolved the `polynomial` module name collision between `monstertruck-math` (solvers) and `monstertruck-traits` (evaluation traits) via explicit re-export precedence in the geometry crate.
+
+### Earlier Changes (Phase 4)
 
 - **nalgebra math backend** -- The new `monstertruck-math` crate provides a nalgebra-backed linear algebra layer. `monstertruck-core` now uses nalgebra internally; a `cgmath64` compatibility shim is available for downstream crates that have not yet migrated.
 - **RwLock concurrency** -- Topology types (`Vertex`, `Edge`, `Face`) in `monstertruck-topology` have been migrated from `parking_lot::Mutex` to `parking_lot::RwLock`, reducing contention for concurrent read-heavy workloads.
