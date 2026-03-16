@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 19 | Approval-needed: 0 | Total: 19
+**Summary:** Auto-fixes: 21 | Approval-needed: 0 | Total: 21
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -131,5 +131,19 @@
 **Type:** auto-fix
 **Category:** bug
 **Description:** 7 pre-existing fillet test failures (chamfer_serialization_round_trip, boolean_shell_converts_for_fillet, 5 generic_fillet_* tests) unrelated to IntegrateVisual changes
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-16T23:13:55.531Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** 7 pre-existing test failures in fillet::tests (generic_fillet_*, boolean_shell_*, chamfer_serialization_*) and pre-existing clippy errors in monstertruck-core. Not caused by this plan.
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-16T23:27:10.185Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** TDD RED/GREEN cycle not applicable: all three findings (B1, S1, S2) are test-quality improvements to existing tests, not new implementation code. The implementation already produces correct results; the tests were strengthened to assert more precisely.
 **Files changed:** none
 **Status:** applied
