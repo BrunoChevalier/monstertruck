@@ -19,6 +19,8 @@ mod params;
 mod topology;
 mod types;
 
+mod validate;
+
 #[cfg(test)]
 mod tests;
 
