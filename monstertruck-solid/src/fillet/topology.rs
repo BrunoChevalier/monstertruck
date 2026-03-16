@@ -2,7 +2,7 @@ use algo::curve::search_closest_parameter;
 use itertools::Itertools;
 use monstertruck_geometry::prelude::*;
 
-use super::convert::sample_curve_to_nurbs;
+use super::convert::FilletableCurve;
 use super::geometry::*;
 use super::params::FilletProfile;
 use super::types::*;
@@ -23,19 +23,17 @@ pub(super) fn take_ori<T>(ori: bool, (a, b): (T, T)) -> T {
     }
 }
 
-/// Number of sample points used when converting an IntersectionCurve to NURBS.
-const IC_SAMPLE_COUNT: usize = 24;
-
 /// If `edge` has an `IntersectionCurve` geometry, return a new edge with
-/// the curve approximated as a NURBS curve (sampled at `IC_SAMPLE_COUNT`
-/// points). Otherwise return a clone of the original edge.
+/// the curve converted to a NURBS approximation via
+/// [`FilletableCurve::to_nurbs_curve`]. Otherwise return a clone of the
+/// original edge.
 ///
 /// This allows `search_closest_parameter` and `not_strictly_cut_with_parameter`
-/// to operate reliably on edges produced by boolean operations.
+/// to operate reliably on edges produced by boolean operations, where the
+/// raw IntersectionCurve can cause Newton iteration to diverge.
 fn ensure_cuttable_edge(edge: &Edge) -> Edge {
-    if let Curve::IntersectionCurve(ic) = &edge.curve() {
-        let range = ic.range_tuple();
-        let nurbs = sample_curve_to_nurbs(range, |t| ic.subs(t), IC_SAMPLE_COUNT);
+    if matches!(edge.curve(), Curve::IntersectionCurve(_)) {
+        let nurbs = edge.curve().to_nurbs_curve();
         Edge::new(
             edge.absolute_front(),
             edge.absolute_back(),
