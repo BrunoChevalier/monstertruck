@@ -106,49 +106,130 @@ mod tests {
     use itertools::Itertools;
     use monstertruck_geometry::prelude::*;
 
-    use super::super::types::*;
     use super::*;
 
+    // -- Test 1: Euler-Poincare on valid closed box --
+
+    /// Builds a 6-face closed box, verifies `ShellCondition::Closed`,
+    /// `euler_poincare_check` returns true, `is_oriented_check` returns true,
+    /// and explicitly counts V=8, E=12, F=6 so that V - E + F = 2.
     #[test]
-    fn euler_poincare_check_exists_and_returns_bool() {
+    fn euler_poincare_valid_closed_box() {
         let shell = build_closed_box();
+
+        assert_eq!(shell.shell_condition(), ShellCondition::Closed);
         assert!(euler_poincare_check(&shell));
         assert!(is_oriented_check(&shell));
+
+        // Explicit V, E, F count.
+        let (v, e, f) = count_vef(&shell);
+        assert_eq!(v, 8, "expected 8 unique vertices");
+        assert_eq!(e, 12, "expected 12 unique edges");
+        assert_eq!(f, 6, "expected 6 faces");
+        assert_eq!(
+            v as isize - e as isize + f as isize,
+            2,
+            "Euler characteristic must be 2 for closed box"
+        );
     }
 
-    /// Verifies that `debug_assert_topology` does not panic on a valid closed box.
-    #[test]
-    fn debug_assert_topology_valid_box() {
-        let shell = build_closed_box();
-        // Should not panic.
-        debug_assert_topology(&shell, "test_valid_box");
-        debug_assert_euler(&shell, "test_valid_box_euler");
-    }
+    // -- Test 2: Topology valid after box fillet --
 
-    /// Verifies that fillet_edges calls with debug assertions active do not panic.
+    /// Builds a 6-face closed box, fillets one edge with `fillet_edges`,
+    /// then verifies both `euler_poincare_check` and `is_oriented_check` pass.
     #[test]
-    fn fillet_edges_with_debug_assertions() {
+    fn topology_valid_after_box_fillet() {
         let (mut shell, edge) = build_closed_box_with_edges();
         let edge_id = edge[0].id();
-        // Fillet a single edge. The debug assertions in fillet_edges (once inserted)
-        // must not panic on this valid closed shell.
+
         super::super::edge_select::fillet_edges(&mut shell, &[edge_id], None).unwrap();
-        assert!(euler_poincare_check(&shell));
-        assert!(is_oriented_check(&shell));
+
+        assert!(
+            euler_poincare_check(&shell),
+            "Euler-Poincare must hold after filleting a closed box edge"
+        );
+        assert!(
+            is_oriented_check(&shell),
+            "Orientation must be consistent after filleting a closed box edge"
+        );
     }
 
-    /// Builds a 6-face closed unit cube, returning shell and edges.
+    // -- Test 3: Debug assertion fires on corrupted orientation --
+
+    /// Constructs a 6-face closed box, inverts face 5 (bottom) to corrupt
+    /// orientation, and verifies `debug_assert_topology` panics with an
+    /// orientation violation message.
+    ///
+    /// Inverting a face (rather than removing one) changes `shell_condition()`
+    /// from `Closed` to `Regular` -- which fails `is_oriented_check` and
+    /// triggers the orientation assertion.
+    #[cfg(debug_assertions)]
+    #[test]
+    fn debug_assert_fires_on_corrupted_orientation() {
+        let mut shell = build_closed_box();
+
+        // Sanity: before corruption the shell is Closed.
+        assert_eq!(shell.shell_condition(), ShellCondition::Closed);
+
+        // Corrupt orientation by inverting the bottom face.
+        shell[5].invert();
+
+        // After inversion the condition degrades from Closed.
+        let condition = shell.shell_condition();
+        assert!(
+            !matches!(condition, ShellCondition::Oriented | ShellCondition::Closed),
+            "Expected non-oriented condition after face inversion, got {condition:?}"
+        );
+
+        // `debug_assert_topology` must panic on orientation violation.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            debug_assert_topology(&shell, "corrupted_orientation_test");
+        }));
+        assert!(
+            result.is_err(),
+            "debug_assert_topology must panic on orientation-corrupted shell"
+        );
+    }
+
+    // -- Test 4: Euler-Poincare check guard logic --
+
+    /// Verifies the guard logic in `euler_poincare_check`:
+    /// - A valid closed box returns true (V-E+F=2).
+    /// - A 5-face open box (missing one face) is not Closed, so
+    ///   `euler_poincare_check` returns true unconditionally (guard skips
+    ///   the check for non-closed shells).
+    #[test]
+    fn euler_poincare_check_detects_invalid_chi() {
+        // Valid closed box: euler check passes.
+        let shell = build_closed_box();
+        assert_eq!(shell.shell_condition(), ShellCondition::Closed);
+        assert!(euler_poincare_check(&shell));
+
+        // Build a 5-face open box by dropping the last face.
+        let open_shell = build_open_box_5face();
+        assert_ne!(
+            open_shell.shell_condition(),
+            ShellCondition::Closed,
+            "5-face box must not be Closed"
+        );
+        // Guard logic: non-closed shells return true unconditionally.
+        assert!(
+            euler_poincare_check(&open_shell),
+            "euler_poincare_check must return true for non-closed shells"
+        );
+    }
+
+    // -- Helper: builds a 6-face closed unit cube --
+
     fn build_closed_box_with_edges() -> (Shell, [Edge; 12]) {
         let (shell, edge, _) = build_closed_box_full();
         (shell, edge)
     }
 
-    /// Builds a 6-face closed unit cube (the `build_6face_box` pattern).
     fn build_closed_box() -> Shell {
         build_closed_box_full().0
     }
 
-    /// Builds a 6-face closed unit cube returning all components.
     fn build_closed_box_full() -> (Shell, [Edge; 12], Vec<Vertex>) {
         let p = [
             Point3::new(0.0, 0.0, 1.0),
@@ -214,5 +295,71 @@ mod tests {
         ]
         .into();
         (shell, edge, v)
+    }
+
+    /// Builds a 5-face open box (cube missing the bottom face).
+    fn build_open_box_5face() -> Shell {
+        let p = [
+            Point3::new(0.0, 0.0, 1.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 1.0),
+            Point3::new(0.0, 1.0, 1.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
+        ];
+        let v = Vertex::news(p);
+        let line = |i: usize, j: usize| {
+            let bsp = BsplineCurve::new(KnotVector::bezier_knot(1), vec![p[i], p[j]]);
+            Edge::new(&v[i], &v[j], NurbsCurve::from(bsp).into())
+        };
+        let edge = [
+            line(0, 1),
+            line(1, 2),
+            line(2, 3),
+            line(3, 0),
+            line(0, 4),
+            line(1, 5),
+            line(2, 6),
+            line(3, 7),
+            line(4, 5),
+            line(5, 6),
+            line(6, 7),
+            line(7, 4),
+        ];
+        let plane = |i: usize, j: usize, k: usize, l: usize| {
+            let control_points = vec![vec![p[i], p[l]], vec![p[j], p[k]]];
+            let knot_vec = KnotVector::bezier_knot(1);
+            let bsp = BsplineSurface::new((knot_vec.clone(), knot_vec), control_points);
+            let wire: Wire = [i, j, k, l]
+                .into_iter()
+                .circular_tuple_windows()
+                .map(|(a, b)| {
+                    edge.iter()
+                        .find_map(|e| {
+                            if e.front() == &v[a] && e.back() == &v[b] {
+                                Some(e.clone())
+                            } else if e.back() == &v[a] && e.front() == &v[b] {
+                                Some(e.inverse())
+                            } else {
+                                None
+                            }
+                        })
+                        // SAFETY: Same edge array as closed box.
+                        .unwrap()
+                })
+                .collect();
+            Face::new(vec![wire], bsp.into())
+        };
+        // 5 faces only -- no bottom face.
+        [
+            plane(0, 1, 2, 3), // top
+            plane(1, 0, 4, 5), // front
+            plane(2, 1, 5, 6), // right
+            plane(3, 2, 6, 7), // back
+            plane(0, 3, 7, 4), // left
+        ]
+        .into()
     }
 }
