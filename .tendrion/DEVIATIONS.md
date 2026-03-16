@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 21 | Approval-needed: 0 | Total: 21
+**Summary:** Auto-fixes: 22 | Approval-needed: 0 | Total: 22
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -145,5 +145,12 @@
 **Type:** auto-fix
 **Category:** dependency
 **Description:** TDD RED/GREEN cycle not applicable: all three findings (B1, S1, S2) are test-quality improvements to existing tests, not new implementation code. The implementation already produces correct results; the tests were strengthened to assert more precisely.
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-16T23:50:52.163Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Exempt: Plan 8-2 is documentation-only (FILLET_IMPLEMENTATION_PLAN.md updates). No runtime code, no testable behavior. TDD not applicable.
 **Files changed:** none
 **Status:** applied
