@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 5 of 8 (Solver Port)
-**Plan:** 1 of 2
+**Plan:** 2 of 2
 **Progress:**
 
 
