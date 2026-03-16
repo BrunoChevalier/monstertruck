@@ -2,6 +2,7 @@ use algo::curve::search_closest_parameter;
 use itertools::Itertools;
 use monstertruck_geometry::prelude::*;
 
+use super::convert::sample_curve_to_nurbs;
 use super::geometry::*;
 use super::params::FilletProfile;
 use super::types::*;
@@ -33,13 +34,8 @@ const IC_SAMPLE_COUNT: usize = 24;
 /// to operate reliably on edges produced by boolean operations.
 fn ensure_cuttable_edge(edge: &Edge) -> Edge {
     if let Curve::IntersectionCurve(ic) = &edge.curve() {
-        let (t0, t1) = ic.range_tuple();
-        let points: Vec<Point3> = (0..=IC_SAMPLE_COUNT)
-            .map(|i| t0 + (t1 - t0) * (i as f64) / (IC_SAMPLE_COUNT as f64))
-            .map(|t| ic.subs(t))
-            .collect();
-        let knot_vector = KnotVector::uniform_knot(1, IC_SAMPLE_COUNT);
-        let nurbs = NurbsCurve::from(BsplineCurve::new(knot_vector, points));
+        let range = ic.range_tuple();
+        let nurbs = sample_curve_to_nurbs(range, |t| ic.subs(t), IC_SAMPLE_COUNT);
         Edge::new(
             edge.absolute_front(),
             edge.absolute_back(),

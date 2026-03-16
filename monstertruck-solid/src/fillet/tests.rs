@@ -3235,7 +3235,7 @@ fn fillet_boolean_union() {
 
     assert_eq!(
         shell.shell_condition(),
-        monstertruck_topology::shell::ShellCondition::Closed,
+        ShellCondition::Closed,
         "filleted boolean-union shell must be closed"
     );
 }
@@ -3300,7 +3300,7 @@ fn fillet_boolean_subtraction_multi_wire() {
     if _result.is_ok() {
         assert_eq!(
             shell.shell_condition(),
-            monstertruck_topology::shell::ShellCondition::Closed,
+            ShellCondition::Closed,
             "filleted boolean-subtraction shell must be closed"
         );
     }
