@@ -1,16 +1,133 @@
-// Topology validation for fillet operations.
+//! Topology validation for fillet operations.
+//!
+//! Provides debug-only assertions that verify [`Shell`] topology invariants
+//! (Euler-Poincare characteristic and face orientation consistency) after
+//! fillet modifications. No runtime cost in release builds.
+
+use std::collections::HashSet;
+
+use monstertruck_topology::shell::ShellCondition;
+
+use super::types::*;
+
+/// Checks the Euler-Poincare characteristic for a closed shell.
+///
+/// For a closed shell: V - E + F must equal 2.
+/// For non-closed shells (open, oriented, regular, irregular): returns `true`
+/// unconditionally because the Euler-Poincare formula only applies to closed
+/// 2-manifolds.
+pub(crate) fn euler_poincare_check(shell: &Shell) -> bool {
+    if shell.shell_condition() != ShellCondition::Closed {
+        return true;
+    }
+
+    let v: usize = shell
+        .vertex_iter()
+        .map(|vtx| vtx.id())
+        .collect::<HashSet<_>>()
+        .len();
+    let e: usize = shell
+        .edge_iter()
+        .map(|edge| edge.id())
+        .collect::<HashSet<_>>()
+        .len();
+    let f: usize = shell.len();
+
+    // Euler-Poincare: V - E + F = 2 for a closed orientable 2-manifold.
+    v as isize - e as isize + f as isize == 2
+}
+
+/// Checks that the shell has compatible face orientations.
+///
+/// Returns `true` if [`shell_condition()`] is [`ShellCondition::Oriented`] or
+/// [`ShellCondition::Closed`].
+pub(crate) fn is_oriented_check(shell: &Shell) -> bool {
+    matches!(
+        shell.shell_condition(),
+        ShellCondition::Oriented | ShellCondition::Closed
+    )
+}
+
+/// Debug-only topology validation for a shell after fillet operations.
+///
+/// In release builds this is a complete no-op.
+/// In debug builds it checks both the Euler-Poincare characteristic (closed
+/// shells only) and orientation consistency.
+pub(crate) fn debug_assert_topology(shell: &Shell, context: &str) {
+    if cfg!(debug_assertions) {
+        let v: usize = shell
+            .vertex_iter()
+            .map(|vtx| vtx.id())
+            .collect::<HashSet<_>>()
+            .len();
+        let e: usize = shell
+            .edge_iter()
+            .map(|edge| edge.id())
+            .collect::<HashSet<_>>()
+            .len();
+        let f: usize = shell.len();
+        let chi = v as isize - e as isize + f as isize;
+
+        if shell.shell_condition() == ShellCondition::Closed {
+            debug_assert!(
+                chi == 2,
+                "Euler-Poincare violation after {context}: V={v} E={e} F={f}, V-E+F={chi}"
+            );
+        }
+
+        let condition = shell.shell_condition();
+        debug_assert!(
+            matches!(condition, ShellCondition::Oriented | ShellCondition::Closed),
+            "Orientation violation after {context}: condition={condition:?}"
+        );
+    }
+}
+
+/// Debug-only Euler-Poincare check without orientation validation.
+///
+/// Used for mid-chain intermediate states where orientation may be temporarily
+/// invalid but the vertex-edge-face count should still be consistent.
+pub(crate) fn debug_assert_euler(shell: &Shell, context: &str) {
+    if cfg!(debug_assertions) {
+        let v: usize = shell
+            .vertex_iter()
+            .map(|vtx| vtx.id())
+            .collect::<HashSet<_>>()
+            .len();
+        let e: usize = shell
+            .edge_iter()
+            .map(|edge| edge.id())
+            .collect::<HashSet<_>>()
+            .len();
+        let f: usize = shell.len();
+        let chi = v as isize - e as isize + f as isize;
+
+        if shell.shell_condition() == ShellCondition::Closed {
+            debug_assert!(
+                chi == 2,
+                "Euler-Poincare violation after {context}: V={v} E={e} F={f}, V-E+F={chi}"
+            );
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+    use monstertruck_geometry::prelude::*;
+
+    use super::super::types::*;
     use super::*;
 
     #[test]
     fn euler_poincare_check_exists_and_returns_bool() {
-        // Verify the function exists and accepts a shell reference.
-        // Build a minimal closed shell (cube) and check it.
-        use monstertruck_geometry::prelude::*;
-        use super::super::types::*;
+        let shell = build_closed_box();
+        assert!(euler_poincare_check(&shell));
+        assert!(is_oriented_check(&shell));
+    }
 
+    /// Builds a 6-face closed unit cube (the `build_6face_box` pattern).
+    fn build_closed_box() -> Shell {
         let p = [
             Point3::new(0.0, 0.0, 1.0),
             Point3::new(1.0, 0.0, 1.0),
@@ -58,22 +175,21 @@ mod tests {
                                 None
                             }
                         })
+                        // SAFETY: The edge array contains all 12 edges of a cube,
+                        // so every vertex pair forming a cube edge is present.
                         .unwrap()
                 })
                 .collect();
             Face::new(vec![wire], bsp.into())
         };
-        let shell: Shell = [
-            plane(0, 1, 2, 3),
-            plane(1, 0, 4, 5),
-            plane(2, 1, 5, 6),
-            plane(3, 2, 6, 7),
-            plane(0, 3, 7, 4),
-            plane(5, 4, 7, 6),
+        [
+            plane(0, 1, 2, 3), // top
+            plane(1, 0, 4, 5), // front
+            plane(2, 1, 5, 6), // right
+            plane(3, 2, 6, 7), // back
+            plane(0, 3, 7, 4), // left
+            plane(5, 4, 7, 6), // bottom
         ]
-        .into();
-
-        assert!(euler_poincare_check(&shell));
-        assert!(is_oriented_check(&shell));
+        .into()
     }
 }
