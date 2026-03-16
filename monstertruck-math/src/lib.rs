@@ -26,6 +26,9 @@ pub mod traits;
 /// Type aliases and wrapper types.
 pub mod types;
 
+/// Polynomial equation solvers (quadratic, cubic, quartic).
+pub mod polynomial;
+
 // Re-export all types at crate root.
 pub use types::{
     Deg, Matrix2, Matrix3, Matrix4, Point1, Point2, Point3, Rad, Vector1, Vector2, Vector3, Vector4,
@@ -45,6 +48,9 @@ pub use approx::AbsDiffEq;
 
 // Re-export num_traits (cgmath re-exports these).
 pub use num_traits;
+
+// Re-export num_complex so downstream crates can use `Complex` without adding their own dep.
+pub use num_complex;
 
 // Re-export nalgebra for advanced use.
 pub use nalgebra;

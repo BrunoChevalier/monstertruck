@@ -7,6 +7,7 @@ description = "Math adapter crate providing cgmath-compatible API over nalgebra"
 [dependencies]
 nalgebra = { workspace = true }
 num-traits = "0.2"
+num-complex = "0.4"
 serde = { version = "1", features = ["derive"] }
 approx = "0.5"
 
