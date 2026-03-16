@@ -116,8 +116,40 @@ mod tests {
         assert!(is_oriented_check(&shell));
     }
 
+    /// Verifies that `debug_assert_topology` does not panic on a valid closed box.
+    #[test]
+    fn debug_assert_topology_valid_box() {
+        let shell = build_closed_box();
+        // Should not panic.
+        debug_assert_topology(&shell, "test_valid_box");
+        debug_assert_euler(&shell, "test_valid_box_euler");
+    }
+
+    /// Verifies that fillet_edges calls with debug assertions active do not panic.
+    #[test]
+    fn fillet_edges_with_debug_assertions() {
+        let (mut shell, edge) = build_closed_box_with_edges();
+        let edge_id = edge[0].id();
+        // Fillet a single edge. The debug assertions in fillet_edges (once inserted)
+        // must not panic on this valid closed shell.
+        super::super::edge_select::fillet_edges(&mut shell, &[edge_id], None).unwrap();
+        assert!(euler_poincare_check(&shell));
+        assert!(is_oriented_check(&shell));
+    }
+
+    /// Builds a 6-face closed unit cube, returning shell and edges.
+    fn build_closed_box_with_edges() -> (Shell, [Edge; 12]) {
+        let (shell, edge, _) = build_closed_box_full();
+        (shell, edge)
+    }
+
     /// Builds a 6-face closed unit cube (the `build_6face_box` pattern).
     fn build_closed_box() -> Shell {
+        build_closed_box_full().0
+    }
+
+    /// Builds a 6-face closed unit cube returning all components.
+    fn build_closed_box_full() -> (Shell, [Edge; 12], Vec<Vertex>) {
         let p = [
             Point3::new(0.0, 0.0, 1.0),
             Point3::new(1.0, 0.0, 1.0),
@@ -172,7 +204,7 @@ mod tests {
                 .collect();
             Face::new(vec![wire], bsp.into())
         };
-        [
+        let shell: Shell = [
             plane(0, 1, 2, 3), // top
             plane(1, 0, 4, 5), // front
             plane(2, 1, 5, 6), // right
@@ -180,6 +212,7 @@ mod tests {
             plane(0, 3, 7, 4), // left
             plane(5, 4, 7, 6), // bottom
         ]
-        .into()
+        .into();
+        (shell, edge, v)
     }
 }
