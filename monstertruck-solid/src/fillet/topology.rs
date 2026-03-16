@@ -22,6 +22,34 @@ pub(super) fn take_ori<T>(ori: bool, (a, b): (T, T)) -> T {
     }
 }
 
+/// Number of sample points used when converting an IntersectionCurve to NURBS.
+const IC_SAMPLE_COUNT: usize = 24;
+
+/// If `edge` has an `IntersectionCurve` geometry, return a new edge with
+/// the curve approximated as a NURBS curve (sampled at `IC_SAMPLE_COUNT`
+/// points). Otherwise return a clone of the original edge.
+///
+/// This allows `search_closest_parameter` and `not_strictly_cut_with_parameter`
+/// to operate reliably on edges produced by boolean operations.
+fn ensure_cuttable_edge(edge: &Edge) -> Edge {
+    if let Curve::IntersectionCurve(ic) = &edge.curve() {
+        let (t0, t1) = ic.range_tuple();
+        let points: Vec<Point3> = (0..=IC_SAMPLE_COUNT)
+            .map(|i| t0 + (t1 - t0) * (i as f64) / (IC_SAMPLE_COUNT as f64))
+            .map(|t| ic.subs(t))
+            .collect();
+        let knot_vector = KnotVector::uniform_knot(1, IC_SAMPLE_COUNT);
+        let nurbs = NurbsCurve::from(BsplineCurve::new(knot_vector, points));
+        Edge::new(
+            edge.absolute_front(),
+            edge.absolute_back(),
+            Curve::NurbsCurve(nurbs),
+        )
+    } else {
+        edge.clone()
+    }
+}
+
 pub(super) fn cut_face_by_bezier(
     face: &Face,
     mut bezier: NurbsCurve<Vector4>,
@@ -29,8 +57,14 @@ pub(super) fn cut_face_by_bezier(
 ) -> Option<(Face, Edge)> {
     let (front_edge, back_edge) = find_adjacent_edge(face, filleted_edge_id)?;
 
+    // Convert IntersectionCurve edges to NURBS approximations so that
+    // search_closest_parameter and not_strictly_cut_with_parameter work
+    // reliably on complex boolean-result geometry.
+    let cuttable_front = ensure_cuttable_edge(&front_edge);
+    let cuttable_back = ensure_cuttable_edge(&back_edge);
+
     let new_front_edge = {
-        let curve = front_edge.curve();
+        let curve = cuttable_front.curve();
         let hint = algo::curve::presearch_closest_point(
             &bezier,
             &curve,
@@ -40,11 +74,11 @@ pub(super) fn cut_face_by_bezier(
         let (t0, t1) = search_closest_parameter(&bezier, &curve, hint, 100)?;
         let v0 = Vertex::new(bezier.subs(t0));
         bezier = bezier.cut(t0);
-        front_edge.not_strictly_cut_with_parameter(&v0, t1)?.0
+        cuttable_front.not_strictly_cut_with_parameter(&v0, t1)?.0
     };
 
     let new_back_edge = {
-        let curve = back_edge.curve();
+        let curve = cuttable_back.curve();
         let hint = algo::curve::presearch_closest_point(
             &bezier,
             &curve,
@@ -54,7 +88,7 @@ pub(super) fn cut_face_by_bezier(
         let (t0, t1) = search_closest_parameter(&bezier, &curve, hint, 100)?;
         let v1 = Vertex::new(bezier.subs(t0));
         bezier.cut(t0);
-        back_edge.not_strictly_cut_with_parameter(&v1, t1)?.1
+        cuttable_back.not_strictly_cut_with_parameter(&v1, t1)?.1
     };
 
     let fillet_edge = Edge::new(new_front_edge.back(), new_back_edge.front(), bezier.into());
