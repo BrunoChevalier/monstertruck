@@ -10,6 +10,30 @@ use monstertruck_topology::shell::ShellCondition;
 
 use super::types::*;
 
+/// Counts unique vertices, edges, and faces in a shell.
+///
+/// Returns `(V, E, F)` where V and E are deduplicated by ID.
+fn count_vef(shell: &Shell) -> (usize, usize, usize) {
+    let v = shell
+        .vertex_iter()
+        .map(|vtx| vtx.id())
+        .collect::<HashSet<_>>()
+        .len();
+    let e = shell
+        .edge_iter()
+        .map(|edge| edge.id())
+        .collect::<HashSet<_>>()
+        .len();
+    let f = shell.len();
+    (v, e, f)
+}
+
+/// Computes the Euler characteristic (V - E + F) for a shell.
+fn euler_characteristic(shell: &Shell) -> isize {
+    let (v, e, f) = count_vef(shell);
+    v as isize - e as isize + f as isize
+}
+
 /// Checks the Euler-Poincare characteristic for a closed shell.
 ///
 /// For a closed shell: V - E + F must equal 2.
@@ -20,21 +44,7 @@ pub(crate) fn euler_poincare_check(shell: &Shell) -> bool {
     if shell.shell_condition() != ShellCondition::Closed {
         return true;
     }
-
-    let v: usize = shell
-        .vertex_iter()
-        .map(|vtx| vtx.id())
-        .collect::<HashSet<_>>()
-        .len();
-    let e: usize = shell
-        .edge_iter()
-        .map(|edge| edge.id())
-        .collect::<HashSet<_>>()
-        .len();
-    let f: usize = shell.len();
-
-    // Euler-Poincare: V - E + F = 2 for a closed orientable 2-manifold.
-    v as isize - e as isize + f as isize == 2
+    euler_characteristic(shell) == 2
 }
 
 /// Checks that the shell has compatible face orientations.
@@ -55,17 +65,7 @@ pub(crate) fn is_oriented_check(shell: &Shell) -> bool {
 /// shells only) and orientation consistency.
 pub(crate) fn debug_assert_topology(shell: &Shell, context: &str) {
     if cfg!(debug_assertions) {
-        let v: usize = shell
-            .vertex_iter()
-            .map(|vtx| vtx.id())
-            .collect::<HashSet<_>>()
-            .len();
-        let e: usize = shell
-            .edge_iter()
-            .map(|edge| edge.id())
-            .collect::<HashSet<_>>()
-            .len();
-        let f: usize = shell.len();
+        let (v, e, f) = count_vef(shell);
         let chi = v as isize - e as isize + f as isize;
 
         if shell.shell_condition() == ShellCondition::Closed {
@@ -89,17 +89,7 @@ pub(crate) fn debug_assert_topology(shell: &Shell, context: &str) {
 /// invalid but the vertex-edge-face count should still be consistent.
 pub(crate) fn debug_assert_euler(shell: &Shell, context: &str) {
     if cfg!(debug_assertions) {
-        let v: usize = shell
-            .vertex_iter()
-            .map(|vtx| vtx.id())
-            .collect::<HashSet<_>>()
-            .len();
-        let e: usize = shell
-            .edge_iter()
-            .map(|edge| edge.id())
-            .collect::<HashSet<_>>()
-            .len();
-        let f: usize = shell.len();
+        let (v, e, f) = count_vef(shell);
         let chi = v as isize - e as isize + f as isize;
 
         if shell.shell_condition() == ShellCondition::Closed {
