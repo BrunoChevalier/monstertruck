@@ -12,7 +12,7 @@
 - [x] **Phase 3: Feature Completeness** - STEP boolean export, chamfer, shell/offset, and draft/taper operations
 - [x] **Phase 4: Strategic Evolution** - cgmath-to-nalgebra migration, RwLock concurrency, GPU tessellation, T-spline completion
 - [x] **Phase 5: Solver Port** - Port polynomial solvers from matext4cgmath to monstertruck-math to fix build breakage
-- [ ] **Phase 6: Topology Surgery Hardening** - Harden cut_face_by_bezier for boolean-result faces and fix seam averaging bug
+- [x] **Phase 6: Topology Surgery Hardening** - Harden cut_face_by_bezier for boolean-result faces and fix seam averaging bug
 - [ ] **Phase 7: Integration Mode** - Implement FilletMode with G1/G2 continuity annotations and fillet option extensions
 - [ ] **Phase 8: Validation and Documentation** - Add topology invariant checks and update fillet implementation plan
 
@@ -91,7 +91,7 @@
 | 3. Feature Completeness | v0.2.0 | 5/5 | ✓ Complete | 2026-03-10 |
 | 4. Strategic Evolution | v0.2.0 | 4/4 | ✓ Complete | 2026-03-15 |
 | 5. Solver Port | v0.3.0 | 2/2 | ✓ Complete | 2026-03-16 |
-| 6. Topology Surgery Hardening | v0.3.0 | 0/TBD | Not started | - |
+| 6. Topology Surgery Hardening | v0.3.0 | 2/2 | ✓ Complete | 2026-03-16 |
 | 7. Integration Mode | v0.3.0 | 0/TBD | Not started | - |
 | 8. Validation and Documentation | v0.3.0 | 0/TBD | Not started | - |
 
