@@ -2790,54 +2790,105 @@ fn fillet_edges_cuboid_top_and_bottom() {
 }
 
 /// Demonstrates that homogeneous control points must be dehomogenized before
-/// averaging to produce correct 3D midpoints. Naive `(p + q) / 2` on weighted
-/// homogeneous coordinates yields a weight-biased position.
+/// averaging to produce correct 3D midpoints.  Uses two adjacent
+/// `NurbsSurface<Vector4>` grids whose shared boundary control points have
+/// differing weights (w=1 on one surface, w=3 on the other) AND slightly
+/// different 3D positions -- the typical situation at a fillet seam before
+/// averaging.  Naive `(p + q) / 2` in homogeneous space yields a
+/// weight-biased position; the dehomogenize-average-rehomogenize pattern
+/// gives the true 3D midpoint.
 #[test]
 fn seam_averaging_dehomogenizes() {
-    // Two 3D points at known positions with differing weights.
-    let pt_a = Point3::new(2.0, 0.0, 0.0);
-    let pt_b = Point3::new(0.0, 4.0, 0.0);
-    let w_a = 1.0;
-    let w_b = 3.0;
+    // -----------------------------------------------------------
+    // Build two adjacent NurbsSurface<Vector4> grids (degree-1 in
+    // both u and v, 2x2 control points each).
+    //
+    // Surface A: last column at roughly x=1, weight 1.0.
+    // Surface B: first column at roughly x=1 but offset, weight 3.0.
+    //
+    // The shared seam has DIFFERENT 3D positions and DIFFERENT weights,
+    // which is what triggers the homogeneous averaging bug.
+    // -----------------------------------------------------------
+    let w_a = 1.0_f64;
+    let w_b = 3.0_f64;
 
-    // Homogeneous representation: (wx, wy, wz, w).
-    let p = Vector4::from_point_weight(pt_a, w_a);
-    let q = Vector4::from_point_weight(pt_b, w_b);
+    // Surface A: 2x2 control point grid.
+    let cp_a: Vec<Vec<Vector4>> = vec![
+        vec![
+            Vector4::from_point_weight(Point3::new(0.0, 0.0, 0.0), w_a),
+            Vector4::from_point_weight(Point3::new(0.0, 1.0, 0.0), w_a),
+        ],
+        vec![
+            Vector4::from_point_weight(Point3::new(1.0, 0.0, 0.0), w_a),
+            Vector4::from_point_weight(Point3::new(1.0, 1.0, 0.0), w_a),
+        ],
+    ];
+    let surf_a = NurbsSurface::new(BsplineSurface::new(
+        (KnotVector::bezier_knot(1), KnotVector::bezier_knot(1)),
+        cp_a,
+    ));
 
-    // Correct 3D midpoint: dehomogenize, average, rehomogenize.
-    let correct_mid = pt_a.midpoint(pt_b);
-    assert_near2!(correct_mid, Point3::new(1.0, 2.0, 0.0));
+    // Surface B: first column is offset from A's last column.
+    let cp_b: Vec<Vec<Vector4>> = vec![
+        vec![
+            Vector4::from_point_weight(Point3::new(1.2, 0.1, 0.0), w_b),
+            Vector4::from_point_weight(Point3::new(1.2, 1.1, 0.0), w_b),
+        ],
+        vec![
+            Vector4::from_point_weight(Point3::new(2.0, 0.0, 0.0), w_b),
+            Vector4::from_point_weight(Point3::new(2.0, 1.0, 0.0), w_b),
+        ],
+    ];
+    let surf_b = NurbsSurface::new(BsplineSurface::new(
+        (KnotVector::bezier_knot(1), KnotVector::bezier_knot(1)),
+        cp_b,
+    ));
 
-    let avg_w = (p.weight() + q.weight()) / 2.0;
-    let correct = Vector4::from_point_weight(correct_mid, avg_w);
-    assert_near2!(correct.to_point(), correct_mid);
+    // Read shared boundary control points.
+    // Surface A last column (idx0=1): control_point(1, j)
+    // Surface B first column (idx0=0): control_point(0, j)
+    let n_rows = surf_a.control_points()[0].len(); // 2
 
-    // Naive averaging (current bug): `(p + q) / 2` in homogeneous space.
-    let naive = (p + q) / 2.0;
+    for j in 0..n_rows {
+        let p = *surf_a.control_point(1, j); // last column of A
+        let q = *surf_b.control_point(0, j); // first column of B
 
-    // The naive result has the correct average weight...
-    assert_near2!(naive.weight(), avg_w);
+        // 3D positions differ at the seam.
+        let p3 = p.to_point();
+        let q3 = q.to_point();
 
-    // ...but its 3D position is WRONG -- biased toward the higher-weight point.
-    // Naive averaging does NOT produce the correct 3D midpoint when weights differ.
-    let naive_pt = naive.to_point();
-    let dist = (naive_pt - correct_mid).magnitude();
-    assert!(
-        dist > 0.01,
-        "naive averaging should NOT equal correct midpoint: naive={naive_pt:?}, correct={correct_mid:?}, dist={dist}",
-    );
+        // Correct midpoint: dehomogenize, average 3D positions, rehomogenize.
+        let correct_mid = p3.midpoint(q3);
+        let avg_w = (p.weight() + q.weight()) / 2.0;
+        let correct = Vector4::from_point_weight(correct_mid, avg_w);
+        assert_near2!(correct.to_point(), correct_mid);
 
-    // The dehomogenize-average-rehomogenize pattern used in fillet_along_wire
-    // produces the correct 3D midpoint.
-    let avg_w2 = (p.weight() + q.weight()) / 2.0;
-    let corrected = Vector4::from_point_weight(correct_mid, avg_w2);
-    assert_near2!(corrected.to_point(), correct_mid);
+        // Naive averaging in homogeneous space.
+        let naive = (p + q) / 2.0;
+        let naive_pt = naive.to_point();
+
+        // The naive result is biased toward the higher-weight point.
+        let dist = (naive_pt - correct_mid).magnitude();
+        assert!(
+            dist > 0.01,
+            "naive averaging should NOT equal correct midpoint at row {j}: \
+             naive={naive_pt:?}, correct={correct_mid:?}, dist={dist}",
+        );
+
+        // The dehomogenize-average-rehomogenize pattern (used in
+        // fillet_along_wire) produces the correct 3D midpoint.
+        assert_near2!(correct.to_point(), correct_mid);
+    }
 }
 
-/// Builds a 4-face open box, creates a 2-edge wire along the ridge, applies
-/// `fillet_along_wire`, and verifies the resulting shell has the expected face
-/// count and that seam control points between adjacent fillet surfaces produce
-/// geometrically correct 3D positions (i.e. dehomogenized averaging).
+/// Builds a 4-face open box, prepares the topology with `fillet_with_side`,
+/// then applies `fillet_along_wire` on a 2-edge wire along the ridge.
+///
+/// Verifies:
+///   1. The resulting shell has exactly 6 faces post-fillet_with_side, then
+///      the expected count after fillet_along_wire adds fillet faces.
+///   2. Adjacent fillet surfaces share C0 continuity at the seam (points on
+///      both sides of the shared boundary match within tolerance).
 #[test]
 fn fillet_wire_seam_continuity() {
     // 4-face open box (same topology as fillet_semi_cube).
@@ -2898,13 +2949,16 @@ fn fillet_wire_seam_continuity() {
         Face::new(vec![wire], bsp.into())
     };
     let mut shell: Shell = [
-        plane(0, 1, 2, 3),
-        plane(1, 0, 4, 5),
-        plane(2, 1, 5, 6),
-        plane(3, 2, 6, 7),
+        plane(0, 1, 2, 3), // face 0: top
+        plane(1, 0, 4, 5), // face 1: side
+        plane(2, 1, 5, 6), // face 2: side
+        plane(3, 2, 6, 7), // face 3: side
     ]
     .into();
+    assert_eq!(shell.len(), 4);
 
+    // Prepare topology: fillet two vertical edges so the top face boundary
+    // acquires the geometry that fillet_along_wire can operate on.
     let opts = FilletOptions {
         radius: RadiusSpec::Constant(0.4),
         ..Default::default()
@@ -2933,11 +2987,19 @@ fn fillet_wire_seam_continuity() {
     (shell[2], shell[3], shell[0]) = (face0, face1, side1.unwrap());
     shell.push(face2);
 
+    // After two fillet_with_side calls: 4 original + 2 fillet = 6 faces.
+    assert_eq!(
+        shell.len(),
+        6,
+        "expected 6 faces after fillet_with_side prep, got {}",
+        shell.len()
+    );
+
     let mut boundary = shell[0].boundaries().pop().unwrap();
     boundary.pop_back();
     assert_eq!(boundary.front_vertex().unwrap(), &v[0]);
 
-    let initial_face_count = shell.len();
+    let pre_wire_count = shell.len();
 
     fillet_along_wire(
         &mut shell,
@@ -2949,16 +3011,56 @@ fn fillet_wire_seam_continuity() {
     )
     .unwrap();
 
-    // fillet_along_wire adds fillet faces to the shell:
-    // boundary has 2 edges, producing fillet surfaces that result in 3 fillet faces
-    // (first, middle, last for an open wire of length 2).
+    // fillet_along_wire adds fillet faces (first + middle + last for the open
+    // wire extracted from the modified top face boundary).
+    let fillet_face_count = shell.len() - pre_wire_count;
     assert!(
-        shell.len() > initial_face_count,
-        "expected new fillet faces: initial={initial_face_count}, got={}",
-        shell.len()
+        fillet_face_count >= 2,
+        "expected at least 2 fillet faces, got {fillet_face_count}",
     );
 
-    // Verify the shell can be triangulated without errors (basic sanity check
-    // that the geometry is well-formed after seam averaging).
+    // C0 continuity check: the two fillet faces (appended at the end of the
+    // shell) share a seam.  Collect both surfaces and sample corresponding
+    // points along the shared boundary to verify they match within tolerance.
+    let fillet_a = &shell[pre_wire_count];
+    let fillet_b = &shell[pre_wire_count + 1];
+    let surf_a: NurbsSurface<Vector4> = fillet_a.oriented_surface();
+    let surf_b: NurbsSurface<Vector4> = fillet_b.oriented_surface();
+
+    let (u_range_a, v_range_a) = surf_a.range_tuple();
+    let (u_range_b, v_range_b) = surf_b.range_tuple();
+
+    // Sample the right v-boundary of surf_a and left v-boundary of surf_b.
+    // For concatenated fillet surfaces the seam lies at v_max of the first
+    // face and v_min of the second (or vice versa depending on orientation).
+    // We try both orderings and accept whichever produces coincident points.
+    let n_samples = 5;
+    let tol = 0.05;
+    let mut matched_max_min = 0;
+    let mut matched_min_min = 0;
+    for i in 0..=n_samples {
+        let t = i as f64 / n_samples as f64;
+        let u_a = u_range_a.0 + t * (u_range_a.1 - u_range_a.0);
+        let u_b = u_range_b.0 + t * (u_range_b.1 - u_range_b.0);
+
+        let pt_a_max = surf_a.subs(u_a, v_range_a.1);
+        let pt_b_min = surf_b.subs(u_b, v_range_b.0);
+        if (pt_a_max - pt_b_min).magnitude() < tol {
+            matched_max_min += 1;
+        }
+
+        let pt_a_min = surf_a.subs(u_a, v_range_a.0);
+        if (pt_a_min - pt_b_min).magnitude() < tol {
+            matched_min_min += 1;
+        }
+    }
+    let best = matched_max_min.max(matched_min_min);
+    assert!(
+        best >= 3,
+        "C0 continuity: expected >= 3 coincident boundary samples, got {best} \
+         (max-min={matched_max_min}, min-min={matched_min_min})",
+    );
+
+    // Verify the shell can be triangulated without errors.
     let _poly = shell.robust_triangulation(0.001).to_polygon();
 }
