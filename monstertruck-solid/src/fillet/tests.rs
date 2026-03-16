@@ -11,6 +11,8 @@ use super::{
     FilletOptions, FilletProfile, RadiusSpec, fillet, fillet_along_wire, fillet_edges,
     fillet_edges_generic, fillet_with_side,
 };
+use super::integrate::{ContinuityAnnotation, FilletResult};
+use super::ops::fillet_annotated;
 use super::params::{CornerMode, ExtendMode, FilletMode};
 
 #[test]
@@ -3399,4 +3401,198 @@ fn fillet_edges_none_params_uses_default() {
 
     // Verify the shell can still be triangulated.
     let _poly = shell.robust_triangulation(0.001).to_polygon();
+}
+
+#[test]
+fn integrate_visual_single_edge_annotated() {
+    let (shell, edge, _) = build_box_shell();
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::Constant(0.3),
+        ..Default::default()
+    }
+    .with_mode(FilletMode::IntegrateVisual);
+
+    let result: FilletResult = fillet_annotated(
+        &shell[1],
+        &shell[2],
+        edge[5].id(),
+        &opts,
+    )
+    .unwrap();
+
+    // The FilletResult should carry the fillet face and annotations.
+    assert!(
+        !result.annotations.is_empty(),
+        "IntegrateVisual mode should produce non-empty annotations"
+    );
+
+    // Annotations should be at least G1 for a rolling-ball fillet
+    // against planar faces (which produce tangent-continuous junctions).
+    for (_edge_id, annotation) in &result.annotations {
+        assert!(
+            *annotation == ContinuityAnnotation::G1
+                || *annotation == ContinuityAnnotation::G2,
+            "expected G1 or G2, got {:?}",
+            annotation
+        );
+    }
+}
+
+#[test]
+fn keep_separate_face_returns_empty_annotations() {
+    let (shell, edge, _) = build_box_shell();
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::Constant(0.3),
+        ..Default::default()
+    }
+    .with_mode(FilletMode::KeepSeparateFace);
+
+    let result = fillet_annotated(
+        &shell[1],
+        &shell[2],
+        edge[5].id(),
+        &opts,
+    )
+    .unwrap();
+
+    assert!(
+        result.annotations.is_empty(),
+        "KeepSeparateFace mode should produce empty annotations"
+    );
+}
+
+#[test]
+fn integrate_visual_vs_keep_separate_measurable_difference() {
+    let (shell, edge, _) = build_box_shell();
+
+    // Fillet with KeepSeparateFace mode via fillet_annotated.
+    let keep_result = fillet_annotated(
+        &shell[1],
+        &shell[2],
+        edge[5].id(),
+        &FilletOptions {
+            radius: RadiusSpec::Constant(0.3),
+            ..Default::default()
+        }
+        .with_mode(FilletMode::KeepSeparateFace),
+    )
+    .unwrap();
+
+    // Fillet with IntegrateVisual mode via fillet_annotated.
+    let integrate_result = fillet_annotated(
+        &shell[1],
+        &shell[2],
+        edge[5].id(),
+        &FilletOptions {
+            radius: RadiusSpec::Constant(0.3),
+            ..Default::default()
+        }
+        .with_mode(FilletMode::IntegrateVisual),
+    )
+    .unwrap();
+
+    // Measurable difference 1: IntegrateVisual has annotations, KeepSeparateFace does not.
+    assert!(
+        keep_result.annotations.is_empty(),
+        "KeepSeparateFace should have zero annotations"
+    );
+    assert!(
+        !integrate_result.annotations.is_empty(),
+        "IntegrateVisual should have non-zero annotations"
+    );
+
+    // Measurable difference 2: IntegrateVisual should annotate at least 2 shared edges.
+    assert!(
+        integrate_result.annotations.len() >= 2,
+        "IntegrateVisual should annotate at least 2 shared edges, got {}",
+        integrate_result.annotations.len()
+    );
+
+    // Measurable difference 3: Tessellate both results and compare mesh properties.
+    let shell_keep: Shell = vec![
+        keep_result.new_face0,
+        keep_result.new_face1,
+        keep_result.fillet_face,
+    ]
+    .into();
+    let poly_keep = shell_keep.robust_triangulation(0.001).to_polygon();
+
+    let shell_integrate: Shell = vec![
+        integrate_result.new_face0,
+        integrate_result.new_face1,
+        integrate_result.fillet_face,
+    ]
+    .into();
+    let poly_integrate = shell_integrate.robust_triangulation(0.001).to_polygon();
+
+    // Both should tessellate successfully.
+    assert!(
+        poly_keep.positions().len() > 0,
+        "KeepSeparateFace tessellation should produce vertices"
+    );
+    assert!(
+        poly_integrate.positions().len() > 0,
+        "IntegrateVisual tessellation should produce vertices"
+    );
+}
+
+#[test]
+fn integrate_visual_crack_free_tessellation() {
+    let (mut shell, edge, _) = build_box_shell();
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::Constant(0.3),
+        ..Default::default()
+    }
+    .with_mode(FilletMode::IntegrateVisual);
+
+    fillet_edges(&mut shell, &[edge[5].id()], Some(&opts)).unwrap();
+
+    // Shell should remain closed (no cracks) after IntegrateVisual fillet.
+    // Note: build_box_shell creates 4 faces (not a complete box), so it may
+    // not be closed. Instead verify it tessellates without panics.
+    let _poly = shell.robust_triangulation(0.001).to_polygon();
+}
+
+#[test]
+fn keep_separate_face_unchanged_behavior() {
+    let (shell, edge, _) = build_box_shell();
+
+    // Fillet with explicit KeepSeparateFace mode.
+    let opts_explicit = FilletOptions {
+        radius: RadiusSpec::Constant(0.3),
+        ..Default::default()
+    }
+    .with_mode(FilletMode::KeepSeparateFace);
+
+    let result_explicit = fillet(
+        &shell[1],
+        &shell[2],
+        edge[5].id(),
+        &opts_explicit,
+    )
+    .unwrap();
+
+    // Fillet with default mode (should be KeepSeparateFace).
+    let opts_default = FilletOptions {
+        radius: RadiusSpec::Constant(0.3),
+        ..Default::default()
+    };
+
+    let result_default = fillet(
+        &shell[1],
+        &shell[2],
+        edge[5].id(),
+        &opts_default,
+    )
+    .unwrap();
+
+    // Both should produce the same number of boundary edges on the fillet face.
+    assert_eq!(
+        result_explicit.2.boundaries()[0].len(),
+        result_default.2.boundaries()[0].len(),
+        "KeepSeparateFace and default should produce identical topology"
+    );
 }

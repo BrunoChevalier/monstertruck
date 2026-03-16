@@ -1,9 +1,13 @@
 use algo::curve::search_closest_parameter;
 use monstertruck_geometry::prelude::*;
+use std::collections::HashMap;
 
 use super::error::FilletError;
 use super::geometry::*;
-use super::params::{FilletOptions, FilletProfile, RadiusSpec};
+use super::integrate::{
+    ContinuityAnnotation, FilletResult, annotate_fillet_edges, ensure_seamless_vertices,
+};
+use super::params::{FilletMode, FilletOptions, FilletProfile, RadiusSpec};
 use super::topology::*;
 use super::types::*;
 
@@ -99,6 +103,35 @@ pub fn fillet(
     };
 
     Ok((new_face0, new_face1, fillet))
+}
+
+/// Fillets a single shared edge, returning a FilletResult with continuity annotations.
+///
+/// When mode is IntegrateVisual, the result carries G1/G2 annotations on
+/// shared edges and the fillet face has seamless vertex positions.
+/// When mode is KeepSeparateFace, annotations is empty.
+pub fn fillet_annotated(
+    face0: &Face,
+    face1: &Face,
+    filleted_edge_id: EdgeId,
+    options: &FilletOptions,
+) -> Result<FilletResult> {
+    let (new_face0, new_face1, mut fillet_face) = fillet(face0, face1, filleted_edge_id, options)?;
+
+    let annotations = match options.mode {
+        FilletMode::IntegrateVisual => {
+            ensure_seamless_vertices(&mut fillet_face, &new_face0, &new_face1);
+            annotate_fillet_edges(&new_face0, &new_face1, &fillet_face)
+        }
+        FilletMode::KeepSeparateFace => HashMap::new(),
+    };
+
+    Ok(FilletResult {
+        new_face0,
+        new_face1,
+        fillet_face,
+        annotations,
+    })
 }
 
 /// Fillets a shared edge between two faces, optionally updating adjacent side faces.
