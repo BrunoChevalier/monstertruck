@@ -1,6 +1,39 @@
 use monstertruck_geometry::prelude::*;
 use std::num::NonZeroUsize;
 
+/// Controls how fillet faces relate to host faces.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum FilletMode {
+    /// Fillet face is a separate topological face (current behavior).
+    #[default]
+    KeepSeparateFace,
+    /// Fillet face is a separate face annotated with G1/G2 continuity
+    /// constraints at shared edges, enabling seamless tessellation.
+    IntegrateVisual,
+}
+
+/// Controls how fillet surfaces extend beyond edge endpoints.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ExtendMode {
+    /// Extend fillet surfaces beyond endpoints when possible (current behavior).
+    #[default]
+    Auto,
+    /// Never extend fillet surfaces beyond endpoints.
+    NoExtend,
+}
+
+/// Controls how fillet corners (where multiple fillets meet) are handled.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum CornerMode {
+    /// Default corner handling.
+    #[default]
+    Auto,
+    /// Trim corners to a sharp intersection.
+    Trim,
+    /// Blend corners with a smooth transition.
+    Blend,
+}
+
 /// Profile shape for fillet operations.
 #[derive(Debug, Clone, Default)]
 pub enum FilletProfile {
@@ -54,6 +87,12 @@ pub struct FilletOptions {
     pub divisions: NonZeroUsize,
     /// Profile shape. Default: [`FilletProfile::Round`].
     pub profile: FilletProfile,
+    /// Fillet-to-host-face integration mode.
+    pub mode: FilletMode,
+    /// How fillet surfaces extend beyond edge endpoints.
+    pub extend_mode: ExtendMode,
+    /// How fillet corners are handled.
+    pub corner_mode: CornerMode,
 }
 
 impl Default for FilletOptions {
@@ -62,6 +101,9 @@ impl Default for FilletOptions {
             radius: RadiusSpec::Constant(0.1),
             divisions: NonZeroUsize::new(5).expect("5 is non-zero"),
             profile: FilletProfile::default(),
+            mode: FilletMode::default(),
+            extend_mode: ExtendMode::default(),
+            corner_mode: CornerMode::default(),
         }
     }
 }
@@ -98,6 +140,24 @@ impl FilletOptions {
     /// Sets the fillet profile.
     pub fn with_profile(mut self, profile: FilletProfile) -> Self {
         self.profile = profile;
+        self
+    }
+
+    /// Sets the fillet-to-host-face integration mode.
+    pub fn with_mode(mut self, mode: FilletMode) -> Self {
+        self.mode = mode;
+        self
+    }
+
+    /// Sets how fillet surfaces extend beyond edge endpoints.
+    pub fn with_extend_mode(mut self, extend_mode: ExtendMode) -> Self {
+        self.extend_mode = extend_mode;
+        self
+    }
+
+    /// Sets how fillet corners are handled.
+    pub fn with_corner_mode(mut self, corner_mode: CornerMode) -> Self {
+        self.corner_mode = corner_mode;
         self
     }
 }

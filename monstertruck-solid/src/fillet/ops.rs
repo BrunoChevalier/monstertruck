@@ -154,6 +154,7 @@ pub fn fillet_with_side(
 /// Supports both open and closed wires. Modifies `shell` in place by replacing
 /// filleted faces and adding new fillet faces.
 pub fn fillet_along_wire(shell: &mut Shell, wire: &Wire, options: &FilletOptions) -> Result<()> {
+    let _mode = options.mode;
     let division = options.divisions.get();
 
     // Validate variable radius constraint for closed wire fillets.

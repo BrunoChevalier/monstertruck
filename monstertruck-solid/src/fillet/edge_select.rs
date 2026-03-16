@@ -561,6 +561,9 @@ pub fn fillet_edges(
                     radius: RadiusSpec::Constant(radii[edge_id_to_idx[&original_eid]]),
                     divisions: options.divisions,
                     profile: options.profile.clone(),
+                    mode: options.mode,
+                    extend_mode: options.extend_mode,
+                    corner_mode: options.corner_mode,
                 };
                 &chain_opts
             } else {
@@ -612,6 +615,9 @@ pub fn fillet_edges(
                     radius: RadiusSpec::PerEdge(chain_radii),
                     divisions: options.divisions,
                     profile: options.profile.clone(),
+                    mode: options.mode,
+                    extend_mode: options.extend_mode,
+                    corner_mode: options.corner_mode,
                 };
                 &chain_opts
             } else {
@@ -664,6 +670,9 @@ pub fn fillet_edges(
                             radius: RadiusSpec::Constant(radii[edge_id_to_idx[&original_eid]]),
                             divisions: options.divisions,
                             profile: options.profile.clone(),
+                            mode: options.mode,
+                            extend_mode: options.extend_mode,
+                            corner_mode: options.corner_mode,
                         };
                         &single_edge_opts
                     } else {

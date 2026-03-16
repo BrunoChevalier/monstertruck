@@ -35,7 +35,7 @@ pub use transversal::{
 mod alternative;
 pub mod fillet;
 pub use fillet::{
-    FilletError, FilletIntersectionCurve, FilletOptions, FilletProfile, FilletableCurve,
-    FilletableSurface, ParameterCurveLinear, RadiusSpec, fillet, fillet_along_wire, fillet_edges,
-    fillet_edges_generic, fillet_with_side,
+    CornerMode, ExtendMode, FilletError, FilletIntersectionCurve, FilletMode, FilletOptions,
+    FilletProfile, FilletableCurve, FilletableSurface, ParameterCurveLinear, RadiusSpec, fillet,
+    fillet_along_wire, fillet_edges, fillet_edges_generic, fillet_with_side,
 };
