@@ -83,7 +83,7 @@ pub(super) fn classify_edge_continuity(
 
         let fillet_len = fillet_normal.magnitude();
         let host_len = host_normal.magnitude();
-        if fillet_len < 1.0e-12 || host_len < 1.0e-12 {
+        if !fillet_len.is_finite() || fillet_len < 1.0e-12 || !host_len.is_finite() || host_len < 1.0e-12 {
             all_g1 = false;
             all_g2 = false;
             continue;
@@ -212,4 +212,51 @@ pub(super) fn ensure_seamless_vertices(
     // The Arc-based edge sharing guarantees positional consistency.
     // Future enhancement: if surface evaluation drift is detected,
     // add explicit control-point snapping here.
+
+    // Debug-mode contract check: verify shared boundary vertices between fillet
+    // and host faces have identical positions, confirming the Arc-sharing
+    // invariant prevents tessellation cracks.
+    #[cfg(debug_assertions)]
+    {
+        let fillet_boundary = &_fillet_face.absolute_boundaries()[0];
+        if fillet_boundary.len() >= 4 {
+            let tol = 1.0e-10;
+            // Shared edge with host_face0 at boundary index 0.
+            // The fillet edge endpoint positions must appear on the host boundary.
+            let shared0 = &fillet_boundary[0];
+            let f0_front = shared0.front().point();
+            let f0_back = shared0.back().point();
+            let host0_verts: Vec<_> = _host_face0
+                .absolute_boundaries()[0]
+                .iter()
+                .map(|e| e.front().point())
+                .collect();
+            debug_assert!(
+                host0_verts.iter().any(|v| (*v - f0_front).magnitude() < tol),
+                "ensure_seamless_vertices: fillet edge 0 front vertex not found on host face 0"
+            );
+            debug_assert!(
+                host0_verts.iter().any(|v| (*v - f0_back).magnitude() < tol),
+                "ensure_seamless_vertices: fillet edge 0 back vertex not found on host face 0"
+            );
+
+            // Shared edge with host_face1 at boundary index 2.
+            let shared2 = &fillet_boundary[2];
+            let f2_front = shared2.front().point();
+            let f2_back = shared2.back().point();
+            let host1_verts: Vec<_> = _host_face1
+                .absolute_boundaries()[0]
+                .iter()
+                .map(|e| e.front().point())
+                .collect();
+            debug_assert!(
+                host1_verts.iter().any(|v| (*v - f2_front).magnitude() < tol),
+                "ensure_seamless_vertices: fillet edge 2 front vertex not found on host face 1"
+            );
+            debug_assert!(
+                host1_verts.iter().any(|v| (*v - f2_back).magnitude() < tol),
+                "ensure_seamless_vertices: fillet edge 2 back vertex not found on host face 1"
+            );
+        }
+    }
 }

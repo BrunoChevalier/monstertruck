@@ -3539,7 +3539,7 @@ fn integrate_visual_vs_keep_separate_measurable_difference() {
 }
 
 #[test]
-fn integrate_visual_crack_free_tessellation() {
+fn integrate_visual_tessellation_does_not_panic() {
     let (mut shell, edge, _) = build_box_shell();
 
     let opts = FilletOptions {

@@ -13,6 +13,7 @@ mod ops;
 mod convert;
 mod error;
 mod geometry;
+#[allow(private_interfaces)]
 mod integrate;
 mod params;
 mod topology;
