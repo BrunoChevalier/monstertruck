@@ -230,6 +230,45 @@ impl<S: na::Scalar + Copy> Matrix3<S> {
         Matrix3(*rot.matrix())
     }
 
+    /// Creates a 2D translation matrix (homogeneous coordinates).
+    #[inline]
+    pub fn from_translation(v: Vector2<S>) -> Self
+    where
+        S: na::RealField,
+    {
+        Matrix3::new(
+            S::one(),
+            S::zero(),
+            S::zero(),
+            S::zero(),
+            S::one(),
+            S::zero(),
+            v[0],
+            v[1],
+            S::one(),
+        )
+    }
+
+    /// Creates a uniform scale matrix.
+    #[inline]
+    pub fn from_scale(s: S) -> Self
+    where
+        S: na::RealField,
+    {
+        Self::from_nonuniform_scale(s, s)
+    }
+
+    /// Creates a non-uniform 2D scaling matrix (homogeneous coordinates).
+    #[inline]
+    pub fn from_nonuniform_scale(x: S, y: S) -> Self
+    where
+        S: na::RealField,
+    {
+        Matrix3::new(
+            x, S::zero(), S::zero(), S::zero(), y, S::zero(), S::zero(), S::zero(), S::one(),
+        )
+    }
+
     /// Returns the transpose of the matrix.
     #[inline]
     pub fn transpose(self) -> Self {
@@ -403,6 +442,17 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
         m * v
     }
 
+    /// Returns the 3D (xyz) part of the given column.
+    ///
+    /// Equivalent to cgmath's `mat.x.truncate()`, `mat.z.truncate()`, etc.
+    #[inline]
+    pub fn column3(&self, col: usize) -> Vector3<S>
+    where
+        S: Copy,
+    {
+        Vector3::new(self.0[(0, col)], self.0[(1, col)], self.0[(2, col)])
+    }
+
     /// Iwasawa (QR-like) decomposition: returns `Some((orthogonal, scaling, upper))`.
     ///
     /// The scaling matrix `K` is a diagonal matrix whose diagonal entries
@@ -430,6 +480,15 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
             }
         }
         Some((Matrix4(q), Matrix4(k), Matrix4(u)))
+    }
+
+    /// Creates a uniform scale matrix.
+    #[inline]
+    pub fn from_scale(s: S) -> Self
+    where
+        S: na::RealField,
+    {
+        Self::from_nonuniform_scale(s, s, s)
     }
 
     /// Creates a non-uniform scaling matrix.

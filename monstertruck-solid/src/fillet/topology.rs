@@ -96,7 +96,10 @@ pub(super) fn create_pcurve_edge(
 ) -> Option<Edge> {
     let uv0 = fillet_surface.search_parameter(v0.point(), hint0, 100)?;
     let uv1 = fillet_surface.search_parameter(v1.point(), hint1, 100)?;
-    let curve = ParameterCurve::new(Line(uv0.into(), uv1.into()), fillet_surface.clone());
+    let curve = ParameterCurve::new(
+        Line(Point2::new(uv0.0, uv0.1), Point2::new(uv1.0, uv1.1)),
+        fillet_surface.clone(),
+    );
     Some(Edge::new(v0, v1, curve.into()))
 }
 

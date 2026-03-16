@@ -18,7 +18,7 @@ impl FaceNormal {
             .fold(Vector3::zero(), |sum, v| {
                 let vec0 = positions[v[0].pos].to_vec() - center;
                 let vec1 = positions[v[1].pos].to_vec() - center;
-                sum + vec0.cross(vec1)
+                sum + vec0.cross(&vec1)
             })
             .normalize();
         FaceNormal { face_id, normal }

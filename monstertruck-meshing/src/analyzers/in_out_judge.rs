@@ -13,7 +13,7 @@ struct Triangle([Point3; 3]);
 impl Triangle {
     #[inline(always)]
     fn normal(self) -> Vector3 {
-        (self[1] - self[0]).cross(self[2] - self[0]).normalize()
+        (self[1] - self[0]).cross(&(self[2] - self[0])).normalize()
     }
 
     fn is_crossing(self, ray: Ray) -> bool {

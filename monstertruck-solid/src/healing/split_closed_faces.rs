@@ -623,7 +623,7 @@ fn boundary_into_domain<S: ParametricSurface3D>(vec: &mut Vec<Point2>, surface: 
     if let Some(last) = vec.last().copied()
         && !vec[0].near(&last)
     {
-        let Point2 { x: u0, y: v0 } = last;
+        let (u0, v0) = (last[0], last[1]);
         if surface.uder(u0, v0).so_small() || surface.vder(u0, v0).so_small() {
             vec.push(vec[0]);
         }

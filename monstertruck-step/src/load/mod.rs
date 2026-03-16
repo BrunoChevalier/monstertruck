@@ -1059,7 +1059,7 @@ impl From<&Axis2Placement3d> for Matrix4 {
             },
         };
         let x = (x - x.dot(z) * z).normalize();
-        let y = z.cross(x);
+        let y = z.cross(&x);
         Matrix4::from_cols(
             x.extend(0.0),
             y.extend(0.0),
@@ -1809,9 +1809,9 @@ impl From<&Plane> for geom::Plane {
     #[inline(always)]
     fn from(plane: &Plane) -> Self {
         let mat = Matrix4::from(&plane.position);
-        let o = Point3::from_homogeneous(mat[3]);
-        let p = o + mat[0].truncate();
-        let q = o + mat[1].truncate();
+        let o = mat[3].to_point();
+        let p = o + mat.column3(0);
+        let q = o + mat.column3(1);
         Self::new(o, p, q)
     }
 }
@@ -1853,9 +1853,9 @@ impl From<&CylindricalSurface> for step_geometry::CylindricalSurface {
     #[inline(always)]
     fn from(cs: &CylindricalSurface) -> Self {
         let mat = Matrix4::from(&cs.position);
-        let x = mat[0].truncate();
-        let z = mat[2].truncate();
-        let center = Point3::from_homogeneous(mat[3]);
+        let x = mat.column3(0);
+        let z = mat.column3(2);
+        let center = mat[3].to_point();
         let radius = cs.radius;
         let p = center + x * radius;
         let mut res = Processor::new(RevolutedCurve::by_revolution(Line(p, p + z), center, z));

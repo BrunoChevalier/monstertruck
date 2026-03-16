@@ -296,14 +296,14 @@ fn is_signed_up_upper(
 fn get_angle(positions: &[Point3], face: &[Vertex], idx0: usize, idx1: usize, idx2: usize) -> f64 {
     let vec0 = positions[face[idx1].pos] - positions[face[idx0].pos];
     let vec1 = positions[face[idx2].pos] - positions[face[idx0].pos];
-    vec0.angle(vec1).0
+    vec0.angle(&vec1)
 }
 
 fn add_weights(weights: &mut [f64], positions: &[Point3], face: &[Vertex]) {
     let area = (2..face.len()).fold(0.0, |sum, i| {
         let vec0 = positions[face[i - 1].pos] - positions[face[0].pos];
         let vec1 = positions[face[i].pos] - positions[face[0].pos];
-        sum + (vec0.cross(vec1)).magnitude() / 2.0
+        sum + (vec0.cross(&vec1)).magnitude() / 2.0
     }) / (face.len() as f64);
     for v in face {
         weights[v.pos] += area;

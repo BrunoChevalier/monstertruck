@@ -180,7 +180,7 @@ impl OptimizingFilter for PolygonMesh {
         let diag = bnd_box.diagonal().map(|a| f64::max(a.abs(), 1.0));
         let normalized_positions = positions
             .iter()
-            .map(move |position| 2.0 * (position - center).zip(diag, |a, b| a / b))
+            .map(move |position| 2.0 * (position - center).component_div(&diag))
             .collect::<Vec<_>>();
         let pos_map = sub_put_together_same_attrs(&normalized_positions, tol);
         all_pos_mut(faces).for_each(|idx| *idx = pos_map[*idx]);
@@ -305,7 +305,7 @@ fn centralize<T: SameAttr>(
     components.for_each(|component| {
         let center = component
             .iter()
-            .fold(T::zero(), |sum, j| sum.add_element_wise(attrs[*j]))
+            .fold(T::zero(), |sum, j| sum.accumulate(attrs[*j]))
             / component.len() as f64;
         let (mut mindist, mut mindx) = (f64::INFINITY, 0);
         component.iter().copied().for_each(|i| {
@@ -365,13 +365,15 @@ fn split_into_nondegenerate(poly: Vec<Vertex>) -> Vec<Vec<Vertex>> {
 }
 
 trait CastIntVector:
-    Sized + ElementWise<Self> + Mul<f64, Output = Self> + Div<f64, Output = Self>
+    Sized + Mul<f64, Output = Self> + Div<f64, Output = Self>
 {
     type IntVector: IntVector;
     fn cast_int(self) -> Self::IntVector;
     fn round(self, tol: f64) -> Self::IntVector;
     fn zero() -> Self;
     fn has_nan(&self) -> bool;
+    /// Accumulate `other` into `self` (element-wise addition for centroid computation).
+    fn accumulate(self, other: Self) -> Self;
 }
 
 macro_rules! impl_cast_int {
@@ -379,9 +381,11 @@ macro_rules! impl_cast_int {
         impl CastIntVector for $typename {
             type IntVector = [i64; $n];
             fn cast_int(self) -> [i64; $n] {
-                self.cast::<i64>()
-                    .unwrap_or_else(|| panic!("failed to cast: {self:?}"))
-                    .into()
+                let mut result = [0i64; $n];
+                self.iter().enumerate().for_each(|(i, &v)| {
+                    result[i] = v as i64;
+                });
+                result
             }
             fn round(self, tol: f64) -> Self::IntVector {
                 (self / tol).cast_int()
@@ -390,8 +394,15 @@ macro_rules! impl_cast_int {
                 Self::from([0.0; $n])
             }
             fn has_nan(&self) -> bool {
-                let arr: [f64; $n] = (*self).into();
-                arr.iter().any(|v| v.is_nan())
+                self.iter().any(|v| v.is_nan())
+            }
+            fn accumulate(self, other: Self) -> Self {
+                let mut arr = [0.0f64; $n];
+                self.iter()
+                    .zip(other.iter())
+                    .enumerate()
+                    .for_each(|(i, (&a, &b))| arr[i] = a + b);
+                Self::from(arr)
             }
         }
     };

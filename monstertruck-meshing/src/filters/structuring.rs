@@ -174,7 +174,7 @@ impl SubStructureFilter for PolygonMesh {
             .expect("adjacent triangle must have unshared vertex");
         let vec0 = self.positions()[face0[1].pos] - self.positions()[face0[0].pos];
         let vec1 = self.positions()[face0[2].pos] - self.positions()[face0[0].pos];
-        let mut n = vec0.cross(vec1);
+        let mut n = vec0.cross(&vec1);
         n /= n.magnitude();
         let vec2 = self.positions()[face1[k].pos] - self.positions()[face0[0].pos];
         let mat = Matrix3::from_cols(vec0, vec1, n);

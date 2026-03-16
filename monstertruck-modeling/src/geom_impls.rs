@@ -9,8 +9,8 @@ pub(super) fn circle_arc_by_three_points(
 ) -> Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4> {
     let origin = circum_center(point0, point1, transit);
     let (vec0, vec1) = (point0 - transit, point1 - transit);
-    let axis = vec1.cross(vec0).normalize();
-    let angle = Rad(PI) - vec0.angle(vec1);
+    let axis = vec1.cross(&vec0).normalize();
+    let angle = Rad(PI) - Rad(vec0.angle(&vec1));
     circle_arc(point0, origin, axis, angle * 2.0)
 }
 
@@ -31,7 +31,7 @@ pub(super) fn circle_arc(
     let diag = point - origin;
     let axis_trsf = Matrix4::from_cols(
         diag.extend(0.0),
-        axis.cross(diag).extend(0.0),
+        axis.cross(&diag).extend(0.0),
         axis.extend(0.0),
         origin.to_homogeneous(),
     );
@@ -66,14 +66,14 @@ pub(super) fn attach_plane(mut pts: Vec<Vec<Point3>>) -> Option<Plane> {
         .iter()
         .flat_map(|vec| vec.iter().circular_tuple_windows())
         .fold(Vector3::zero(), |sum, (p0, p1)| {
-            sum + (p0 - center).cross(p1 - center)
+            sum + (p0 - center).cross(&(p1 - center))
         });
     let n = match normal.so_small() {
         true => return None,
         false => normal.normalize(),
     };
     let a = take_one_axis_by_normal(n);
-    let mat: Matrix4 = Matrix3::from_cols(a, n.cross(a), n).into();
+    let mat: Matrix4 = Matrix3::from_cols(a, n.cross(&a), n).into();
     pts.iter_mut()
         .flatten()
         .for_each(|pt| *pt = mat.invert().unwrap().transform_point(*pt));
@@ -258,7 +258,7 @@ mod test_geom_impl {
             let diag = take_one_axis_by_normal(axis);
             let trsf = Matrix4::from_cols(
                 diag.extend(0.0),
-                axis.cross(diag).extend(0.0),
+                axis.cross(&diag).extend(0.0),
                 axis.extend(0.0),
                 origin.to_homogeneous(),
             );
@@ -282,7 +282,7 @@ mod test_geom_impl {
             let diag = take_one_axis_by_normal(axis);
             let trsf = Matrix4::from_cols(
                 diag.extend(0.0),
-                axis.cross(diag).extend(0.0),
+                axis.cross(&diag).extend(0.0),
                 axis.extend(0.0),
                 origin.to_homogeneous(),
             );

@@ -155,7 +155,7 @@ fn is_tangent_pair<S: ParametricSurface3D>(s0: &S, s1: &S, tol: f64) -> bool {
             }
             let n1 = s1.normal(u1, v1);
             // Normals must be parallel (cross product near zero).
-            n0.cross(n1).so_small()
+            n0.cross(&n1).so_small()
         })
     })
 }
@@ -189,7 +189,7 @@ fn is_coincident_pair<S: ParametricSurface3D>(s0: &S, s1: &S, tol: f64) -> Optio
                 return false;
             }
             let n1 = s1.normal(u1, v1);
-            if !n0.cross(n1).so_small() {
+            if !n0.cross(&n1).so_small() {
                 return false;
             }
             if n0.dot(n1) > 0.0 {

@@ -20,10 +20,10 @@ where
 {
     let surface = face.surface();
     let pt = wire.front_vertex()?.point();
-    let p: Point2 = surface
+    let (pu, pv) = surface
         .search_parameter(pt, None, 100)
-        .or_else(|| surface.search_nearest_parameter(pt, None, 100))?
-        .into();
+        .or_else(|| surface.search_nearest_parameter(pt, None, 100))?;
+    let p: Point2 = Point2::new(pu, pv);
     let vec = wire.edge_iter().try_fold(vec![p], |mut vec, edge| {
         let poly = polys.entry(edge.id()).or_insert_with(|| {
             let curve = edge.curve();
@@ -32,12 +32,13 @@ where
         });
         let mut p = *vec.last().expect("vec initialized with one element");
         let closure = |q: &P| -> Option<Point2> {
-            p = surface
-                .search_parameter(*q, Some(p.into()), 100)
-                .or_else(|| surface.search_nearest_parameter(*q, Some(p.into()), 100))
+            let hint = (p[0], p[1]);
+            let (u, v) = surface
+                .search_parameter(*q, Some(hint), 100)
+                .or_else(|| surface.search_nearest_parameter(*q, Some(hint), 100))
                 .or_else(|| surface.search_parameter(*q, None, 100))
-                .or_else(|| surface.search_nearest_parameter(*q, None, 100))?
-                .into();
+                .or_else(|| surface.search_nearest_parameter(*q, None, 100))?;
+            p = Point2::new(u, v);
             Some(p)
         };
         let add: Option<Vec<Point2>> = match edge.orientation() {

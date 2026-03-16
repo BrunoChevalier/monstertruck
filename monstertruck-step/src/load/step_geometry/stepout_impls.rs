@@ -64,9 +64,9 @@ impl save::DisplayByStep for ElementarySurface {
                 let ref_direction_idx = idx + 4;
 
                 let location = StepDisplay::new(transform[3].to_point(), location_idx);
-                let raw_axis = VectorAsDirection(transform[2].truncate());
+                let raw_axis = VectorAsDirection(transform.column3(2));
                 let axis = StepDisplay::new(raw_axis, axis_idx);
-                let raw_ref_direction = VectorAsDirection(transform[0].truncate());
+                let raw_ref_direction = VectorAsDirection(transform.column3(0));
                 let ref_direction = StepDisplay::new(raw_ref_direction, ref_direction_idx);
 
                 f.write_fmt(format_args!(

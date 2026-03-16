@@ -293,7 +293,7 @@ fn fillet_along_wire_open(
         let edge2 = {
             let (v0, v1) = (edge0.front(), edge1.back());
             let (u, v) = fillet_surface.search_parameter(v1.point(), (1.0, 1.0), 100)?;
-            let param_line = Line((0.0, 1.0).into(), (u, v).into());
+            let param_line = Line(Point2::new(0.0, 1.0), Point2::new(u, v));
             let pcurve = ParameterCurveLinear::new(param_line, fillet_surface.clone());
             Edge::new(v0, v1, pcurve.into())
         };
@@ -301,7 +301,7 @@ fn fillet_along_wire_open(
         let edge3 = {
             let (v0, v1) = (edge0.back(), edge1.front());
             let (u, v) = fillet_surface.search_parameter(v1.point(), (1.0, 2.0), 100)?;
-            let param_line = Line((0.0, 2.0).into(), (u, v).into());
+            let param_line = Line(Point2::new(0.0, 2.0), Point2::new(u, v));
             let pcurve = ParameterCurveLinear::new(param_line, fillet_surface.clone());
             Edge::new(v0, v1, pcurve.into())
         };
@@ -360,7 +360,7 @@ fn fillet_along_wire_open(
                 .ok_or(FilletError::GeometryFailed {
                     context: "search parameter for first fillet edge2",
                 })?;
-            let param_line = Line((0.0, t0).into(), (u, v).into());
+            let param_line = Line(Point2::new(0.0, t0), Point2::new(u, v));
             let pcurve = ParameterCurveLinear::new(param_line, fillet_surface.clone());
             Edge::new(v0, v1, pcurve.into())
         };
@@ -372,7 +372,7 @@ fn fillet_along_wire_open(
                 .ok_or(FilletError::GeometryFailed {
                     context: "search parameter for first fillet edge3",
                 })?;
-            let param_line = Line((0.0, 1.0).into(), (u, v).into());
+            let param_line = Line(Point2::new(0.0, 1.0), Point2::new(u, v));
             let pcurve = ParameterCurveLinear::new(param_line, fillet_surface.clone());
             Edge::new(v0, v1, pcurve.into())
         };
@@ -424,7 +424,7 @@ fn fillet_along_wire_open(
                 .ok_or(FilletError::GeometryFailed {
                     context: "search parameter for last fillet edge2",
                 })?;
-            let param_line = Line((0.0, 1.0).into(), (u, v).into());
+            let param_line = Line(Point2::new(0.0, 1.0), Point2::new(u, v));
             let pcurve = ParameterCurveLinear::new(param_line, fillet_surface.clone());
             Edge::new(v0, v1, pcurve.into())
         };
@@ -437,7 +437,7 @@ fn fillet_along_wire_open(
                 .ok_or(FilletError::GeometryFailed {
                     context: "search parameter for last fillet edge3",
                 })?;
-            let param_line = Line((0.0, t0 + 1.0).into(), (u, v).into());
+            let param_line = Line(Point2::new(0.0, t0 + 1.0), Point2::new(u, v));
             let pcurve = ParameterCurveLinear::new(param_line, fillet_surface.clone());
             Edge::new(v0, v1, pcurve.into())
         };
@@ -571,7 +571,7 @@ fn fillet_along_wire_closed(
                 .ok_or(FilletError::GeometryFailed {
                     context: "search parameter for closed fillet edge2",
                 })?;
-            let param_line = Line((0.0, 1.0).into(), (u, v).into());
+            let param_line = Line(Point2::new(0.0, 1.0), Point2::new(u, v));
             let pcurve = ParameterCurveLinear::new(param_line, fillet_surface.clone());
             Edge::new(v0, v1, pcurve.into())
         };
@@ -583,7 +583,7 @@ fn fillet_along_wire_closed(
                 .ok_or(FilletError::GeometryFailed {
                     context: "search parameter for closed fillet edge3",
                 })?;
-            let param_line = Line((0.0, 2.0).into(), (u, v).into());
+            let param_line = Line(Point2::new(0.0, 2.0), Point2::new(u, v));
             let pcurve = ParameterCurveLinear::new(param_line, fillet_surface.clone());
             Edge::new(v0, v1, pcurve.into())
         };

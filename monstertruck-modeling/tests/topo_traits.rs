@@ -64,7 +64,7 @@ fn face_top_normal(face: &Face<Point3, Line, Surface>) -> Vector3 {
         .map(|edge| {
             let vec0 = edge.front().point().to_vec();
             let vec1 = edge.back().point().to_vec();
-            vec0.cross(vec1)
+            vec0.cross(&vec1)
         })
         .sum::<Vector3>()
         / 2.0

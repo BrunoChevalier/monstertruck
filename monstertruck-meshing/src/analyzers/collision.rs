@@ -84,13 +84,13 @@ where
     let mut res: Vec<EndPoint> = iter0
         .into_iter()
         .enumerate()
-        .filter(|(_, tri)| !(tri[1] - tri[0]).cross(tri[2] - tri[0]).so_small())
+        .filter(|(_, tri)| !(tri[1] - tri[0]).cross(&(tri[2] - tri[0])).so_small())
         .flat_map(|(i, tri)| EndPoint::from_seg(tri_to_seg(tri, unit), 0, i))
         .chain(
             iter1
                 .into_iter()
                 .enumerate()
-                .filter(|(_, tri)| !(tri[1] - tri[0]).cross(tri[2] - tri[0]).so_small())
+                .filter(|(_, tri)| !(tri[1] - tri[0]).cross(&(tri[2] - tri[0])).so_small())
                 .flat_map(|(i, tri)| EndPoint::from_seg(tri_to_seg(tri, unit), 1, i)),
         )
         .collect();
@@ -148,7 +148,7 @@ fn collide_seg_triangle(seg: [Point3; 2], tri: [Point3; 3]) -> Option<Point3> {
     let ab = tri[1] - tri[0];
     let bc = tri[2] - tri[1];
     let ca = tri[0] - tri[2];
-    let nor = ab.cross(ca);
+    let nor = ab.cross(&ca);
     if nor.so_small() {
         return None;
     }
@@ -160,9 +160,9 @@ fn collide_seg_triangle(seg: [Point3; 2], tri: [Point3; 3]) -> Option<Point3> {
         return None;
     }
     let h = seg[0] + dotapnor / (dotapnor - dotaqnor) * (seg[1] - seg[0]);
-    if f64::signum(ab.cross(nor).dot(h - tri[0]) + TOLERANCE2)
-        + f64::signum(bc.cross(nor).dot(h - tri[1]) + TOLERANCE2)
-        + f64::signum(ca.cross(nor).dot(h - tri[2]) + TOLERANCE2)
+    if f64::signum(ab.cross(&nor).dot(h - tri[0]) + TOLERANCE2)
+        + f64::signum(bc.cross(&nor).dot(h - tri[1]) + TOLERANCE2)
+        + f64::signum(ca.cross(&nor).dot(h - tri[2]) + TOLERANCE2)
         >= 2.0
     {
         Some(h)

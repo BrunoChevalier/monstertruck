@@ -52,7 +52,7 @@ where
     let mut res: Vec<EndPoint> = iter0
         .into_iter()
         .enumerate()
-        .filter(|(_, tri)| !(tri[1] - tri[0]).cross(tri[2] - tri[0]).so_small())
+        .filter(|(_, tri)| !(tri[1] - tri[0]).cross(&(tri[2] - tri[0])).so_small())
         .flat_map(|(i, tri)| EndPoint::from_seg(tri_to_seg(tri, unit, tol), i))
         .chain(
             iter1

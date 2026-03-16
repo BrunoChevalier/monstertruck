@@ -47,8 +47,8 @@ impl IncludeCurve<Curve3D> for Plane {
             Curve3D::NurbsCurve(bsp) => self.include(bsp),
             Curve3D::Conic(conic) => {
                 let mat = conic.posture();
-                let axis = mat.z.truncate();
-                axis.cross(self.normal()).so_small()
+                let axis = mat.column3(2);
+                axis.cross(&self.normal()).so_small()
             }
             Curve3D::Polyline(poly) => poly
                 .iter()
@@ -91,7 +91,7 @@ impl ToSameGeometry<Surface> for RevolutedCurve<Curve3D> {
                 let &Line(p, q) = line;
                 let v = q - p;
                 let axis = self.axis();
-                if v.cross(axis).so_small() {
+                if v.cross(&axis).so_small() {
                     let o = self.origin();
                     let origin = o + (q - o).dot(axis) * axis;
                     let line = Line(q, q - v.normalize());

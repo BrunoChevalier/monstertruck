@@ -233,7 +233,7 @@ fn independent_intersection() {
                 let curve = bw[0].oriented_curve();
                 let pt = curve.subs(0.5) - Point3::origin();
                 let der = curve.der(0.5);
-                assert!(pt.cross(der)[2] > 0.0);
+                assert!(pt.cross(&der)[2] > 0.0);
                 assert!(flags[1]);
                 flags[1] = false;
             }
@@ -241,7 +241,7 @@ fn independent_intersection() {
                 let curve = bw[0].oriented_curve();
                 let pt = curve.subs(0.5) - Point3::origin();
                 let der = curve.der(0.5);
-                assert!(pt.cross(der)[2] < 0.0);
+                assert!(pt.cross(&der)[2] < 0.0);
                 assert!(flags[2]);
                 flags[2] = false;
             }
@@ -261,7 +261,7 @@ fn independent_intersection() {
                 let curve = bw[0].oriented_curve();
                 let pt = curve.subs(0.5) - Point3::origin();
                 let der = curve.der(0.5);
-                assert!(pt.cross(der)[2] < 0.0);
+                assert!(pt.cross(&der)[2] < 0.0);
                 assert!(flags[1]);
                 flags[1] = false;
             }
@@ -269,7 +269,7 @@ fn independent_intersection() {
                 let curve = bw[0].oriented_curve();
                 let pt = curve.subs(0.5) - Point3::origin();
                 let der = curve.der(0.5);
-                assert!(pt.cross(der)[2] > 0.0);
+                assert!(pt.cross(&der)[2] > 0.0);
                 assert!(flags[2]);
                 flags[2] = false;
             }

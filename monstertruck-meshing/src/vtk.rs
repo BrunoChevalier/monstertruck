@@ -192,9 +192,9 @@ impl ToDataSet for PolygonMesh {
 }
 
 fn hash_point(p: Point3) -> Option<[i64; 3]> {
-    (p / (TOLERANCE * 50.0) - Vector3::new(0.5, 0.5, 0.5))
-        .cast()
-        .map(Into::into)
+    let v = p / (TOLERANCE * 50.0) - Vector3::new(0.5, 0.5, 0.5);
+    let arr = [v[0] as i64, v[1] as i64, v[2] as i64];
+    Some(arr)
 }
 
 impl ToDataSet for Vertex<Point3> {

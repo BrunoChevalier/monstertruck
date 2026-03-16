@@ -2788,3 +2788,41 @@ fn fillet_edges_cuboid_top_and_bottom() {
     );
     let _poly = shell.robust_triangulation(0.001).to_polygon();
 }
+
+/// Demonstrates that homogeneous control points must be dehomogenized before
+/// averaging to produce correct 3D midpoints. Naive `(p + q) / 2` on weighted
+/// homogeneous coordinates yields a weight-biased position.
+#[test]
+fn seam_averaging_dehomogenizes() {
+    // Two 3D points at known positions with differing weights.
+    let pt_a = Point3::new(2.0, 0.0, 0.0);
+    let pt_b = Point3::new(0.0, 4.0, 0.0);
+    let w_a = 1.0;
+    let w_b = 3.0;
+
+    // Homogeneous representation: (wx, wy, wz, w).
+    let p = Vector4::from_point_weight(pt_a, w_a);
+    let q = Vector4::from_point_weight(pt_b, w_b);
+
+    // Correct 3D midpoint: dehomogenize, average, rehomogenize.
+    let correct_mid = pt_a.midpoint(pt_b);
+    assert_near2!(correct_mid, Point3::new(1.0, 2.0, 0.0));
+
+    let avg_w = (p.weight() + q.weight()) / 2.0;
+    let correct = Vector4::from_point_weight(correct_mid, avg_w);
+    assert_near2!(correct.to_point(), correct_mid);
+
+    // Naive averaging (current bug): `(p + q) / 2` in homogeneous space.
+    let naive = (p + q) / 2.0;
+
+    // The naive result has the correct average weight...
+    assert_near2!(naive.weight(), avg_w);
+
+    // ...but its 3D position is WRONG -- biased toward the higher-weight point.
+    // This assertion proves the bug: naive averaging does NOT produce the
+    // correct 3D midpoint when weights differ.
+    assert_near2!(
+        naive.to_point(),
+        correct_mid,
+    );
+}

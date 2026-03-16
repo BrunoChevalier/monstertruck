@@ -93,7 +93,7 @@ where
 {
     let origin = origin + (start - origin).dot(axis) * axis;
     let radius = start - origin;
-    let y = axis.cross(radius);
+    let y = axis.cross(&radius);
     let mat = Matrix4::from_cols(
         radius.extend(0.0),
         y.extend(0.0),
@@ -144,14 +144,14 @@ where
 {
     let (p, q) = (r#box.min(), r#box.max());
     let v = builder::vertices([
-        (p.x, p.y, p.z),
-        (q.x, p.y, p.z),
-        (q.x, q.y, p.z),
-        (p.x, q.y, p.z),
-        (p.x, p.y, q.z),
-        (q.x, p.y, q.z),
-        (q.x, q.y, q.z),
-        (p.x, q.y, q.z),
+        [p.x, p.y, p.z],
+        [q.x, p.y, p.z],
+        [q.x, q.y, p.z],
+        [p.x, q.y, p.z],
+        [p.x, p.y, q.z],
+        [q.x, p.y, q.z],
+        [q.x, q.y, q.z],
+        [p.x, q.y, q.z],
     ]);
     let e = [
         builder::line(&v[0], &v[1]),

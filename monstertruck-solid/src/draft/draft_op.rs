@@ -245,7 +245,7 @@ where
     S: ParametricSurface3D<Point = Point3, Vector = Vector3>,
 {
     // Hinge axis = face_normal x neutral_normal.
-    let hinge = face_normal.cross(*neutral_normal);
+    let hinge = face_normal.cross(neutral_normal);
     let hinge_mag = hinge.magnitude();
 
     if hinge_mag.so_small() {
@@ -255,7 +255,7 @@ where
     let hinge = hinge / hinge_mag;
 
     // Determine rotation sign: face normal should tilt toward pull direction.
-    let cross_test = face_normal.cross(*pull);
+    let cross_test = face_normal.cross(pull);
     let sign = if cross_test.dot(hinge) >= 0.0 {
         1.0
     } else {
@@ -267,8 +267,8 @@ where
     // plane and the neutral plane. Solve the 2-plane intersection by
     // finding a point that satisfies both plane equations.
     let face_origin = ParametricSurface::evaluate(surface, 0.0, 0.0);
-    let d_face = face_normal.dot(face_origin.to_vec());
-    let d_neutral = neutral_normal.dot(neutral_origin.to_vec());
+    let d_face = face_normal.dot(&face_origin.to_vec());
+    let d_neutral = neutral_normal.dot(&neutral_origin.to_vec());
 
     // Build a 3x3 system: two plane equations plus the hinge direction
     // to pick the unique closest point to the origin.

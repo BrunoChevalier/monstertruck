@@ -14,7 +14,7 @@ pub(super) fn circle_arc(
     let diag = point - origin;
     let axis_trsf = Matrix4::from_cols(
         diag.extend(0.0),
-        axis.cross(diag).extend(0.0),
+        axis.cross(&diag).extend(0.0),
         axis.extend(0.0),
         origin.to_homogeneous(),
     );
@@ -29,13 +29,13 @@ pub(super) fn circle_arc_by_three_points(
     transit: Point3,
 ) -> NurbsCurve<Vector4> {
     let (w0, w1) = (point0.w, point1.w);
-    let point0 = Point3::from_homogeneous(point0);
-    let point1 = Point3::from_homogeneous(point1);
+    let point0 = point0.to_point();
+    let point1 = point1.to_point();
     let origin = circum_center(point0, point1, transit);
     let (vec0, vec1) = (point0 - transit, point1 - transit);
-    let axis = vec1.cross(vec0).normalize();
-    let angle = Rad(PI) - vec0.angle(vec1);
-    circle_arc(point0, origin, axis, angle * 2.0, (w0, w1))
+    let axis = vec1.cross(&vec0).normalize();
+    let angle = vec0.angle(&vec1);
+    circle_arc(point0, origin, axis, Rad(PI - angle) * 2.0, (w0, w1))
 }
 
 fn circum_center(pt0: Point3, pt1: Point3, pt2: Point3) -> Point3 {
@@ -51,21 +51,22 @@ fn unit_circle_arc(angle: Rad<f64>, w0: f64, w1: f64) -> NurbsCurve<Vector4> {
     let p1 = Vector3::new(Rad::cos(angle), Rad::sin(angle), 1.0) * w1;
     let pt = Vector3::new(Rad::cos(angle / 2.0), Rad::sin(angle / 2.0), 1.0);
     let d = p1 - p0;
-    let function = |Vector2 { x, y }| CalcOutput {
+    let function = |v: Vector2| CalcOutput {
         value: Vector2::new(
-            x * x + y * y - 0.5,
-            d.x * x + d.y * y + d.z / f64::sqrt(2.0),
+            v.x * v.x + v.y * v.y - 0.5,
+            d.x * v.x + d.y * v.y + d.z / f64::sqrt(2.0),
         ),
-        derivation: Matrix2::new(2.0 * x, d.x, 2.0 * y, d.y),
+        derivation: Matrix2::new(2.0 * v.x, d.x, 2.0 * v.y, d.y),
     };
-    let Vector2 { x, y } = match newton::solve(function, pt.truncate(), 100) {
+    let sol = match newton::solve(function, Truncate::truncate(pt), 100) {
         Ok(solution) => solution,
-        Err(_) => pt.truncate(),
+        Err(_) => Truncate::truncate(pt),
     };
+    let (x, y) = (sol.x, sol.y);
 
     let n = Vector3::new(x, y, 1.0 / f64::sqrt(2.0));
     let y_axis = Vector3::new(-n.x, -n.y, n.z);
-    let x_axis = y_axis.cross(n);
+    let x_axis = y_axis.cross(&n);
     let parab_apex = n * n.dot(p0);
 
     let xt = (p0 + p1).dot(x_axis) / 2.0;
@@ -179,7 +180,7 @@ impl RelaySphere {
         radius: f64,
     ) -> Option<(Point3, Point3, Point3)> {
         let ((p, der), (p0, n0), (p1, n1)) = (point_on_curve, plane0, plane1);
-        let n = n0.cross(n1);
+        let n = n0.cross(&n1);
         let sign = f64::signum(n.dot(der));
         let mat = Matrix3::from_cols(n, n0, n1).transpose();
         let vec = Vector3::new(
@@ -252,8 +253,8 @@ impl RelaySphere {
         }
         Some(Self {
             center,
-            contact0: (p0, (u0, v0).into()),
-            contact1: (p1, (u1, v1).into()),
+            contact0: (p0, Point2::new(u0, v0)),
+            contact1: (p1, Point2::new(u1, v1)),
             transit: center + radius * (p - center).normalize(),
         })
     }
@@ -503,8 +504,8 @@ fn map_profile_to_3d(
     transit: Point3,
     profile: &BsplineCurve<Point2>,
 ) -> BsplineCurve<Vector4> {
-    let pt0 = Point3::from_homogeneous(*p0);
-    let pt1 = Point3::from_homogeneous(*p1);
+    let pt0 = p0.to_point();
+    let pt1 = p1.to_point();
     let mid = pt0.midpoint(pt1);
     let toward_transit = transit - mid;
     let cpts: Vec<Vector4> = profile

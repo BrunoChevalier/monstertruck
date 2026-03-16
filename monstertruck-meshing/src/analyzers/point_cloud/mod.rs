@@ -68,11 +68,11 @@ fn distance2_point_triangle(point: Point3, triangle: [Point3; 3]) -> f64 {
     let bp = point - triangle[1];
     let ca = triangle[0] - triangle[2];
     let cp = point - triangle[2];
-    let nor = ab.cross(ca);
+    let nor = ab.cross(&ca);
 
-    let coef = f64::signum(ab.cross(nor).dot(ap))
-        + f64::signum(bc.cross(nor).dot(bp))
-        + f64::signum(ca.cross(nor).dot(cp));
+    let coef = f64::signum(ab.cross(&nor).dot(ap))
+        + f64::signum(bc.cross(&nor).dot(bp))
+        + f64::signum(ca.cross(&nor).dot(cp));
     if coef < 2.0 || nor.magnitude().so_small() {
         let a = (ap - ab * f64::clamp(ab.dot(ap) / ab.dot(ab), 0.0, 1.0)).magnitude2();
         let b = (bp - bc * f64::clamp(bc.dot(bp) / bc.dot(bc), 0.0, 1.0)).magnitude2();

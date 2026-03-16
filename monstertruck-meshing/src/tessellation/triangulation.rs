@@ -358,7 +358,7 @@ impl PolyBoundaryPiece {
         }
         let last = *vec.last().expect("boundary vec is non-empty");
         if !vec[0].near(&last) {
-            let Point2 { x: u0, y: v0 } = last.uv;
+            let (u0, v0) = (last.uv[0], last.uv[1]);
             if surface.uder(u0, v0).so_small() || surface.vder(u0, v0).so_small() {
                 vec.push(vec[0]);
             }
@@ -1126,13 +1126,13 @@ fn quad_area(quad: [Point3; 4]) -> f64 {
 fn triangle_area(point0: Point3, point1: Point3, point2: Point3) -> f64 {
     let vector0 = point1.to_vec() - point0.to_vec();
     let vector1 = point2.to_vec() - point0.to_vec();
-    vector0.cross(vector1).magnitude() * 0.5
+    vector0.cross(&vector1).magnitude() * 0.5
 }
 
 fn is_convex_quad(quad: [Point3; 4]) -> bool {
     let diagonal0 = quad[1].to_vec() - quad[0].to_vec();
     let diagonal1 = quad[2].to_vec() - quad[0].to_vec();
-    let normal = diagonal0.cross(diagonal1);
+    let normal = diagonal0.cross(&diagonal1);
     if normal.so_small() {
         false
     } else {
@@ -1160,7 +1160,7 @@ fn corner_turn(quad: [Point3; 4], index: usize, normal: Vector3) -> f64 {
     let next = quad[(index + 1) % 4];
     let edge0 = current.to_vec() - previous.to_vec();
     let edge1 = next.to_vec() - current.to_vec();
-    edge0.cross(edge1).dot(normal)
+    edge0.cross(&edge1).dot(normal)
 }
 
 fn corner_angle(quad: [Point3; 4], index: usize) -> Option<f64> {

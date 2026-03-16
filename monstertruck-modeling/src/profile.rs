@@ -106,7 +106,7 @@ where
         .iter()
         .circular_tuple_windows()
         .fold(Vector3::zero(), |sum, (p0, p1)| {
-            sum + (p0 - center).cross(p1 - center)
+            sum + (p0 - center).cross(&(p1 - center))
         });
 
     if normal.so_small() {
@@ -124,7 +124,7 @@ fn axes_from_normal(n: Vector3) -> (Vector3, Vector3) {
     } else {
         Vector3::new(-n.z, 0.0, n.x).normalize()
     };
-    (u, n.cross(u))
+    (u, n.cross(&u))
 }
 
 /// Classifies and normalizes a set of wires for planar face construction.

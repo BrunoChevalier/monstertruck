@@ -25,7 +25,7 @@ fn intersection_curve_sphere_case() {
         let pt = curve.subs(t);
         assert_near!(pt.distance(Point3::origin()), 1.0);
         let vec = curve.der(t);
-        assert!(pt.dot(vec).so_small(), "{i} {t} {vec:?}");
+        assert!(pt.coords.dot(vec).so_small(), "{i} {t} {vec:?}");
         assert!(vec[2].so_small());
         let denom = if matches!(i, 0 | N) { 2.0 } else { 1.0 };
         sum += vec.magnitude() / denom * (t1 - t0) / N as f64;

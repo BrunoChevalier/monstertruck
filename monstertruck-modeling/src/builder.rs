@@ -775,7 +775,7 @@ where
         return Shell::new();
     }
 
-    let on_axis = |pt: Point3| (pt - origin).cross(axis).so_small();
+    let on_axis = |pt: Point3| (pt - origin).cross(&axis).so_small();
     let front_on_axis = on_axis(wire.front_vertex().unwrap().point());
     let back_on_axis = on_axis(wire.back_vertex().unwrap().point());
 
