@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 12 | Approval-needed: 0 | Total: 12
+**Summary:** Auto-fixes: 15 | Approval-needed: 0 | Total: 15
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -83,4 +83,25 @@
 **Category:** bug
 **Description:** Pre-existing workspace build failures in monstertruck-modeling, monstertruck-meshing, monstertruck-render (nalgebra migration issues). These existed before plan 5-2 and are unrelated to solver port. Plan criterion 'cargo build --workspace succeeds' is met for all solver-related crates (geometry, core, math, traits).
 **Files changed:** monstertruck-modeling/src/lib.rs, monstertruck-meshing/src/lib.rs, monstertruck-render/src/lib.rs
+**Status:** applied
+
+### [2026-03-16T12:03:04.134Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Pre-existing build error: CastIntVector trait bound referenced removed ElementWise trait from cgmath. Removed the stale bound since add_element_wise is a built-in nalgebra method.
+**Files changed:** monstertruck-meshing/src/filters/optimizing.rs
+**Status:** applied
+
+### [2026-03-16T12:24:42.110Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Pre-existing nalgebra migration incomplete: cross(), angle(), truncate(), Point2/Point3 tuple conversions, Matrix field access, and from_homogeneous() changes across monstertruck-meshing, monstertruck-solid, monstertruck-modeling, and monstertruck-step crates. All fixes are mechanical API adaptation.
+**Files changed:** monstertruck-meshing/src/analyzers/collision.rs, monstertruck-meshing/src/filters/optimizing.rs, monstertruck-solid/src/fillet/geometry.rs, monstertruck-solid/src/fillet/ops.rs, monstertruck-solid/src/fillet/topology.rs
+**Status:** applied
+
+### [2026-03-16T14:03:29.619Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** 7 pre-existing fillet test failures (generic_fillet_identity, generic_fillet_mixed_surfaces, generic_fillet_modeling_types, generic_fillet_multi_chain, generic_fillet_unsupported, boolean_shell_converts_for_fillet, chamfer_serialization_round_trip) unrelated to seam averaging fix
+**Files changed:** monstertruck-solid/src/fillet/tests.rs
 **Status:** applied
