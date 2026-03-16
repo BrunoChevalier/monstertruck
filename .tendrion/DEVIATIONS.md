@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 18 | Approval-needed: 0 | Total: 18
+**Summary:** Auto-fixes: 19 | Approval-needed: 0 | Total: 19
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -124,5 +124,12 @@
 **Type:** auto-fix
 **Category:** bug
 **Description:** 7 pre-existing fillet test failures (generic_fillet_identity, generic_fillet_modeling_types, generic_fillet_mixed_surfaces, generic_fillet_unsupported, generic_fillet_multi_chain, boolean_shell_converts_for_fillet, chamfer_serialization_round_trip) -- not caused by this plan's changes
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-16T21:30:03.599Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** 7 pre-existing fillet test failures (chamfer_serialization_round_trip, boolean_shell_converts_for_fillet, 5 generic_fillet_* tests) unrelated to IntegrateVisual changes
 **Files changed:** none
 **Status:** applied
