@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 7 of 8 (Integration Mode)
-**Plan:** 1 of 2
+**Plan:** 2 of 2
 **Progress:**
 
 
