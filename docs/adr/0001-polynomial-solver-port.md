@@ -34,3 +34,7 @@ Additionally, the `monstertruck-traits` crate already has a `polynomial` module 
 ## Status Update (Phase 6)
 
 The polynomial solvers ported in this ADR continue to function correctly after the Phase 6 topology surgery hardening changes. No modifications to `monstertruck-math::polynomial` were required. See [ADR-0002](0002-fillet-topology-surgery-hardening.md) for the Phase 6 architectural decisions.
+
+## Status Update (Phase 7)
+
+No changes to the polynomial solver module. Phase 7 focused on fillet integration modes and continuity annotations within `monstertruck-solid`; the math layer was unaffected. See [ADR-0003](0003-fillet-integration-mode.md) for Phase 7 architectural decisions.

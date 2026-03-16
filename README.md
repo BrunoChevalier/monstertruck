@@ -124,12 +124,18 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 6)
+### Recent Changes (Phase 7)
+
+- **Fillet integration mode** -- New `FilletMode` enum (`KeepSeparateFace` / `IntegrateVisual`) in `FilletOptions` controls whether fillet surfaces remain distinct faces or are merged into adjacent geometry. `IntegrateVisual` produces seamless results with G1/G2 continuity annotations.
+- **Continuity annotations** -- `FilletResult` now carries per-edge continuity classifications. The new `fillet_annotated()` API and helpers (`annotate_fillet_edges`, `classify_edge_continuity`, `ensure_seamless_vertices`) let downstream consumers query join quality.
+- **Extended fillet options** -- `FilletOptions` gained `mode`, `extend_mode`, and `corner_mode` fields, all backward-compatible via `Default`.
+
+### Earlier Changes (Phase 6)
 
 - **Fillet seam averaging fix** -- `fillet_along_wire` now dehomogenizes `Vector4` control points before averaging at seam boundaries, producing correct C0-continuous joins between fillet patches (TOPO-02).
 - **Intersection curve edge handling** -- New `ensure_cuttable_edge()` converts `IntersectionCurve` boundary edges to NURBS approximations before `cut_face_by_bezier` runs, preventing topology surgery failures on boolean-result geometry (TOPO-01).
 
-### Earlier Changes (Phase 5)
+### Earlier Changes (Phase 5 -- Polynomial Solvers)
 
 - **Polynomial solvers** -- `monstertruck-math` now includes quadratic, cubic, and quartic polynomial solvers (ported from `matext4cgmath`), eliminating the legacy `cgmath` transitive dependency. These solvers are wired into `monstertruck-geometry` curve intersection call sites (hyperbola and parabola specifieds).
 - **Namespace collision fix** -- Resolved the `polynomial` module name collision between `monstertruck-math` (solvers) and `monstertruck-traits` (evaluation traits) via explicit re-export precedence in the geometry crate.

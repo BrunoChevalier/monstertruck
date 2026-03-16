@@ -27,3 +27,7 @@ Fillet operations in `monstertruck-solid` encountered two classes of topology fa
 - Fillets now succeed on solids produced by boolean operations, expanding the set of modelable shapes.
 - The NURBS approximation in `ensure_cuttable_edge` introduces a bounded approximation error controlled by the existing operation tolerance.
 - Additional boolean-fillet integration tests are currently ignored pending fixes to upstream boolean operations; they should be un-ignored once those fixes land.
+
+## Status Update (Phase 7)
+
+The topology surgery hardening from this ADR forms the foundation for Phase 7's integration mode work. The `IntegrateVisual` fillet mode (see [ADR-0003](0003-fillet-integration-mode.md)) builds on the dehomogenized seam averaging and pre-cut edge conversion established here, extending them with G1/G2 continuity classification and seamless vertex enforcement.
