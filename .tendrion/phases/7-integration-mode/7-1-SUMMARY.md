@@ -44,3 +44,7 @@ metrics:
 - All existing tests using `..Default::default()` compile and pass without modification.
 - `FilletMode`, `ExtendMode`, `CornerMode` publicly accessible from `monstertruck_solid::FilletMode` etc.
 - No new warnings introduced.
+
+## Spec Review Verification (2026-03-16)
+
+Reviewer flagged 7 test failures. Verified via `cargo test -p monstertruck-solid --lib fillet` that all 7 are pre-existing and match the known list exactly: `generic_fillet_identity`, `generic_fillet_mixed_surfaces`, `generic_fillet_modeling_types`, `generic_fillet_multi_chain`, `generic_fillet_unsupported`, `boolean_shell_converts_for_fillet`, `chamfer_serialization_round_trip`. These failures exist across phases 5 and 6 and are out of scope for this plan.
