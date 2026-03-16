@@ -6,56 +6,66 @@
 use crate::traits::BaseFloat;
 use num_complex::Complex;
 
+// Re-import `Float` under a private alias to disambiguate from nalgebra's
+// `ComplexField` methods that shadow identically-named functions.
+use num_traits::Float as Fl;
+
 /// Solve x^2 + ax + b = 0.
+///
+/// Real solutions are returned sorted in ascending order.
+/// Complex conjugate pairs are returned with positive imaginary part first.
 pub fn solve_quadratic<F: BaseFloat>(a: F, b: F) -> [Complex<F>; 2] {
     let two = F::one() + F::one();
     let four = two + two;
     let det = a * a - four * b;
     match det >= F::zero() {
         true => {
-            let h = num_traits::Float::sqrt(det);
+            let h = Fl::sqrt(det);
             [
                 Complex::new((-a - h) / two, F::zero()),
                 Complex::new((-a + h) / two, F::zero()),
             ]
         }
         false => {
-            let h = num_traits::Float::sqrt(-det);
+            let h = Fl::sqrt(-det);
             [Complex::new(-a, h) / two, Complex::new(-a, -h) / two]
         }
     }
 }
 
-/// Solve x^3 + px + q = 0 (depressed cubic).
+/// Solve the depressed cubic x^3 + px + q = 0.
+///
+/// Uses Cardano's formula with cube-root-of-unity splitting, followed by
+/// Newton refinement to polish each root.
 pub fn pre_solve_cubic<F: BaseFloat>(p: F, q: F) -> [Complex<F>; 3] {
     let two = F::one() + F::one();
     let three = two + F::one();
-    let sqrt3_2 = num_traits::Float::sqrt(three) / two;
+    let sqrt3_2 = Fl::sqrt(three) / two;
     let omega = Complex::new(-F::one() / two, sqrt3_2);
     let omega2 = Complex::new(-F::one() / two, -sqrt3_2);
-    let eps_2 = num_traits::Float::sqrt(num_traits::Float::epsilon());
+    let eps_2 = Fl::sqrt(Fl::epsilon());
 
     let p_3 = p / three;
     let q_2 = q / two;
     let alpha2 = q_2 * q_2 + p_3 * p_3 * p_3;
     let (x, y) = match alpha2 >= F::zero() {
         true => {
-            let alpha = num_traits::Float::sqrt(alpha2);
+            let alpha = Fl::sqrt(alpha2);
             let tmpx = -q_2 - alpha;
             let tmpy = -q_2 + alpha;
             (
                 Complex::new(
-                    num_traits::Float::signum(tmpx) * num_traits::Float::powf(num_traits::Float::abs(tmpx), F::one() / three),
+                    Fl::signum(tmpx) * Fl::powf(Fl::abs(tmpx), F::one() / three),
                     F::zero(),
                 ),
                 Complex::new(
-                    num_traits::Float::signum(tmpy) * num_traits::Float::powf(num_traits::Float::abs(tmpy), F::one() / three),
+                    Fl::signum(tmpy) * Fl::powf(Fl::abs(tmpy), F::one() / three),
                     F::zero(),
                 ),
             )
         }
         false => {
-            let alphai = num_traits::Float::sqrt(-alpha2);
+            let alphai = Fl::sqrt(-alpha2);
             (
                 Complex::powf(Complex::new(-q_2, alphai), F::one() / three),
                 Complex::powf(Complex::new(-q_2, -alphai), F::one() / three),
@@ -63,7 +73,7 @@ pub fn pre_solve_cubic<F: BaseFloat>(p: F, q: F) -> [Complex<F>; 3] {
         }
     };
     let mut res = [x + y, omega * x + omega2 * y, omega2 * x + omega * y];
-    // Precision by Newton method.
+    // Refinement by Newton method.
     res.iter_mut().for_each(|x| {
         let mut f = *x * *x * *x + *x * p + q;
         let mut f_prime = *x * *x * three + p;
@@ -80,6 +90,9 @@ pub fn pre_solve_cubic<F: BaseFloat>(p: F, q: F) -> [Complex<F>; 3] {
 }
 
 /// Solve x^3 + ax^2 + bx + c = 0.
+///
+/// Reduces to the depressed form via the substitution x = t - a/3, then
+/// delegates to [`pre_solve_cubic`].
 pub fn solve_cubic<F: BaseFloat>(a: F, b: F, c: F) -> [Complex<F>; 3] {
     let two = F::one() + F::one();
     let three = two + F::one();
@@ -93,37 +106,41 @@ pub fn solve_cubic<F: BaseFloat>(a: F, b: F, c: F) -> [Complex<F>; 3] {
     res
 }
 
-/// Solve x^4 + px^2 + qx + r = 0 (depressed quartic).
+/// Solve the depressed quartic x^4 + px^2 + qx + r = 0.
+///
+/// Uses resolvent cubic factorisation with sign-combination search, followed
+/// by Newton refinement to polish each root.
 pub fn pre_solve_quartic<F: BaseFloat>(p: F, q: F, r: F) -> [Complex<F>; 4] {
-    let one = F::one();
-    let two = one + one;
+    let two = F::one() + F::one();
     let four = two + two;
-    let eps_2 = num_traits::Float::sqrt(num_traits::Float::epsilon());
+    let eps_2 = Fl::sqrt(Fl::epsilon());
 
-    let a = two * p;
-    let b = p * p - four * r;
-    let c = -q * q;
-    let f = solve_cubic(a, b, c);
-    let a = f[0].sqrt() / two;
-    let b = f[1].sqrt() / two;
-    let c = f[2].sqrt() / two;
+    let cubic_a = two * p;
+    let cubic_b = p * p - four * r;
+    let cubic_c = -q * q;
+    let f = solve_cubic(cubic_a, cubic_b, cubic_c);
+    let sa = f[0].sqrt() / two;
+    let sb = f[1].sqrt() / two;
+    let sc = f[2].sqrt() / two;
 
-    // SAFETY: The iterator always yields exactly 8 elements, so min_by always
-    // returns `Some`.
+    // Try all 8 sign combinations for the three square roots and keep the one
+    // that minimises the worst-case residual across all four candidate roots.
+    // SAFETY: The iterator always yields exactly 8 elements, so `min_by`
+    // always returns `Some`.
     let mut res = (0..8i32)
         .map(|i| {
-            let a = a * num_traits::Float::powi(-F::one(), i % 2);
-            let b = b * num_traits::Float::powi(-F::one(), (i / 2) % 2);
-            let c = c * num_traits::Float::powi(-F::one(), (i / 4) % 2);
+            let a = sa * Fl::powi(-F::one(), i % 2);
+            let b = sb * Fl::powi(-F::one(), (i / 2) % 2);
+            let c = sc * Fl::powi(-F::one(), (i / 4) % 2);
             [-a - b - c, -a + b + c, a - b + c, a + b - c]
         })
         .map(|x| {
-            let f = x
+            let max_residual = x
                 .iter()
                 .map(|t| (t * t * t * t + t * t * p + t * q + r).norm_sqr())
                 .max_by(|x, y| x.partial_cmp(y).unwrap())
                 .unwrap();
-            (x, f)
+            (x, max_residual)
         })
         .min_by(|x, y| x.1.partial_cmp(&y.1).unwrap())
         .unwrap()
@@ -145,10 +162,12 @@ pub fn pre_solve_quartic<F: BaseFloat>(p: F, q: F, r: F) -> [Complex<F>; 4] {
 }
 
 /// Solve x^4 + ax^3 + bx^2 + cx + d = 0.
+///
+/// Reduces to the depressed form via the substitution x = t - a/4, then
+/// delegates to [`pre_solve_quartic`].
 pub fn solve_quartic<F: BaseFloat>(a: F, b: F, c: F, d: F) -> [Complex<F>; 4] {
-    let one = F::one();
-    let two = one + one;
-    let three = one + two;
+    let two = F::one() + F::one();
+    let three = F::one() + two;
     let four = two + two;
     let six = two * three;
     let eight = four + four;
@@ -184,7 +203,11 @@ mod tests {
     fn test_solve_quadratic_complex_roots() {
         // x^2 + 2x + 5 = 0 => roots: -1 +/- 2i.
         let mut res = solve_quadratic(2.0, 5.0);
-        res.sort_by(|x, y| x.re.partial_cmp(&y.re).unwrap().then(x.im.partial_cmp(&y.im).unwrap()));
+        res.sort_by(|x, y| {
+            x.re.partial_cmp(&y.re)
+                .unwrap()
+                .then(x.im.partial_cmp(&y.im).unwrap())
+        });
         let ans = [Complex::new(-1.0, -2.0), Complex::new(-1.0, 2.0)];
         for (x, y) in res.iter().zip(ans.iter()) {
             assert!(Complex::norm(x - y) < EPS, "got {x}, expected {y}");
@@ -196,7 +219,11 @@ mod tests {
         // x^3 - 7x - 6 = 0 => roots: -2, -1, 3.
         let mut res = pre_solve_cubic(-7.0, -6.0);
         res.sort_by(|x, y| x.re.partial_cmp(&y.re).unwrap());
-        let ans = [Complex::from(-2.0), Complex::from(-1.0), Complex::from(3.0)];
+        let ans = [
+            Complex::from(-2.0),
+            Complex::from(-1.0),
+            Complex::from(3.0),
+        ];
         for (x, y) in res.iter().zip(ans.iter()) {
             assert!(Complex::norm(x - y) < EPS, "got {x}, expected {y}");
         }
@@ -207,7 +234,11 @@ mod tests {
         // x^3 - 3x^2 + 4 = 0 => roots: -1, 2, 2.
         let mut res = solve_cubic(-3.0, 0.0, 4.0);
         res.sort_by(|x, y| x.re.partial_cmp(&y.re).unwrap());
-        let ans = [Complex::from(-1.0), Complex::from(2.0), Complex::from(2.0)];
+        let ans = [
+            Complex::from(-1.0),
+            Complex::from(2.0),
+            Complex::from(2.0),
+        ];
         for (x, y) in res.iter().zip(ans.iter()) {
             assert!(Complex::norm(x - y) < EPS, "got {x}, expected {y}");
         }
@@ -225,7 +256,10 @@ mod tests {
             Complex::from(2.0),
         ];
         for (x, y) in res.iter().zip(ans.iter()) {
-            assert!(Complex::norm(x - y) < EPS_QUARTIC, "got {x}, expected {y}");
+            assert!(
+                Complex::norm(x - y) < EPS_QUARTIC,
+                "got {x}, expected {y}",
+            );
         }
     }
 
@@ -241,7 +275,10 @@ mod tests {
             Complex::from(2.0),
         ];
         for (x, y) in res.iter().zip(ans.iter()) {
-            assert!(Complex::norm(x - y) < EPS_QUARTIC, "got {x}, expected {y}");
+            assert!(
+                Complex::norm(x - y) < EPS_QUARTIC,
+                "got {x}, expected {y}",
+            );
         }
     }
 
@@ -250,7 +287,8 @@ mod tests {
         // For each root r of x^4 + x^3 - 7x^2 - x + 6 = 0, verify substitution.
         let res = solve_quartic(1.0, -7.0, -1.0, 6.0);
         for r in &res {
-            let val: Complex<f64> = r * r * r * r + r * r * r - 7.0 * r * r - r + 6.0;
+            let val: Complex<f64> =
+                r * r * r * r + r * r * r - 7.0 * r * r - r + 6.0;
             assert!(
                 val.norm() < EPS,
                 "Substitution check failed: f({r}) = {val}",
