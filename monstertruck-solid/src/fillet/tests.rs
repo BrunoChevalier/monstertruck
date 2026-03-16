@@ -11,6 +11,7 @@ use super::{
     FilletOptions, FilletProfile, RadiusSpec, fillet, fillet_along_wire, fillet_edges,
     fillet_edges_generic, fillet_with_side,
 };
+use super::params::{CornerMode, ExtendMode, FilletMode};
 
 #[test]
 fn create_fillet_surface() {
@@ -3361,4 +3362,41 @@ fn fillet_boolean_subtraction_multi_wire() {
             "filleted boolean-subtraction shell must be closed"
         );
     }
+}
+
+#[test]
+fn default_fillet_mode_is_keep_separate() {
+    let opts = FilletOptions::default();
+    assert_eq!(opts.mode, FilletMode::KeepSeparateFace);
+    assert_eq!(opts.extend_mode, ExtendMode::Auto);
+    assert_eq!(opts.corner_mode, CornerMode::Auto);
+}
+
+#[test]
+fn fillet_options_builder_methods() {
+    let opts = FilletOptions::constant(0.5)
+        .with_mode(FilletMode::IntegrateVisual)
+        .with_extend_mode(ExtendMode::NoExtend)
+        .with_corner_mode(CornerMode::Blend);
+    assert_eq!(opts.mode, FilletMode::IntegrateVisual);
+    assert_eq!(opts.extend_mode, ExtendMode::NoExtend);
+    assert_eq!(opts.corner_mode, CornerMode::Blend);
+}
+
+#[test]
+fn fillet_edges_none_params_uses_default() {
+    let (mut shell, edge, _) = build_box_shell();
+    let initial_face_count = shell.len();
+
+    // Call `fillet_edges` with `None` to exercise the default `FilletOptions` path.
+    fillet_edges(&mut shell, &[edge[5].id()], None).unwrap();
+
+    // A fillet face should have been added.
+    assert!(
+        shell.len() > initial_face_count,
+        "expected fillet face to be added with default options"
+    );
+
+    // Verify the shell can still be triangulated.
+    let _poly = shell.robust_triangulation(0.001).to_polygon();
 }
