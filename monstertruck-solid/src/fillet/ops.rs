@@ -231,26 +231,33 @@ pub fn fillet_along_wire(shell: &mut Shell, wire: &Wire, options: &FilletOptions
     .ok_or(FilletError::FilletSurfaceComputationFailed)?;
 
     // Interior seam averaging.
+    // Dehomogenize before averaging to produce correct 3D midpoints
+    // instead of weight-biased positions.
     (1..fillet_surfaces.len()).for_each(|i| {
         let len = fillet_surfaces[i].control_points().len();
         (0..len).for_each(|j| {
             let len = fillet_surfaces[i - 1].control_points()[j].len();
             let p = *fillet_surfaces[i - 1].control_point(j, len - 1);
             let q = *fillet_surfaces[i].control_point(j, 0);
-            let c = (p + q) / 2.0;
+            let mid = p.to_point().midpoint(q.to_point());
+            let avg_w = (p.weight() + q.weight()) / 2.0;
+            let c = Vector4::from_point_weight(mid, avg_w);
             *fillet_surfaces[i - 1].control_point_mut(j, len - 1) = c;
             *fillet_surfaces[i].control_point_mut(j, 0) = c;
         });
     });
 
     // Wrap-around seam averaging for closed wires.
+    // Same dehomogenize-average-rehomogenize pattern.
     if closed {
         let last = fillet_surfaces.len() - 1;
         for j in 0..fillet_surfaces[last].control_points().len() {
             let len = fillet_surfaces[last].control_points()[j].len();
             let p = *fillet_surfaces[last].control_point(j, len - 1);
             let q = *fillet_surfaces[0].control_point(j, 0);
-            let c = (p + q) / 2.0;
+            let mid = p.to_point().midpoint(q.to_point());
+            let avg_w = (p.weight() + q.weight()) / 2.0;
+            let c = Vector4::from_point_weight(mid, avg_w);
             *fillet_surfaces[last].control_point_mut(j, len - 1) = c;
             *fillet_surfaces[0].control_point_mut(j, 0) = c;
         }
