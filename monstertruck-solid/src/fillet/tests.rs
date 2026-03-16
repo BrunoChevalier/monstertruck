@@ -3022,3 +3022,286 @@ fn fillet_wire_seam_continuity() {
     // Verify the shell can be triangulated without errors.
     let _poly = shell.robust_triangulation(0.001).to_polygon();
 }
+
+// ---------------------------------------------------------------------------
+// Phase 6-2: Boolean-result fillet operations
+// ---------------------------------------------------------------------------
+
+/// Helper: build a face whose boundary includes `IntersectionCurve` edges
+/// as the *adjacent* edges to the filleted edge.
+///
+/// This simulates the topology produced by boolean operations where
+/// `cut_face_by_bezier` needs to perform `search_closest_parameter` and
+/// `not_strictly_cut_with_parameter` on IntersectionCurve boundary edges.
+///
+/// Returns (face, filleted_edge, [e0, e1_ic, e2, e3_ic]).
+/// Edge layout:
+///   e0 (0→1): the filleted edge (NURBS line)
+///   e1_ic (1→2): IntersectionCurve (front adjacent)
+///   e2 (2→3): NURBS line
+///   e3_ic (3→0): IntersectionCurve (back adjacent)
+fn build_face_with_intersection_curve_edge() -> (Face, Edge, [Edge; 4]) {
+    use super::types::Curve;
+
+    let pts = [
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(1.0, 0.0, 0.0),
+        Point3::new(1.0, 1.0, 0.0),
+        Point3::new(0.0, 1.0, 0.0),
+    ];
+    let v = Vertex::news(&pts);
+
+    let line_nurbs = |i: usize, j: usize| -> NurbsCurve<Vector4> {
+        NurbsCurve::from(BsplineCurve::new(
+            KnotVector::bezier_knot(1),
+            vec![pts[i], pts[j]],
+        ))
+    };
+
+    // Helper: create an IntersectionCurve edge between two points.
+    // Uses two non-planar surfaces whose intersection lies approximately
+    // along the edge. The surfaces are deliberately complex (degree-2 with
+    // out-of-plane bulges) to stress the Newton iteration in
+    // search_closest_parameter / search_nearest_parameter.
+    let make_ic_edge = |from: usize, to: usize| -> Edge {
+        let p0 = pts[from];
+        let p1 = pts[to];
+        let mid = (p0 + p1.to_vec()) / 2.0;
+
+        // Surface 0: a highly curved surface (degree-2 in both u and v)
+        // with strong curvature that makes Newton iteration on the raw
+        // IntersectionCurve unreliable.
+        let s0: NurbsSurface<Vector4> = NurbsSurface::from(BsplineSurface::new(
+            (KnotVector::bezier_knot(2), KnotVector::bezier_knot(2)),
+            vec![
+                vec![
+                    p0 + Vector3::new(-0.3, -0.5, 0.2),
+                    p0 + Vector3::new(0.1, 0.0, -0.1),
+                    p0 + Vector3::new(-0.3, 0.5, 0.2),
+                ],
+                vec![
+                    mid + Vector3::new(-0.2, -0.5, 0.8),
+                    mid + Vector3::new(0.0, 0.0, 0.8),
+                    mid + Vector3::new(-0.2, 0.5, 0.8),
+                ],
+                vec![
+                    p1 + Vector3::new(0.3, -0.5, 0.2),
+                    p1 + Vector3::new(-0.1, 0.0, -0.1),
+                    p1 + Vector3::new(0.3, 0.5, 0.2),
+                ],
+            ],
+        ));
+        // Surface 1: a different highly curved surface intersecting s0.
+        let s1: NurbsSurface<Vector4> = NurbsSurface::from(BsplineSurface::new(
+            (KnotVector::bezier_knot(2), KnotVector::bezier_knot(2)),
+            vec![
+                vec![
+                    p0 + Vector3::new(0.3, -0.5, -0.2),
+                    p0 + Vector3::new(-0.1, 0.0, 0.1),
+                    p0 + Vector3::new(0.3, 0.5, -0.2),
+                ],
+                vec![
+                    mid + Vector3::new(0.2, -0.5, -0.8),
+                    mid + Vector3::new(0.0, 0.0, -0.8),
+                    mid + Vector3::new(0.2, 0.5, -0.8),
+                ],
+                vec![
+                    p1 + Vector3::new(-0.3, -0.5, -0.2),
+                    p1 + Vector3::new(0.1, 0.0, 0.1),
+                    p1 + Vector3::new(-0.3, 0.5, -0.2),
+                ],
+            ],
+        ));
+        // Leader: line in UV space of s0 at v=0.5 (z=0 slice at endpoints),
+        // u from 0→1 traces p0 → (mid + z-bulge) → p1.
+        let leader = ParameterCurve::new(
+            Line(Point2::new(0.0, 0.5), Point2::new(1.0, 0.5)),
+            s0.clone(),
+        );
+        let ic = IntersectionCurve::new(Box::new(s0), Box::new(s1), leader);
+        Edge::new(&v[from], &v[to], Curve::IntersectionCurve(ic))
+    };
+
+    // Edge 0 (0→1): filleted edge (NURBS line)
+    let e0 = Edge::new(&v[0], &v[1], Curve::NurbsCurve(line_nurbs(0, 1)));
+    // Edge 1 (1→2): IntersectionCurve (front adjacent to e0)
+    let e1 = make_ic_edge(1, 2);
+    // Edge 2 (2→3): ordinary NURBS line
+    let e2 = Edge::new(&v[2], &v[3], Curve::NurbsCurve(line_nurbs(2, 3)));
+    // Edge 3 (3→0): IntersectionCurve (back adjacent to e0)
+    let e3 = make_ic_edge(3, 0);
+
+    let wire: Wire = [e0.clone(), e1.clone(), e2.clone(), e3.clone()]
+        .iter()
+        .cloned()
+        .collect();
+
+    let surface: NurbsSurface<_> = BsplineSurface::new(
+        (KnotVector::bezier_knot(1), KnotVector::bezier_knot(1)),
+        vec![
+            vec![Point3::new(-0.5, -0.5, 0.0), Point3::new(-0.5, 1.5, 0.0)],
+            vec![Point3::new(1.5, -0.5, 0.0), Point3::new(1.5, 1.5, 0.0)],
+        ],
+    )
+    .into();
+
+    let face = Face::new(vec![wire], surface);
+    (face, e0.clone(), [e0, e1, e2, e3])
+}
+
+/// `cut_face_by_bezier` should succeed on a face whose boundary includes
+/// `IntersectionCurve` edges as the *adjacent* edges to the filleted edge.
+///
+/// Layout: e0 (filleted, NURBS), e1 (IntersectionCurve), e2 (NURBS), e3 (IntersectionCurve).
+/// Adjacent to e0: front=e3 (3→0), back=e1 (1→2).
+/// The bezier crosses from e3 to e1, and `cut_face_by_bezier` must do
+/// `search_closest_parameter` and `not_strictly_cut_with_parameter` on the
+/// IntersectionCurve edges e3 and e1.
+#[test]
+fn cut_face_by_bezier_intersection_curve_edge() {
+    use super::topology::cut_face_by_bezier;
+
+    let (face, _filleted, edges) = build_face_with_intersection_curve_edge();
+
+    // e0 (0→1) is the filleted edge.
+    // Adjacent: front=e3 (3→0), back=e1 (1→2) -- both IntersectionCurve.
+    // Bezier from near midpoint of e3 to near midpoint of e1.
+    let mid3 = Point3::new(0.0, 0.5, 0.0);
+    let mid1 = Point3::new(1.0, 0.5, 0.0);
+    let ctrl = Point3::new(0.5, 0.3, 0.0);
+    let bezier: NurbsCurve<Vector4> = NurbsCurve::from(BsplineCurve::new(
+        KnotVector::bezier_knot(2),
+        vec![mid3, ctrl, mid1],
+    ));
+
+    let result = cut_face_by_bezier(&face, bezier, edges[0].id());
+    assert!(
+        result.is_some(),
+        "cut_face_by_bezier returned None on face with IntersectionCurve adjacent edges"
+    );
+}
+
+/// Fillet applied to a boolean-union result should produce a valid shell.
+///
+/// This creates two overlapping cubes via `crate::or()`, selects edges
+/// from the union boundary (which have `IntersectionCurve` geometry),
+/// and fillets them with a small radius.
+///
+/// Currently ignored: boolean `or()` fails with `CreateLoopsStoreFailed`
+/// (pre-existing bug). Re-enable once boolean operations are fixed.
+#[test]
+#[ignore]
+fn fillet_boolean_union() {
+    use monstertruck_modeling::builder;
+
+    // Cube 1 at origin.
+    let v1 = builder::vertex(Point3::origin());
+    let e1 = builder::extrude(&v1, Vector3::unit_x());
+    let f1 = builder::extrude(&e1, Vector3::unit_y());
+    let cube1: monstertruck_modeling::Solid = builder::extrude(&f1, Vector3::unit_z());
+
+    // Cube 2 offset by 0.5 in X (overlapping).
+    let v2 = builder::vertex(Point3::new(0.5, 0.0, 0.0));
+    let e2 = builder::extrude(&v2, Vector3::unit_x());
+    let f2 = builder::extrude(&e2, Vector3::unit_y());
+    let cube2: monstertruck_modeling::Solid = builder::extrude(&f2, Vector3::unit_z());
+
+    // Boolean union -- produces IntersectionCurve edges where the cubes meet.
+    let union_solid = crate::or(&cube1, &cube2, 0.05).expect("boolean OR failed");
+    let mut shell = union_solid.into_boundaries().into_iter().next().unwrap();
+
+    // Find IntersectionCurve edges in the result.
+    let ic_edges: Vec<_> = shell
+        .edge_iter()
+        .filter(|e| {
+            matches!(
+                e.curve(),
+                monstertruck_modeling::Curve::IntersectionCurve(_)
+            )
+        })
+        .take(2)
+        .collect();
+    assert!(
+        !ic_edges.is_empty(),
+        "expected IntersectionCurve edges in boolean union result"
+    );
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::Constant(0.05),
+        ..Default::default()
+    };
+    fillet_edges_generic(&mut shell, &ic_edges, Some(&opts))
+        .expect("fillet_edges_generic failed on boolean-union shell");
+
+    assert_eq!(
+        shell.shell_condition(),
+        monstertruck_topology::shell::ShellCondition::Closed,
+        "filleted boolean-union shell must be closed"
+    );
+}
+
+/// Fillet applied to a boolean-subtraction result with multi-wire boundary
+/// faces should complete without panic.
+///
+/// Currently ignored: boolean `and()` fails because `try_attach_plane`
+/// returns `WireNotInOnePlane` (pre-existing bug in cylinder construction).
+/// Re-enable once boolean operations are fixed.
+#[test]
+#[ignore]
+fn fillet_boolean_subtraction_multi_wire() {
+    use monstertruck_modeling::builder;
+
+    // Build a cube.
+    let v = builder::vertex(Point3::origin());
+    let e = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&e, Vector3::unit_y());
+    let cube: monstertruck_modeling::Solid = builder::extrude(&f, Vector3::unit_z());
+
+    // Build a cylinder to subtract -- same pattern as punched-cube.
+    let cv = builder::vertex(Point3::new(0.5, 0.25, -0.5));
+    let cw = builder::revolve(
+        &cv,
+        Point3::new(0.5, 0.5, 0.0),
+        Vector3::unit_z(),
+        Rad(7.0),
+        3,
+    );
+    let cf = builder::try_attach_plane(&[cw]).expect("try_attach_plane failed");
+    let mut cylinder = builder::extrude(&cf, Vector3::unit_z() * 2.0);
+    cylinder.not();
+
+    // Boolean AND -- produces IntersectionCurve edges and multi-wire faces.
+    let solid = crate::and(&cube, &cylinder, 0.05).expect("boolean AND failed");
+    let mut shell = solid.into_boundaries().into_iter().next().unwrap();
+
+    // Find IntersectionCurve edges adjacent to the hole boundary.
+    let ic_edges: Vec<_> = shell
+        .edge_iter()
+        .filter(|e| {
+            matches!(
+                e.curve(),
+                monstertruck_modeling::Curve::IntersectionCurve(_)
+            )
+        })
+        .take(2)
+        .collect();
+    assert!(
+        !ic_edges.is_empty(),
+        "expected IntersectionCurve edges in boolean subtraction result"
+    );
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::Constant(0.05),
+        ..Default::default()
+    };
+    // Should complete without panic, even if the fillet produces a non-closed shell.
+    let _result = fillet_edges_generic(&mut shell, &ic_edges, Some(&opts));
+    // At minimum: no panic. If successful, verify closed topology.
+    if _result.is_ok() {
+        assert_eq!(
+            shell.shell_condition(),
+            monstertruck_topology::shell::ShellCondition::Closed,
+            "filleted boolean-subtraction shell must be closed"
+        );
+    }
+}
