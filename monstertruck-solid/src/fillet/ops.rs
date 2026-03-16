@@ -4,9 +4,7 @@ use std::collections::HashMap;
 
 use super::error::FilletError;
 use super::geometry::*;
-use super::integrate::{
-    ContinuityAnnotation, FilletResult, annotate_fillet_edges, ensure_seamless_vertices,
-};
+use super::integrate::{FilletResult, annotate_fillet_edges, ensure_seamless_vertices};
 use super::params::{FilletMode, FilletOptions, FilletProfile, RadiusSpec};
 use super::topology::*;
 use super::types::*;

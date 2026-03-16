@@ -35,20 +35,21 @@ pub struct FilletResult {
     pub annotations: HashMap<EdgeId, ContinuityAnnotation>,
 }
 
-/// Angle tolerance in radians for G1 tangent continuity classification.
-/// ~1 degree = 0.0175 radians.
+/// Angle tolerance in radians for G1 tangent continuity (~1 degree).
 const G1_ANGLE_TOLERANCE: f64 = 0.0175;
 
-/// Tolerance for principal curvature ratio to classify as G2.
-/// 10% relative difference.
+/// Relative tolerance for mean curvature matching (10%).
 const G2_CURVATURE_TOLERANCE: f64 = 0.10;
+
+/// Default number of sample points along an edge for continuity classification.
+const DEFAULT_SAMPLE_COUNT: usize = 8;
 
 /// Classifies the geometric continuity between a fillet surface and a host
 /// surface along a shared edge by sampling normals and curvatures.
 ///
 /// Samples `sample_count` points along the edge and compares surface normals.
 /// - If all normal angles are within ~1 degree: G1 (tangent continuous)
-/// - If additionally curvatures match within 10%: G2 (curvature continuous)
+/// - If additionally mean curvatures match within 10%: G2 (curvature continuous)
 /// - Otherwise: G0 (positional only)
 pub(super) fn classify_edge_continuity(
     fillet_surface: &NurbsSurface<Vector4>,
@@ -68,53 +69,37 @@ pub(super) fn classify_edge_continuity(
         let pt = curve.evaluate(t);
 
         // Find the nearest parameters on each surface.
-        let fillet_uv = fillet_surface
-            .search_parameter(pt, (0.5, 0.5), 100);
-        let host_uv = host_surface
-            .search_parameter(pt, (0.5, 0.5), 100);
-
-        let (fu, fv) = match fillet_uv {
+        let (fu, fv) = match fillet_surface.search_parameter(pt, (0.5, 0.5), 100) {
             Some(uv) => uv,
             None => return ContinuityAnnotation::G0,
         };
-        let (hu, hv) = match host_uv {
+        let (hu, hv) = match host_surface.search_parameter(pt, (0.5, 0.5), 100) {
             Some(uv) => uv,
             None => return ContinuityAnnotation::G0,
         };
 
-        // Compare normals.
         let fillet_normal = fillet_surface.normal(fu, fv);
         let host_normal = host_surface.normal(hu, hv);
 
-        let fillet_len = (fillet_normal.x * fillet_normal.x
-            + fillet_normal.y * fillet_normal.y
-            + fillet_normal.z * fillet_normal.z)
-            .sqrt();
-        let host_len = (host_normal.x * host_normal.x
-            + host_normal.y * host_normal.y
-            + host_normal.z * host_normal.z)
-            .sqrt();
-
+        let fillet_len = fillet_normal.magnitude();
+        let host_len = host_normal.magnitude();
         if fillet_len < 1.0e-12 || host_len < 1.0e-12 {
             all_g1 = false;
             all_g2 = false;
             continue;
         }
 
-        let dot = fillet_normal.x * host_normal.x
-            + fillet_normal.y * host_normal.y
-            + fillet_normal.z * host_normal.z;
-        // Normals may point in opposite directions depending on orientation;
-        // compare the absolute dot product.
-        let cos_angle = (dot / (fillet_len * host_len)).abs().min(1.0);
+        // Normals may point in opposite directions depending on face orientation.
+        let cos_angle = (fillet_normal.dot(host_normal) / (fillet_len * host_len))
+            .abs()
+            .min(1.0);
         let angle = cos_angle.acos();
 
         if angle > G1_ANGLE_TOLERANCE {
             all_g1 = false;
             all_g2 = false;
         } else {
-            // Check curvature for G2.
-            // Use mean curvature as a scalar proxy.
+            // Check curvature for G2 using mean curvature as a scalar proxy.
             let fillet_curv = mean_curvature(fillet_surface, fu, fv);
             let host_curv = mean_curvature(host_surface, hu, hv);
 
@@ -125,7 +110,7 @@ pub(super) fn classify_edge_continuity(
                     all_g2 = false;
                 }
             }
-            // If both curvatures are near zero, they match (both flat) -> G2 ok.
+            // Both curvatures near zero means both flat -> G2 holds.
         }
     }
 
@@ -138,45 +123,38 @@ pub(super) fn classify_edge_continuity(
     }
 }
 
-/// Approximate mean curvature at a point on a NURBS surface.
+/// Approximate mean curvature at a surface point using fundamental forms.
 ///
-/// Uses the first and second fundamental forms.
+/// H = (EN - 2FM + GL) / (2(EG - F^2))
 fn mean_curvature(surface: &NurbsSurface<Vector4>, u: f64, v: f64) -> f64 {
     let du = surface.derivative_u(u, v);
     let dv = surface.derivative_v(u, v);
     let n = surface.normal(u, v);
-    let n_len = (n.x * n.x + n.y * n.y + n.z * n.z).sqrt();
-    if n_len < 1.0e-12 {
+
+    if n.magnitude() < 1.0e-12 {
         return 0.0;
     }
 
-    // Second derivatives.
     let duu = surface.derivative_uu(u, v);
     let dvv = surface.derivative_vv(u, v);
     let duv = surface.derivative_uv(u, v);
 
-    // First fundamental form coefficients.
-    let e_coeff = dot3(du, du);
-    let f_coeff = dot3(du, dv);
-    let g_coeff = dot3(dv, dv);
+    // First fundamental form.
+    let e_coeff = du.dot(du);
+    let f_coeff = du.dot(dv);
+    let g_coeff = dv.dot(dv);
 
-    // Second fundamental form coefficients.
-    let l_coeff = dot3(duu, n) / n_len;
-    let m_coeff = dot3(duv, n) / n_len;
-    let n_coeff = dot3(dvv, n) / n_len;
+    // Second fundamental form (n is already unit-length from normal()).
+    let l_coeff = duu.dot(n);
+    let m_coeff = duv.dot(n);
+    let n_coeff = dvv.dot(n);
 
     let denom = e_coeff * g_coeff - f_coeff * f_coeff;
     if denom.abs() < 1.0e-20 {
         return 0.0;
     }
 
-    // Mean curvature H = (eN - 2fM + gL) / (2(EG - F^2))
     (e_coeff * n_coeff - 2.0 * f_coeff * m_coeff + g_coeff * l_coeff) / (2.0 * denom)
-}
-
-/// Dot product for Vector3.
-fn dot3(a: Vector3, b: Vector3) -> f64 {
-    a.x * b.x + a.y * b.y + a.z * b.z
 }
 
 /// Given the three faces returned by a fillet operation, identify the shared
@@ -193,25 +171,29 @@ pub(super) fn annotate_fillet_edges(
     new_face1: &Face,
     fillet_face: &Face,
 ) -> HashMap<EdgeId, ContinuityAnnotation> {
-    let mut annotations = HashMap::new();
-    let fillet_surface = fillet_face.oriented_surface();
     let fillet_boundary = &fillet_face.absolute_boundaries()[0];
-
-    // The shared edge with new_face0 is at boundary index 0.
-    if fillet_boundary.len() >= 4 {
-        let shared_edge0 = &fillet_boundary[0];
-        let host_surface0 = new_face0.oriented_surface();
-        let annotation0 =
-            classify_edge_continuity(&fillet_surface, &host_surface0, shared_edge0, 8);
-        annotations.insert(shared_edge0.id(), annotation0);
-
-        // The shared edge with new_face1 is at boundary index 2.
-        let shared_edge1 = &fillet_boundary[2];
-        let host_surface1 = new_face1.oriented_surface();
-        let annotation1 =
-            classify_edge_continuity(&fillet_surface, &host_surface1, shared_edge1, 8);
-        annotations.insert(shared_edge1.id(), annotation1);
+    if fillet_boundary.len() < 4 {
+        return HashMap::new();
     }
+
+    let fillet_surface = fillet_face.oriented_surface();
+    let mut annotations = HashMap::with_capacity(2);
+
+    // Shared edge with new_face0 at boundary index 0.
+    let shared_edge0 = &fillet_boundary[0];
+    let host_surface0 = new_face0.oriented_surface();
+    annotations.insert(
+        shared_edge0.id(),
+        classify_edge_continuity(&fillet_surface, &host_surface0, shared_edge0, DEFAULT_SAMPLE_COUNT),
+    );
+
+    // Shared edge with new_face1 at boundary index 2.
+    let shared_edge1 = &fillet_boundary[2];
+    let host_surface1 = new_face1.oriented_surface();
+    annotations.insert(
+        shared_edge1.id(),
+        classify_edge_continuity(&fillet_surface, &host_surface1, shared_edge1, DEFAULT_SAMPLE_COUNT),
+    );
 
     annotations
 }
@@ -219,20 +201,15 @@ pub(super) fn annotate_fillet_edges(
 /// Ensures that shared edge vertices between fillet and host faces use
 /// bitwise-identical 3D positions, preventing tessellation cracks.
 ///
-/// The existing shared-Vertex topology handles most vertex sharing, but
-/// this function explicitly verifies and fixes any numerical drift from
-/// surface evaluation during fillet construction.
+/// The fillet face shares Edge instances (via Arc) with host faces, so
+/// vertex positions at shared edges are already bitwise-identical through
+/// the topology. No additional snapping is needed.
 pub(super) fn ensure_seamless_vertices(
     _fillet_face: &mut Face,
     _host_face0: &Face,
     _host_face1: &Face,
 ) {
-    // The fillet face shares Edge instances (via Arc) with host faces.
-    // Because edges share the same Arc<RwLock<Curve>>, vertex positions
-    // at shared edges are already bitwise-identical. No additional
-    // snapping is needed -- the topology ensures positional consistency.
-    //
-    // Future enhancement: if fillet construction introduces floating-point
-    // drift in surface control points near shared edges, add explicit
-    // control-point snapping here.
+    // The Arc-based edge sharing guarantees positional consistency.
+    // Future enhancement: if surface evaluation drift is detected,
+    // add explicit control-point snapping here.
 }
