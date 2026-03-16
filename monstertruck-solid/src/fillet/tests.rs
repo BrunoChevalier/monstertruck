@@ -3011,12 +3011,13 @@ fn fillet_wire_seam_continuity() {
     )
     .unwrap();
 
-    // fillet_along_wire adds fillet faces (first + middle + last for the open
-    // wire extracted from the modified top face boundary).
-    let fillet_face_count = shell.len() - pre_wire_count;
-    assert!(
-        fillet_face_count >= 2,
-        "expected at least 2 fillet faces, got {fillet_face_count}",
+    // The 2-edge open wire produces 5 fillet faces (first, middle segments,
+    // last), giving a total shell of 6 + 5 = 11 faces.
+    assert_eq!(
+        shell.len(),
+        11,
+        "expected 11 total faces (6 prep + 5 fillet), got {}",
+        shell.len()
     );
 
     // C0 continuity check: the two fillet faces (appended at the end of the
@@ -3055,10 +3056,11 @@ fn fillet_wire_seam_continuity() {
         }
     }
     let best = matched_max_min.max(matched_min_min);
-    assert!(
-        best >= 3,
-        "C0 continuity: expected >= 3 coincident boundary samples, got {best} \
-         (max-min={matched_max_min}, min-min={matched_min_min})",
+    let total_samples = n_samples + 1;
+    assert_eq!(
+        best, total_samples,
+        "C0 continuity: ALL {total_samples} sampled boundary pairs must coincide, \
+         but only {best} matched (max-min={matched_max_min}, min-min={matched_min_min})",
     );
 
     // Verify the shell can be triangulated without errors.
