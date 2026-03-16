@@ -21,15 +21,16 @@
 
 ## Recent Decisions
 - 2026-03-08: Project initialized: monstertruck
+- 2026-03-16: Milestone v0.2.0 archived
 
 ## Active Blockers
 None
 
 ## Session
 **Chain:** active
-**Last Command:** /td:verify
-**Next Action:** Milestone phases complete -- review and run complete-milestone when ready.
+**Last Command:** /td:complete-milestone
+**Next Action:** Run /td:new-milestone to start next milestone
 **Resume File:** None
 
 ---
-*Updated: 2026-03-15T21:51:17.469Z*
+*Updated: 2026-03-16T09:09:23.310Z*
