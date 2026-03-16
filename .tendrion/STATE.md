@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 6 of 8 (Topology Surgery Hardening)
-**Plan:** 0 of 2
+**Plan:** 1 of 2
 **Progress:**
 
 
