@@ -28,6 +28,9 @@ pub mod base {
         prop_assert_near, prop_assert_near2, tolerance::*,
     };
     pub use monstertruck_traits::*;
+    // Explicit re-export disambiguates the polynomial solver module from
+    // `monstertruck_traits::polynomial` (which provides `PolynomialCurve`/`PolynomialSurface`).
+    pub use monstertruck_core::cgmath64::polynomial;
 }
 /// NURBS and B-spline curves, surfaces, and knot vectors.
 pub mod nurbs;

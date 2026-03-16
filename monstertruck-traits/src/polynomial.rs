@@ -102,7 +102,7 @@ where
 impl<P> std::ops::Add for &PolynomialCurve<P>
 where
     P: EuclideanSpace<Scalar = f64>,
-    P::Diff: ElementWise,
+    P::Diff: MulElementWise,
 {
     type Output = PolynomialCurve<P>;
     fn add(self, rhs: Self) -> PolynomialCurve<P> {
@@ -121,7 +121,7 @@ where
 impl<P> std::ops::Mul for &PolynomialCurve<P>
 where
     P: EuclideanSpace<Scalar = f64>,
-    P::Diff: ElementWise,
+    P::Diff: MulElementWise,
 {
     type Output = PolynomialCurve<P>;
     fn mul(self, rhs: Self) -> PolynomialCurve<P> {
@@ -197,7 +197,7 @@ impl ParametricSurface3D for PolynomialSurface<Point3> {
     #[inline(always)]
     fn normal(&self, u: f64, v: f64) -> Vector3 {
         self.derivative_u(u, v)
-            .cross(self.derivative_v(u, v))
+            .cross(&self.derivative_v(u, v))
             .normalize()
     }
 }
@@ -220,7 +220,7 @@ where
 impl<P> PolynomialSurface<P>
 where
     P: EuclideanSpace<Scalar = f64>,
-    P::Diff: ElementWise,
+    P::Diff: MulElementWise,
 {
     /// create polysurface by tensor product e.g. (u^2 + 2u + 2) * (v^2 + 3v - 2)
     pub fn by_tensor(curve0: PolynomialCurve<P>, curve1: PolynomialCurve<P>) -> Self {

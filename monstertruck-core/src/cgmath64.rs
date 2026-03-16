@@ -1,5 +1,6 @@
 pub use crate::cgmath_extend_traits::*;
 pub use crate::derivatives::*;
+pub use monstertruck_math::polynomial;
 pub use monstertruck_math::prelude::*;
 pub use monstertruck_math::{Deg, Rad, frustum, ortho, perspective};
 macro_rules! f64_type {

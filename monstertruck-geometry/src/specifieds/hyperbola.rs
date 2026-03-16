@@ -79,7 +79,7 @@ impl SearchNearestParameter<D1> for UnitHyperbola<Point2> {
         let b = (p.y * p.y - p.x * p.x) / 4.0 + 1.0;
         let c = -p.y;
         let d = p.y * p.y / 4.0;
-        let y = solver::solve_quartic(a, b, c, d)
+        let y = polynomial::solve_quartic(a, b, c, d)
             .into_iter()
             .filter_map(|z| match z.im.so_small() {
                 true => Some(z.re),

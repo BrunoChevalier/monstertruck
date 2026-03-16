@@ -46,6 +46,7 @@ js-sys = "0.3"
 log = "0.4"
 matext4cgmath = "0.1"
 nalgebra = { version = "0.33", features = ["serde-serialize"] }
+num-complex = "0.4"
 naga = { version = "27", features = ["wgsl-in"] }
 parking_lot = "0.12"
 pollster = "0.4"

@@ -81,7 +81,7 @@ impl SearchNearestParameter<D1> for UnitParabola<Point2> {
     ) -> Option<f64> {
         let p = 2.0 - pt.x;
         let q = -pt.y;
-        solver::pre_solve_cubic(p, q)
+        polynomial::pre_solve_cubic(p, q)
             .into_iter()
             .filter_map(|x| match x.im.so_small() {
                 true => Some(x.re),
