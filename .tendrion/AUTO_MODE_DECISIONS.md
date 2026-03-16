@@ -59,3 +59,18 @@
 ### Doc gate: spawning writer to fix 1 issue(s)
 **Time:** 2026-03-15T21:45:08.253Z
 
+### Clean-state epilogue: committed 0 provenanced + 12 unprovenanced file(s) with [REVIEW-NEEDED]
+**Time:** 2026-03-15T21:47:50.331Z
+
+### Phase: 5 | Started: 2026-03-16T11:17:32Z | Mode: auto
+**Time:** 2026-03-16T11:17:32.875Z
+
+### Namespace collision: both cgmath64::* and monstertruck_traits::* export a 'polynomial' module in the geometry base prelude. Resolving by adding explicit 'pub use monstertruck_core::cgmath64::polynomial' in the base module, which takes precedence over the glob imports. monstertruck_traits::polynomial (PolynomialCurve/Surface) remains accessible via monstertruck_traits::polynomial explicitly.
+**Time:** 2026-03-16T11:33:43.239Z
+
+### Spec review 5-2: B1 (pre-existing workspace build failures in unmodified crates) overruled — solver wiring is correct, cargo build -p monstertruck-geometry succeeds
+**Time:** 2026-03-16T11:40:55.427Z
+
+### Doc gate: spawning writer to fix 2 issue(s)
+**Time:** 2026-03-16T11:41:48.165Z
+
