@@ -124,7 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 5)
+### Recent Changes (Phase 6)
+
+- **Fillet seam averaging fix** -- `fillet_along_wire` now dehomogenizes `Vector4` control points before averaging at seam boundaries, producing correct C0-continuous joins between fillet patches (TOPO-02).
+- **Intersection curve edge handling** -- New `ensure_cuttable_edge()` converts `IntersectionCurve` boundary edges to NURBS approximations before `cut_face_by_bezier` runs, preventing topology surgery failures on boolean-result geometry (TOPO-01).
+
+### Earlier Changes (Phase 5)
 
 - **Polynomial solvers** -- `monstertruck-math` now includes quadratic, cubic, and quartic polynomial solvers (ported from `matext4cgmath`), eliminating the legacy `cgmath` transitive dependency. These solvers are wired into `monstertruck-geometry` curve intersection call sites (hyperbola and parabola specifieds).
 - **Namespace collision fix** -- Resolved the `polynomial` module name collision between `monstertruck-math` (solvers) and `monstertruck-traits` (evaluation traits) via explicit re-export precedence in the geometry crate.

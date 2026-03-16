@@ -30,3 +30,7 @@ Additionally, the `monstertruck-traits` crate already has a `polynomial` module 
 - `matext4cgmath` can be removed from the workspace dependency tree once all call sites are migrated.
 - The `monstertruck-math` crate gains a broader role as the canonical location for numerical algorithms, not just linear algebra types.
 - Downstream crates importing both `polynomial` modules must use the established re-export pattern to avoid ambiguity.
+
+## Status Update (Phase 6)
+
+The polynomial solvers ported in this ADR continue to function correctly after the Phase 6 topology surgery hardening changes. No modifications to `monstertruck-math::polynomial` were required. See [ADR-0002](0002-fillet-topology-surgery-hardening.md) for the Phase 6 architectural decisions.
