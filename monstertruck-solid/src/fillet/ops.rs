@@ -280,7 +280,7 @@ pub fn fillet_along_wire(shell: &mut Shell, wire: &Wire, options: &FilletOptions
 /// Averages two homogeneous control points by dehomogenizing first, computing
 /// the 3D midpoint, then rehomogenizing with the average weight.  This avoids
 /// the weight-bias that naive `(p + q) / 2` produces in homogeneous space.
-fn dehomogenized_average(p: Vector4, q: Vector4) -> Vector4 {
+pub(super) fn dehomogenized_average(p: Vector4, q: Vector4) -> Vector4 {
     let mid = p.to_point().midpoint(q.to_point());
     let avg_w = (p.weight() + q.weight()) / 2.0;
     Vector4::from_point_weight(mid, avg_w)
