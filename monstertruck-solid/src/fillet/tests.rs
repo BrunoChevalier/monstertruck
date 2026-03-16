@@ -1850,101 +1850,7 @@ fn boolean_shell_converts_for_fillet() {
 /// Variable radius on an open wire should succeed (no f(0)≈f(1) constraint).
 #[test]
 fn variable_radius_open_wire() {
-    // Reuse fillet_semi_cube topology: 4-face open box, 2-edge open wire.
-    let p = [
-        Point3::new(0.0, 0.0, 1.0),
-        Point3::new(1.0, 0.0, 1.0),
-        Point3::new(1.0, 1.0, 1.0),
-        Point3::new(0.0, 1.0, 1.0),
-        Point3::new(0.0, -0.1, 0.0),
-        Point3::new(1.1, -0.1, 0.0),
-        Point3::new(1.1, 1.1, 0.0),
-        Point3::new(0.0, 1.1, 0.0),
-    ];
-    let v = Vertex::news(p);
-
-    let line = |i: usize, j: usize| {
-        let bsp = BsplineCurve::new(KnotVector::bezier_knot(1), vec![p[i], p[j]]);
-        Edge::new(&v[i], &v[j], NurbsCurve::from(bsp).into())
-    };
-    let edge = [
-        line(0, 1),
-        line(1, 2),
-        line(2, 3),
-        line(3, 0),
-        line(0, 4),
-        line(1, 5),
-        line(2, 6),
-        line(3, 7),
-        line(4, 5),
-        line(5, 6),
-        line(6, 7),
-        line(7, 4),
-    ];
-
-    let plane = |i: usize, j: usize, k: usize, l: usize| {
-        let control_points = vec![vec![p[i], p[l]], vec![p[j], p[k]]];
-        let knot_vec = KnotVector::bezier_knot(1);
-        let bsp = BsplineSurface::new((knot_vec.clone(), knot_vec), control_points);
-        let wire: Wire = [i, j, k, l]
-            .into_iter()
-            .circular_tuple_windows()
-            .map(|(i, j)| {
-                edge.iter()
-                    .find_map(|edge| {
-                        if edge.front() == &v[i] && edge.back() == &v[j] {
-                            Some(edge.clone())
-                        } else if edge.back() == &v[i] && edge.front() == &v[j] {
-                            Some(edge.inverse())
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap()
-            })
-            .collect();
-        Face::new(vec![wire], bsp.into())
-    };
-
-    let mut shell: Shell = [
-        plane(0, 1, 2, 3),
-        plane(1, 0, 4, 5),
-        plane(2, 1, 5, 6),
-        plane(3, 2, 6, 7),
-    ]
-    .into();
-
-    let opts = FilletOptions {
-        radius: RadiusSpec::Constant(0.4),
-        ..Default::default()
-    };
-    let (face0, face1, face2, _, side1) = fillet_with_side(
-        &shell[1],
-        &shell[2],
-        edge[5].id(),
-        None,
-        Some(&shell[0]),
-        &opts,
-    )
-    .unwrap();
-    (shell[1], shell[2], shell[0]) = (face0, face1, side1.unwrap());
-    shell.push(face2);
-
-    let (face0, face1, face2, _, side1) = fillet_with_side(
-        &shell[2],
-        &shell[3],
-        edge[6].id(),
-        None,
-        Some(&shell[0]),
-        &opts,
-    )
-    .unwrap();
-    (shell[2], shell[3], shell[0]) = (face0, face1, side1.unwrap());
-    shell.push(face2);
-
-    let mut boundary = shell[0].boundaries().pop().unwrap();
-    boundary.pop_back();
-    assert_eq!(boundary.front_vertex().unwrap(), &v[0]);
+    let (mut shell, boundary, _v0) = build_open_wire_semi_cube();
     assert!(!boundary.is_closed());
 
     // Variable radius where f(0)=0.1, f(1)=0.3 -- NOT equal, would fail on closed wire.
@@ -2747,6 +2653,112 @@ fn build_6face_box() -> (Shell, [Edge; 12], Vec<Vertex>) {
     (shell, edge, v)
 }
 
+/// Helper: builds a 4-face open box (semi-cube) with slightly non-planar bottom
+/// vertices, applies `fillet_with_side` on edges 5 and 6 to prepare topology,
+/// then extracts the 2-edge open boundary wire suitable for `fillet_along_wire`.
+///
+/// Returns `(shell, boundary_wire, v0)` where `v0` is the front vertex of the
+/// boundary wire (the original `v[0]`).
+fn build_open_wire_semi_cube() -> (Shell, Wire, Vertex) {
+    let p = [
+        Point3::new(0.0, 0.0, 1.0),
+        Point3::new(1.0, 0.0, 1.0),
+        Point3::new(1.0, 1.0, 1.0),
+        Point3::new(0.0, 1.0, 1.0),
+        Point3::new(0.0, -0.1, 0.0),
+        Point3::new(1.1, -0.1, 0.0),
+        Point3::new(1.1, 1.1, 0.0),
+        Point3::new(0.0, 1.1, 0.0),
+    ];
+    let v = Vertex::news(p);
+
+    let line = |i: usize, j: usize| {
+        let bsp = BsplineCurve::new(KnotVector::bezier_knot(1), vec![p[i], p[j]]);
+        Edge::new(&v[i], &v[j], NurbsCurve::from(bsp).into())
+    };
+    let edge = [
+        line(0, 1),
+        line(1, 2),
+        line(2, 3),
+        line(3, 0),
+        line(0, 4),
+        line(1, 5),
+        line(2, 6),
+        line(3, 7),
+        line(4, 5),
+        line(5, 6),
+        line(6, 7),
+        line(7, 4),
+    ];
+
+    let plane = |i: usize, j: usize, k: usize, l: usize| {
+        let control_points = vec![vec![p[i], p[l]], vec![p[j], p[k]]];
+        let knot_vec = KnotVector::bezier_knot(1);
+        let knot_vecs = (knot_vec.clone(), knot_vec);
+        let bsp = BsplineSurface::new(knot_vecs, control_points);
+        let wire: Wire = [i, j, k, l]
+            .into_iter()
+            .circular_tuple_windows()
+            .map(|(i, j)| {
+                edge.iter()
+                    .find_map(|edge| {
+                        if edge.front() == &v[i] && edge.back() == &v[j] {
+                            Some(edge.clone())
+                        } else if edge.back() == &v[i] && edge.front() == &v[j] {
+                            Some(edge.inverse())
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap()
+            })
+            .collect();
+        Face::new(vec![wire], bsp.into())
+    };
+
+    let mut shell: Shell = [
+        plane(0, 1, 2, 3),
+        plane(1, 0, 4, 5),
+        plane(2, 1, 5, 6),
+        plane(3, 2, 6, 7),
+    ]
+    .into();
+
+    let opts = FilletOptions {
+        radius: RadiusSpec::Constant(0.4),
+        ..Default::default()
+    };
+    let (face0, face1, face2, _, side1) = fillet_with_side(
+        &shell[1],
+        &shell[2],
+        edge[5].id(),
+        None,
+        Some(&shell[0]),
+        &opts,
+    )
+    .unwrap();
+    (shell[1], shell[2], shell[0]) = (face0, face1, side1.unwrap());
+    shell.push(face2);
+
+    let (face0, face1, face2, _, side1) = fillet_with_side(
+        &shell[2],
+        &shell[3],
+        edge[6].id(),
+        None,
+        Some(&shell[0]),
+        &opts,
+    )
+    .unwrap();
+    (shell[2], shell[3], shell[0]) = (face0, face1, side1.unwrap());
+    shell.push(face2);
+
+    let mut boundary = shell[0].boundaries().pop().unwrap();
+    boundary.pop_back();
+    assert_eq!(boundary.front_vertex().unwrap(), &v[0]);
+
+    (shell, boundary, v[0].clone())
+}
+
 /// Fillet all 4 top edges of a cuboid in a single `fillet_edges` call.
 ///
 /// Previously this produced 4 singleton chains (different face pairs) processed
@@ -2787,6 +2799,49 @@ fn fillet_edges_cuboid_top_and_bottom() {
         shell.len()
     );
     let _poly = shell.robust_triangulation(0.001).to_polygon();
+}
+
+/// Verifies the production `dehomogenized_average` helper produces correct 3D
+/// midpoints for control points with non-uniform weights.  This bridges the
+/// gap between the standalone math test (`seam_averaging_dehomogenizes`) and
+/// the end-to-end `fillet_wire_seam_continuity` test by directly invoking the
+/// same function that `fillet_along_wire` calls at seam boundaries.
+#[test]
+fn dehomogenized_average_production() {
+    use super::ops::dehomogenized_average;
+
+    // Pair 1: same 3D position, different weights.
+    let p = Vector4::from_point_weight(Point3::new(1.0, 2.0, 3.0), 1.0);
+    let q = Vector4::from_point_weight(Point3::new(1.0, 2.0, 3.0), 4.0);
+    let result = dehomogenized_average(p, q);
+    assert_near2!(result.to_point(), Point3::new(1.0, 2.0, 3.0));
+    assert_near2!(result.weight(), 2.5);
+
+    // Pair 2: different 3D positions AND different weights (the bug-triggering case).
+    let p = Vector4::from_point_weight(Point3::new(0.0, 0.0, 0.0), 1.0);
+    let q = Vector4::from_point_weight(Point3::new(2.0, 4.0, 6.0), 3.0);
+    let result = dehomogenized_average(p, q);
+    // Correct 3D midpoint is (1, 2, 3) regardless of weights.
+    let expected_mid = Point3::new(1.0, 2.0, 3.0);
+    assert_near2!(result.to_point(), expected_mid);
+    assert_near2!(result.weight(), 2.0);
+
+    // Verify naive averaging would give the WRONG answer for pair 2.
+    let naive = (p + q) / 2.0;
+    let naive_pt = naive.to_point();
+    let dist = (naive_pt - expected_mid).magnitude();
+    assert!(
+        dist > 0.01,
+        "naive averaging should NOT equal correct midpoint: naive={naive_pt:?}, \
+         correct={expected_mid:?}, dist={dist}",
+    );
+
+    // Pair 3: equal weights -- should match naive averaging.
+    let p = Vector4::from_point_weight(Point3::new(0.0, 0.0, 0.0), 2.0);
+    let q = Vector4::from_point_weight(Point3::new(4.0, 6.0, 8.0), 2.0);
+    let result = dehomogenized_average(p, q);
+    assert_near2!(result.to_point(), Point3::new(2.0, 3.0, 4.0));
+    assert_near2!(result.weight(), 2.0);
 }
 
 /// Demonstrates that homogeneous control points must be dehomogenized before
@@ -2881,111 +2936,16 @@ fn seam_averaging_dehomogenizes() {
     }
 }
 
-/// Builds a 4-face open box, prepares the topology with `fillet_with_side`,
-/// then applies `fillet_along_wire` on a 2-edge wire along the ridge.
+/// Builds a 4-face open box via `build_open_wire_semi_cube`, then applies
+/// `fillet_along_wire` on the 2-edge wire along the ridge.
 ///
 /// Verifies:
-///   1. The resulting shell has exactly 6 faces post-fillet_with_side, then
-///      the expected count after fillet_along_wire adds fillet faces.
+///   1. The resulting shell has the expected face count after fillet_along_wire.
 ///   2. Adjacent fillet surfaces share C0 continuity at the seam (points on
 ///      both sides of the shared boundary match within tolerance).
 #[test]
 fn fillet_wire_seam_continuity() {
-    // 4-face open box (same topology as fillet_semi_cube).
-    let p = [
-        Point3::new(0.0, 0.0, 1.0),
-        Point3::new(1.0, 0.0, 1.0),
-        Point3::new(1.0, 1.0, 1.0),
-        Point3::new(0.0, 1.0, 1.0),
-        Point3::new(0.0, -0.1, 0.0),
-        Point3::new(1.1, -0.1, 0.0),
-        Point3::new(1.1, 1.1, 0.0),
-        Point3::new(0.0, 1.1, 0.0),
-    ];
-    let v = Vertex::news(p);
-
-    let line = |i: usize, j: usize| {
-        let bsp = BsplineCurve::new(KnotVector::bezier_knot(1), vec![p[i], p[j]]);
-        Edge::new(&v[i], &v[j], NurbsCurve::from(bsp).into())
-    };
-    let edge = [
-        line(0, 1),
-        line(1, 2),
-        line(2, 3),
-        line(3, 0),
-        line(0, 4),
-        line(1, 5),
-        line(2, 6),
-        line(3, 7),
-        line(4, 5),
-        line(5, 6),
-        line(6, 7),
-        line(7, 4),
-    ];
-
-    let plane = |i: usize, j: usize, k: usize, l: usize| {
-        let control_points = vec![vec![p[i], p[l]], vec![p[j], p[k]]];
-        let knot_vec = KnotVector::bezier_knot(1);
-        let knot_vecs = (knot_vec.clone(), knot_vec);
-        let bsp = BsplineSurface::new(knot_vecs, control_points);
-
-        let wire: Wire = [i, j, k, l]
-            .into_iter()
-            .circular_tuple_windows()
-            .map(|(i, j)| {
-                edge.iter()
-                    .find_map(|edge| {
-                        if edge.front() == &v[i] && edge.back() == &v[j] {
-                            Some(edge.clone())
-                        } else if edge.back() == &v[i] && edge.front() == &v[j] {
-                            Some(edge.inverse())
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap()
-            })
-            .collect();
-        Face::new(vec![wire], bsp.into())
-    };
-    let mut shell: Shell = [
-        plane(0, 1, 2, 3), // face 0: top
-        plane(1, 0, 4, 5), // face 1: side
-        plane(2, 1, 5, 6), // face 2: side
-        plane(3, 2, 6, 7), // face 3: side
-    ]
-    .into();
-    assert_eq!(shell.len(), 4);
-
-    // Prepare topology: fillet two vertical edges so the top face boundary
-    // acquires the geometry that fillet_along_wire can operate on.
-    let opts = FilletOptions {
-        radius: RadiusSpec::Constant(0.4),
-        ..Default::default()
-    };
-    let (face0, face1, face2, _, side1) = fillet_with_side(
-        &shell[1],
-        &shell[2],
-        edge[5].id(),
-        None,
-        Some(&shell[0]),
-        &opts,
-    )
-    .unwrap();
-    (shell[1], shell[2], shell[0]) = (face0, face1, side1.unwrap());
-    shell.push(face2);
-
-    let (face0, face1, face2, _, side1) = fillet_with_side(
-        &shell[2],
-        &shell[3],
-        edge[6].id(),
-        None,
-        Some(&shell[0]),
-        &opts,
-    )
-    .unwrap();
-    (shell[2], shell[3], shell[0]) = (face0, face1, side1.unwrap());
-    shell.push(face2);
+    let (mut shell, boundary, _v0) = build_open_wire_semi_cube();
 
     // After two fillet_with_side calls: 4 original + 2 fillet = 6 faces.
     assert_eq!(
@@ -2994,10 +2954,6 @@ fn fillet_wire_seam_continuity() {
         "expected 6 faces after fillet_with_side prep, got {}",
         shell.len()
     );
-
-    let mut boundary = shell[0].boundaries().pop().unwrap();
-    boundary.pop_back();
-    assert_eq!(boundary.front_vertex().unwrap(), &v[0]);
 
     let pre_wire_count = shell.len();
 
