@@ -104,11 +104,12 @@ Use **canonical NURBS workspace** internally for fillet creation, then map back 
 
 API in `monstertruck-solid` (actual shape):
 
-- `fillet_edges(shell, edge_ids, params: Option<&FilletOptions>) -> Result<(), FilletError>`
-- `fillet_edges_generic(shell, edges, params: Option<&FilletOptions>) -> Result<(), FilletError>`
-- `simple_fillet(face0, face1, edge_id, options: &FilletOptions) -> Result<(Face, Face, Face), FilletError>`
-- `fillet_with_side(face0, face1, edge_id, side0, side1, options: &FilletOptions) -> Result<..., FilletError>`
-- `fillet_along_wire(shell, wire, options: &FilletOptions) -> Result<(), FilletError>`
+- `fillet_edges(shell, edge_ids, params: Option<&FilletOptions>) -> Result<(), FilletError>` (edge_select.rs)
+- `fillet_edges_generic(shell, edges, params: Option<&FilletOptions>) -> Result<(), FilletError>` (edge_select.rs)
+- `fillet(face0, face1, edge_id, options: &FilletOptions) -> Result<(Face, Face, Face), FilletError>` (ops.rs)
+- `fillet_annotated(face0, face1, edge_id, options: &FilletOptions) -> Result<..., FilletError>` (ops.rs)
+- `fillet_with_side(face0, face1, edge_id, side0, side1, options: &FilletOptions) -> Result<..., FilletError>` (ops.rs)
+- `fillet_along_wire(shell, wire, options: &FilletOptions) -> Result<(), FilletError>` (ops.rs)
 
 Core parameter types:
 
@@ -116,17 +117,19 @@ Core parameter types:
   - `radius: RadiusSpec`
     - [x] `Constant(f64)`
     - [x] `Variable(Box<dyn Fn(f64) -> f64>)`
-    - [ ] `PerEdge(Vec<...>)` (optional advanced mode)
+    - [x] `PerEdge(Vec<f64>)` -- defined in params.rs; tested via `per_edge_radius_two_edges`, `per_edge_radius_mismatch`, `per_edge_radius_degenerate`
   - `profile: FilletProfile`
     - [x] `Round`
     - [x] `Chamfer`
     - [x] `Ridge`
     - [x] `Custom(BSplineCurve<Point2>)`
-  - [ ] `extend_mode`, `corner_mode`, `integrate_mode`
-  - [x] `division: NonZeroUsize`
-- [x] `FilletError` typed enum (no `eprintln!` paths)
-- [x] `Default` impl for `FilletOptions` (radius=0.1, division=5, Round)
-- [x] Builder methods: `constant()`, `variable()`, `with_division()`, `with_profile()`
+  - `extend_mode: ExtendMode` -- defined in params.rs with `Auto`/`Trim` variants and builder method `with_extend_mode()`; not yet consumed by fillet geometry pipeline (semantics are a no-op)
+  - `corner_mode: CornerMode` -- defined in params.rs with `Auto` variant and builder method `with_corner_mode()`; not yet consumed by fillet geometry pipeline (semantics are a no-op)
+  - `mode: FilletMode` -- `KeepSeparateFace` (default) and `IntegrateVisual`; `IntegrateVisual` annotates but does not merge into host surface
+  - [x] `divisions: NonZeroUsize`
+- [x] `FilletError` typed enum (9 variants). Note: `edge_select.rs` still contains diagnostic `eprintln!` calls in debug/fallback paths; these supplement but do not replace typed error returns.
+- [x] `Default` impl for `FilletOptions` (radius=0.1, divisions=5, Round)
+- [x] Builder methods: `constant()`, `variable()`, `with_division()`, `with_profile()`, `with_extend_mode()`, `with_corner_mode()`
 - [x] High-level functions take `Option<&FilletOptions>`, low-level take `&FilletOptions`
 
 ---
@@ -188,7 +191,7 @@ Core parameter types:
 
 ---
 
-## Phase 3 -- Canonical Geometry Workspace [DONE]
+## Phase 3 -- Canonical Geometry Workspace [PARTIAL -- generic pipeline tests failing]
 
 ### Tasks
 
@@ -200,8 +203,8 @@ Core parameter types:
 
 ### Done criteria
 
-- [x] Mixed cases run through one pipeline (tested: Plane, NurbsSurface, mixed)
-- [x] Unsupported geometry (T-spline) returns typed error
+- [~] Mixed cases run through one pipeline (tested: Plane, NurbsSurface, mixed) -- conversion stage implemented but all 5 generic-pipeline tests currently fail at runtime (see Section 6.5 for details)
+- [~] Unsupported geometry (T-spline) returns typed error -- `generic_fillet_unsupported` fails: returns `NonManifoldEdge` instead of expected `UnsupportedGeometry`
 
 ---
 
@@ -321,8 +324,8 @@ Core parameter types:
 - [x] Shell remains manifold (triangulation succeeds on all test shells)
 - [x] No open cracks along inserted fillet boundaries (verified via mesh output)
 - [x] Orientation consistency of all new faces/wires
-- [x] Euler-Poincare invariant (V - E + F = 2 for closed shells) checked in debug builds after every fillet operation
-- [x] Orientation consistency verified via `debug_assert_topology` in debug builds
+- [x] Euler-Poincare invariant (V - E + F = 2 for closed shells) checked via `debug_assert_topology` at the end of `fillet_edges` (edge_select.rs), `fillet_edges_generic` (edge_select.rs), and `fillet_along_wire`/`fillet_along_wire_closed` (ops.rs) -- specifically at those four call sites in debug builds
+- [x] Orientation consistency verified via `debug_assert_topology` at the same four call sites; additionally tested by `debug_assert_fires_on_corrupted_orientation` (validate.rs) for the per-edge mid-chain case
 
 ### 6.3 Geometric checks
 
@@ -333,11 +336,14 @@ Core parameter types:
 
 ### 6.4 Regression checks
 
-- [x] Existing fillet prototype tests remain green after refactor (51 of 58 tests passing; 7 failures are in generic pipeline and boolean conversion, tracked as known limitations)
+- [~] Existing fillet prototype tests remain green after refactor (55 of 62 tests passing; 7 failures are in generic pipeline and boolean conversion, tracked as known limitations):
+  - All 5 generic-pipeline tests fail: `generic_fillet_identity` (no fillet face added to shell), `generic_fillet_modeling_types`, `generic_fillet_mixed_surfaces`, `generic_fillet_multi_chain` (similar conversion/topology issues), `generic_fillet_unsupported` (returns `NonManifoldEdge` instead of `UnsupportedGeometry`)
+  - `boolean_shell_converts_for_fillet` panics during test setup (see Section 10 known limitations)
+  - 1 additional failure in boolean/intersection path
 
-### 6.5 Test inventory (58 tests via `cargo nextest run`)
+### 6.5 Test inventory (62 tests via `cargo nextest run`, 1 ignored, 1 skipped)
 
-Tests are spread across three files: `tests.rs` (54 tests), `validate.rs` (4 tests), `geometry.rs` (2 tests, 1 skipped).
+Tests are spread across three files: `tests.rs` (56 tests, 1 ignored), `validate.rs` (4 tests), `geometry.rs` (2 tests, 1 skipped).
 
 **Core fillet operations (round profile):**
 - [x] `create_fillet_surface` -- raw geometry surface creation
@@ -359,12 +365,12 @@ Tests are spread across three files: `tests.rs` (54 tests), `validate.rs` (4 tes
 - [x] `per_edge_radius_mismatch` -- error: per-edge radius count mismatch
 - [x] `per_edge_radius_degenerate` -- error: per-edge with degenerate edge
 
-**Generic pipeline (type conversion):**
-- [x] `generic_fillet_identity` -- generic pipeline with internal types
-- [x] `generic_fillet_modeling_types` -- generic pipeline with monstertruck_modeling types
-- [x] `generic_fillet_mixed_surfaces` -- mixed Plane + NurbsSurface
-- [x] `generic_fillet_unsupported` -- unsupported geometry error
-- [x] `generic_fillet_multi_chain` -- multi-chain with modeling types
+**Generic pipeline (type conversion) -- all 5 currently failing:**
+- [FAIL] `generic_fillet_identity` -- generic pipeline with internal types (no fillet face added to shell)
+- [FAIL] `generic_fillet_modeling_types` -- generic pipeline with monstertruck_modeling types
+- [FAIL] `generic_fillet_mixed_surfaces` -- mixed Plane + NurbsSurface
+- [FAIL] `generic_fillet_unsupported` -- unsupported geometry error (returns `NonManifoldEdge` instead of `UnsupportedGeometry`)
+- [FAIL] `generic_fillet_multi_chain` -- multi-chain with modeling types
 
 **Chamfer profile:**
 - [x] `chamfer_single_edge` -- chamfer on single edge
@@ -397,9 +403,9 @@ Tests are spread across three files: `tests.rs` (54 tests), `validate.rs` (4 tes
 - [x] `seam_averaging_dehomogenizes` -- seam averaging correctness
 
 **Boolean and intersection curve handling:**
-- [x] `boolean_shell_converts_for_fillet` -- CSG result IntersectionCurve conversion (currently failing: `WireNotInOnePlane`)
+- [x] `boolean_shell_converts_for_fillet` -- CSG result IntersectionCurve conversion (currently panics in setup: `try_attach_plane` fails with `WireNotInOnePlane`)
 - [x] `fillet_boolean_union` -- fillet after boolean union
-- [x] `fillet_boolean_subtraction_multi_wire` -- fillet after boolean subtraction
+- [ignored] `fillet_boolean_subtraction_multi_wire` -- fillet after boolean subtraction (blocked by `try_attach_plane` bug; graceful early-return)
 - [x] `cut_face_by_bezier_intersection_curve_edge` -- bezier cut on intersection curve edge
 - [x] `cut_face_five_edge_boundary` -- five-edge boundary face cutting
 
@@ -412,6 +418,10 @@ Tests are spread across three files: `tests.rs` (54 tests), `validate.rs` (4 tes
 
 **API and builder:**
 - [x] `fillet_options_builder_methods` -- builder pattern validation
+- [x] `default_fillet_mode_is_keep_separate` -- default mode is KeepSeparateFace
+
+**Seam averaging:**
+- [x] `dehomogenized_average_production` -- dehomogenized seam averaging correctness
 
 **Topology validation (`validate.rs`):**
 - [x] `euler_poincare_valid_closed_box` -- Euler-Poincare on closed box
@@ -468,6 +478,6 @@ All phases except Phase 6 are complete. Phase 6 (optional integration mode) is d
 
 ### Known limitations (v0.3.0)
 
-1. **Boolean-result shells**: `IntersectionCurve`-to-NURBS conversion is implemented, but filleting boolean-result shells currently fails with `WireNotInOnePlane` during wire planarity validation. The `boolean_shell_converts_for_fillet` test demonstrates this failure. Direct fillet after boolean requires further hardening of the wire classification logic.
+1. **Boolean-result shells**: `IntersectionCurve`-to-NURBS conversion is implemented, but the `boolean_shell_converts_for_fillet` test panics during test setup: `builder::try_attach_plane(&[cw]).unwrap()` fails because `try_attach_plane` returns `WireNotInOnePlane` for revolve-generated wires (a pre-existing bug in the revolve/attach pipeline, not in fillet code itself). The test never reaches the boolean or fillet conversion stage. The companion `fillet_boolean_subtraction_multi_wire` test (ignored) uses non-panicking error handling for the same `try_attach_plane` failure and documents the blocker.
 2. **Radius error bounds**: Verified within tolerance for standard cases (`radius_error_bounds` test passes). No formal G1/G2 continuity proof at joins.
 3. **Phase 6 integration mode**: `KeepSeparateFace` is the only production mode. `IntegrateIntoHost` is not implemented.
