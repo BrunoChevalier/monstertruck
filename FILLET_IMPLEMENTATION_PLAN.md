@@ -123,13 +123,13 @@ Core parameter types:
     - [x] `Chamfer`
     - [x] `Ridge`
     - [x] `Custom(BSplineCurve<Point2>)`
-  - `extend_mode: ExtendMode` -- defined in params.rs with `Auto`/`Trim` variants and builder method `with_extend_mode()`; not yet consumed by fillet geometry pipeline (semantics are a no-op)
-  - `corner_mode: CornerMode` -- defined in params.rs with `Auto` variant and builder method `with_corner_mode()`; not yet consumed by fillet geometry pipeline (semantics are a no-op)
+  - `extend_mode: ExtendMode` -- defined in params.rs with `Auto`/`NoExtend` variants and builder method `with_extend_mode()`; not yet consumed by fillet geometry pipeline (semantics are a no-op)
+  - `corner_mode: CornerMode` -- defined in params.rs with `Auto`/`Trim`/`Blend` variants and builder method `with_corner_mode()`; not yet consumed by fillet geometry pipeline (semantics are a no-op)
   - `mode: FilletMode` -- `KeepSeparateFace` (default) and `IntegrateVisual`; `IntegrateVisual` annotates but does not merge into host surface
   - [x] `divisions: NonZeroUsize`
-- [x] `FilletError` typed enum (9 variants). Note: `edge_select.rs` still contains diagnostic `eprintln!` calls in debug/fallback paths; these supplement but do not replace typed error returns.
+- [x] `FilletError` typed enum (11 variants: `VariableRadiusUnsupported`, `DiscontinuousWire`, `SharedFaceNotFound`, `AdjacentFacesNotFound`, `FilletSurfaceComputationFailed`, `GeometryFailed`, `NonManifoldEdge`, `EdgeNotFound`, `UnsupportedGeometry`, `DegenerateEdge`, `PerEdgeRadiusMismatch`). Note: `edge_select.rs` still contains diagnostic `eprintln!` calls in debug/fallback paths; these supplement but do not replace typed error returns.
 - [x] `Default` impl for `FilletOptions` (radius=0.1, divisions=5, Round)
-- [x] Builder methods: `constant()`, `variable()`, `with_division()`, `with_profile()`, `with_extend_mode()`, `with_corner_mode()`
+- [x] Builder methods: `constant()`, `variable()`, `with_radius()`, `with_division()`, `with_profile()`, `with_mode()`, `with_extend_mode()`, `with_corner_mode()`
 - [x] High-level functions take `Option<&FilletOptions>`, low-level take `&FilletOptions`
 
 ---
@@ -159,7 +159,7 @@ Core parameter types:
   - `ops.rs`, `geometry.rs`, `topology.rs`, `params.rs`, `error.rs`, `types.rs`, `convert.rs`, `edge_select.rs`, `tests.rs`
 - [x] Remove prototype markers (`#![allow(dead_code)]`)
 - [x] Convert `Option` returns to `Result<_, FilletError>`
-- [x] Replace `eprintln!` failures with typed errors (9 error variants)
+- [x] Replace `eprintln!` failures with typed errors (11 error variants)
 - [x] Export from `monstertruck-solid/src/lib.rs` (public API)
 
 ### Done criteria
@@ -324,8 +324,8 @@ Core parameter types:
 - [x] Shell remains manifold (triangulation succeeds on all test shells)
 - [x] No open cracks along inserted fillet boundaries (verified via mesh output)
 - [x] Orientation consistency of all new faces/wires
-- [x] Euler-Poincare invariant (V - E + F = 2 for closed shells) checked via `debug_assert_topology` at the end of `fillet_edges` (edge_select.rs), `fillet_edges_generic` (edge_select.rs), and `fillet_along_wire`/`fillet_along_wire_closed` (ops.rs) -- specifically at those four call sites in debug builds
-- [x] Orientation consistency verified via `debug_assert_topology` at the same four call sites; additionally tested by `debug_assert_fires_on_corrupted_orientation` (validate.rs) for the per-edge mid-chain case
+- [x] Euler-Poincare invariant (V - E + F = 2 for closed shells) checked via `debug_assert_topology` at three call sites in debug builds: `fillet_edges` (edge_select.rs), `fillet_edges_generic` (edge_select.rs), and `fillet_along_wire` (ops.rs). Closed-wire flows reach the assertion through `fillet_along_wire`, which calls `fillet_along_wire_closed` internally before the assertion.
+- [x] Orientation consistency verified via `debug_assert_topology` at the same three call sites; additionally tested by `debug_assert_fires_on_corrupted_orientation` (validate.rs) for the per-edge mid-chain case
 
 ### 6.3 Geometric checks
 
@@ -336,14 +336,14 @@ Core parameter types:
 
 ### 6.4 Regression checks
 
-- [~] Existing fillet prototype tests remain green after refactor (55 of 62 tests passing; 7 failures are in generic pipeline and boolean conversion, tracked as known limitations):
+- [~] Existing fillet prototype tests remain green after refactor (51 of 58 tests passing; 7 failures are in generic pipeline, boolean conversion, and chamfer serialization, tracked as known limitations):
   - All 5 generic-pipeline tests fail: `generic_fillet_identity` (no fillet face added to shell), `generic_fillet_modeling_types`, `generic_fillet_mixed_surfaces`, `generic_fillet_multi_chain` (similar conversion/topology issues), `generic_fillet_unsupported` (returns `NonManifoldEdge` instead of `UnsupportedGeometry`)
   - `boolean_shell_converts_for_fillet` panics during test setup (see Section 10 known limitations)
-  - 1 additional failure in boolean/intersection path
+  - `chamfer_serialization_round_trip` fails with `DegenerateEdge` during chamfer operation on deserialized shell
 
-### 6.5 Test inventory (62 tests via `cargo nextest run`, 1 ignored, 1 skipped)
+### 6.5 Test inventory (60 total: 58 run via `cargo nextest run`, 1 ignored, 1 skipped; 51 passed, 7 failed)
 
-Tests are spread across three files: `tests.rs` (56 tests, 1 ignored), `validate.rs` (4 tests), `geometry.rs` (2 tests, 1 skipped).
+Tests are spread across three files: `tests.rs` (54 tests, 1 ignored), `validate.rs` (4 tests), `geometry.rs` (2 tests, 1 skipped).
 
 **Core fillet operations (round profile):**
 - [x] `create_fillet_surface` -- raw geometry surface creation
@@ -380,7 +380,7 @@ Tests are spread across three files: `tests.rs` (56 tests, 1 ignored), `validate
 - [x] `chamfer_cube_multiple_edges` -- multi-edge chamfer
 - [x] `chamfer_variable_radius` -- variable radius chamfer
 - [x] `chamfer_per_edge_radius` -- per-edge radius chamfer
-- [x] `chamfer_serialization_round_trip` -- serialization round-trip
+- [FAIL] `chamfer_serialization_round_trip` -- serialization round-trip (fails with `DegenerateEdge` on deserialized shell)
 
 **Ridge profile:**
 - [x] `ridge_single_edge` -- ridge on single edge
