@@ -104,3 +104,18 @@
 ### Doc gate: spawning writer to fix 1 issue(s)
 **Time:** 2026-03-16T21:47:48.244Z
 
+### Auto-mode: proceeding after 3 review rounds. Plan 8-1 has 1 remaining blocker (must-have truth 'euler_poincare_check returns false' conflicts with test design acknowledging closed-shell wrong-chi is not constructible). Plan 8-2 passed in round 2.
+**Time:** 2026-03-16T23:00:53.119Z
+
+### Clean-state epilogue: committed 0 provenanced + 2 unprovenanced file(s) with [REVIEW-NEEDED]
+**Time:** 2026-03-16T23:02:08.871Z
+
+### Phase: 8 | Started: 2026-03-16T23:02:34Z | Mode: auto
+**Time:** 2026-03-16T23:02:34.503Z
+
+### Spec review 8-2: 1 unresolved blocker after 3 rounds (boolean_shell_converts_for_fillet inventory marking)
+**Time:** 2026-03-17T00:33:47.014Z
+
+### Doc gate: spawning writer to fix 1 issue(s)
+**Time:** 2026-03-17T00:39:24.804Z
+
