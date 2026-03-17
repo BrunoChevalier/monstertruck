@@ -124,7 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 7)
+### Recent Changes (Phase 8)
+
+- **Topology validation module** -- New `monstertruck-solid::fillet::validate` module with Euler-Poincare characteristic checks and face orientation validation. Debug assertions (`debug_assert_topology`, `debug_assert_euler`) run automatically after fillet modifications in debug builds with zero runtime cost in release builds.
+- **Fillet implementation plan v0.3.0** -- Updated test inventory, API surface documentation, and known-limitations tracking.
+
+### Earlier Changes (Phase 7)
 
 - **Fillet integration mode** -- New `FilletMode` enum (`KeepSeparateFace` / `IntegrateVisual`) in `FilletOptions` controls whether fillet surfaces remain distinct faces or are merged into adjacent geometry. `IntegrateVisual` produces seamless results with G1/G2 continuity annotations.
 - **Continuity annotations** -- `FilletResult` now carries per-edge continuity classifications. The new `fillet_annotated()` API and helpers (`annotate_fillet_edges`, `classify_edge_continuity`, `ensure_seamless_vertices`) let downstream consumers query join quality.

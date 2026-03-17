@@ -30,3 +30,7 @@ Additionally, there was no mechanism for downstream consumers to query the geome
 - The `IntegrateVisual` mode produces topology with fewer faces, which simplifies downstream meshing but means individual fillet surfaces can no longer be selected as separate entities.
 - Continuity annotations add a small per-edge cost but enable automated quality validation without geometric recomputation.
 - Five new integration tests validate both modes and continuity classification correctness.
+
+## Status Update (Phase 8)
+
+Phase 8 added debug-only topology validation (`fillet::validate` module) that runs after fillet operations in both `KeepSeparateFace` and `IntegrateVisual` modes. Euler-Poincare and orientation assertions now guard the post-fillet shell state, catching topology corruption early in debug builds. This complements the continuity annotations from this ADR by validating structural integrity in addition to geometric smoothness.

@@ -38,3 +38,7 @@ The polynomial solvers ported in this ADR continue to function correctly after t
 ## Status Update (Phase 7)
 
 No changes to the polynomial solver module. Phase 7 focused on fillet integration modes and continuity annotations within `monstertruck-solid`; the math layer was unaffected. See [ADR-0003](0003-fillet-integration-mode.md) for Phase 7 architectural decisions.
+
+## Status Update (Phase 8)
+
+No changes to the polynomial solver module. Phase 8 added topology validation (Euler-Poincare assertions and orientation checks) to the fillet pipeline in `monstertruck-solid`; the math layer was unaffected. See [ADR-0002](0002-fillet-topology-surgery-hardening.md) for related updates.

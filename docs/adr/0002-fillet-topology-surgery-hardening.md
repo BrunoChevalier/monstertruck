@@ -31,3 +31,13 @@ Fillet operations in `monstertruck-solid` encountered two classes of topology fa
 ## Status Update (Phase 7)
 
 The topology surgery hardening from this ADR forms the foundation for Phase 7's integration mode work. The `IntegrateVisual` fillet mode (see [ADR-0003](0003-fillet-integration-mode.md)) builds on the dehomogenized seam averaging and pre-cut edge conversion established here, extending them with G1/G2 continuity classification and seamless vertex enforcement.
+
+## Status Update (Phase 8)
+
+Phase 8 added formal topology invariant validation to the fillet pipeline via `monstertruck-solid::fillet::validate`. The new module provides:
+
+- **`euler_poincare_check`** -- Verifies V - E + F = 2 for closed shells after fillet modifications.
+- **`is_oriented_check`** -- Confirms face orientation consistency (Oriented or Closed condition).
+- **`debug_assert_topology` / `debug_assert_euler`** -- Debug-only assertions that fire on Euler-Poincare or orientation violations, providing early detection of the topology corruption classes described in this ADR.
+
+These checks are integrated into fillet operations (`ops.rs`, `edge_select.rs`) and run automatically in debug builds with zero cost in release builds. Four new tests validate the assertions against closed boxes, tetrahedra, open shells, and deliberately corrupted orientations.
