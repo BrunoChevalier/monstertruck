@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 22 | Approval-needed: 0 | Total: 22
+**Summary:** Auto-fixes: 23 | Approval-needed: 0 | Total: 23
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -153,4 +153,11 @@
 **Category:** dependency
 **Description:** Exempt: Plan 8-2 is documentation-only (FILLET_IMPLEMENTATION_PLAN.md updates). No runtime code, no testable behavior. TDD not applicable.
 **Files changed:** none
+**Status:** applied
+
+### [2026-03-18T22:21:40.729Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Boolean unit tests (adjacent_cubes_or, punched_cube, and all new overlapping/chained tests) fail with pre-existing MissingPolygon error -- boolean operations fail on builder::extrude cubes. This is outside plan scope (monstertruck-meshing triangulation). Tests are correctly written and will pass when the underlying bug is fixed.
+**Files changed:** monstertruck-solid/src/transversal/integrate/tests.rs
 **Status:** applied
