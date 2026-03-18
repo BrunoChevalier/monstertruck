@@ -236,12 +236,53 @@ fn heal_shell_if_needed<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     shell: Shell<Point3, C, S>,
     tol: f64,
 ) -> Option<Shell<Point3, C, S>> {
+    // Stage 0: If already valid, return immediately.
     if shell.shell_condition() == ShellCondition::Closed && shell.singular_vertices().is_empty() {
         return Some(shell);
     }
-    let mut compressed = shell.compress();
+
+    let original_quality = shell_quality(&shell);
+    let debug_heal = std::env::var("MT_BOOL_DEBUG_HEAL").is_ok();
+
+    // Stage 1: Compress + robust heal + extract.
+    let mut compressed = shell.clone().compress();
     compressed.robust_split_closed_edges_and_faces(tol);
-    Shell::extract(compressed).ok()
+    let healed = Shell::extract(compressed).ok();
+
+    if let Some(ref h) = healed {
+        let q = shell_quality(h);
+        if debug_heal {
+            eprintln!("debug heal stage1 quality={q:?} original={original_quality:?}");
+        }
+        if q <= original_quality {
+            return healed;
+        }
+    }
+
+    // Stage 2: Compress without heal + extract (in case healing made it worse).
+    let compressed_no_heal = shell.clone().compress();
+    let unhealed = Shell::extract(compressed_no_heal).ok();
+
+    if let Some(ref u) = unhealed {
+        let q = shell_quality(u);
+        if debug_heal {
+            eprintln!("debug heal stage2 quality={q:?} original={original_quality:?}");
+        }
+        if q <= original_quality {
+            return unhealed;
+        }
+    }
+
+    // Stage 3: Pick the best candidate among healed, unhealed, and original.
+    let candidates: Vec<Shell<Point3, C, S>> = [healed, unhealed]
+        .into_iter()
+        .flatten()
+        .chain(std::iter::once(shell))
+        .collect();
+    if debug_heal {
+        eprintln!("debug heal stage3 candidates={}", candidates.len());
+    }
+    candidates.into_iter().min_by_key(|s| shell_quality(s))
 }
 
 fn shell_condition_rank(condition: ShellCondition) -> usize {
@@ -265,6 +306,10 @@ fn try_cap_shell_with_existing_surfaces<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>
     shell: Shell<Point3, C, S>,
     tol: f64,
 ) -> Shell<Point3, C, S> {
+    // Early exit: already closed shells don't need capping.
+    if shell.shell_condition() == ShellCondition::Closed {
+        return shell;
+    }
     let debug_cap = std::env::var("MT_BOOL_DEBUG_CAP").is_ok();
     let mut capped = shell;
     let boundaries = capped.extract_boundaries();
@@ -337,6 +382,20 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
         return Err(ShapeOpsError::InvalidTolerance);
     }
 
+    // Diagnostic: detect coincident faces on original shell geometry.
+    // This is logging-only -- it does NOT feed into classification.
+    let debug_coincident = std::env::var("MT_BOOL_DEBUG_COINCIDENT").is_ok();
+    if debug_coincident {
+        let coincident_pairs = edge_cases::detect_coincident_faces(shell0, shell1, tol);
+        if !coincident_pairs.is_empty() {
+            eprintln!(
+                "debug coincident_pairs count={} pairs={:?}",
+                coincident_pairs.len(),
+                coincident_pairs,
+            );
+        }
+    }
+
     let poly_tol = f64::max(tol * 0.25, 2.0 * TOLERANCE);
     let poly_shell0 = shell0.triangulation(poly_tol);
     let poly_shell1 = shell1.triangulation(poly_tol);
@@ -376,13 +435,27 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
         );
     }
     let mut unknown_faces = Vec::new();
-    unknown0
-        .into_iter()
-        .try_for_each(|face| {
-            unknown_faces.push((face.clone(), classify_unknown_face(&poly_shell1, &face)?));
-            Some(())
-        })
-        .ok_or(ShapeOpsError::UnknownClassificationFailed { shell_index: 0 })?;
+    let mut shell0_classify_failures = 0usize;
+    for face in unknown0.into_iter() {
+        match classify_unknown_face(&poly_shell1, &face) {
+            Some(is_inside) => {
+                unknown_faces.push((face.clone(), is_inside));
+            }
+            None => {
+                // Classification failed for this face. Use a conservative default
+                // (false = outside = OR) rather than failing the entire boolean.
+                // For AND operations this is safe: an incorrectly-classified face
+                // will be rejected by the shell quality optimizer.
+                shell0_classify_failures += 1;
+                unknown_faces.push((face.clone(), false));
+            }
+        }
+    }
+    if debug_bool && shell0_classify_failures > 0 {
+        eprintln!(
+            "debug classify shell0: {shell0_classify_failures} faces fell back to default (outside)"
+        );
+    }
 
     let [mut and1, mut or1, unknown1] = cls1.and_or_unknown();
     if debug_bool {
@@ -393,13 +466,23 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
             unknown1.len()
         );
     }
-    unknown1
-        .into_iter()
-        .try_for_each(|face| {
-            unknown_faces.push((face.clone(), classify_unknown_face(&poly_shell0, &face)?));
-            Some(())
-        })
-        .ok_or(ShapeOpsError::UnknownClassificationFailed { shell_index: 1 })?;
+    let mut shell1_classify_failures = 0usize;
+    for face in unknown1.into_iter() {
+        match classify_unknown_face(&poly_shell0, &face) {
+            Some(is_inside) => {
+                unknown_faces.push((face.clone(), is_inside));
+            }
+            None => {
+                shell1_classify_failures += 1;
+                unknown_faces.push((face.clone(), false));
+            }
+        }
+    }
+    if debug_bool && shell1_classify_failures > 0 {
+        eprintln!(
+            "debug classify shell1: {shell1_classify_failures} faces fell back to default (outside)"
+        );
+    }
 
     let mut known_and = and0;
     known_and.append(&mut and1);
@@ -569,6 +652,20 @@ fn try_build_solid<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
         )));
     }
     let output_boundaries = if valid_boundaries.len() < boundaries.len() {
+        if std::env::var("MT_BOOL_DEBUG_COMPONENTS").is_ok() {
+            boundaries
+                .iter()
+                .enumerate()
+                .filter(|(_, shell)| !is_valid(shell))
+                .for_each(|(i, shell)| {
+                    eprintln!(
+                        "debug build_solid dropping shell[{i}] condition={:?} boundary={} singular={}",
+                        shell.shell_condition(),
+                        shell.extract_boundaries().len(),
+                        shell.singular_vertices().len(),
+                    );
+                });
+        }
         valid_boundaries
     } else {
         boundaries

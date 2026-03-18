@@ -9,6 +9,7 @@ use monstertruck_geometry::prelude::*;
 use monstertruck_topology::*;
 
 /// A pair of face indices from two shells that share a tangent relationship.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TangentFacePair {
     /// Face index in the first shell.
@@ -37,6 +38,7 @@ const SAMPLE_GRID_SIZE: usize = 3;
 /// or has zero length. Detection samples surface normals at a grid of points
 /// and checks if they are parallel (or anti-parallel) while the surfaces
 /// are within tolerance.
+#[allow(dead_code)]
 pub fn detect_tangent_faces<C, S>(
     shell0: &Shell<Point3, C, S>,
     shell1: &Shell<Point3, C, S>,
@@ -88,6 +90,7 @@ where
 /// A pole-degenerate surface has an entire edge of the parameter domain
 /// mapping to a single 3D point (e.g., the poles of a sphere).
 /// Returns `true` if any edge of the parameter domain is degenerate.
+#[allow(dead_code)]
 pub fn is_pole_degenerate<S: ParametricSurface3D>(surface: &S, tol: f64) -> bool {
     let (Some(u_range), Some(v_range)) = surface.try_range_tuple() else {
         return false;
@@ -115,6 +118,7 @@ pub fn is_pole_degenerate<S: ParametricSurface3D>(surface: &S, tol: f64) -> bool
 
 /// Handles a degenerate intersection result by classifying tangent and
 /// coincident face pairs. Returns the number of faces that were handled.
+#[allow(dead_code)]
 pub fn handle_degenerate_intersection<C, S>(
     shell0: &Shell<Point3, C, S>,
     shell1: &Shell<Point3, C, S>,

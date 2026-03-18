@@ -1,6 +1,5 @@
 mod divide_face;
-#[allow(dead_code)]
-mod edge_cases;
+pub(crate) mod edge_cases;
 mod faces_classification;
 mod integrate;
 mod intersection_curve;

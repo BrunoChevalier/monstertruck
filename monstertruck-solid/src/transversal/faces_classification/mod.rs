@@ -1,6 +1,6 @@
 use super::loops_store::ShapesOpStatus;
 use monstertruck_topology::*;
-use rustc_hash::FxHashMap as HashMap;
+use rustc_hash::{FxHashMap as HashMap, FxHashSet};
 
 #[derive(Clone, Debug)]
 pub struct FacesClassification<P, C, S> {
@@ -43,25 +43,41 @@ impl<P, C, S> FacesClassification<P, C, S> {
         let [and, or, unknown] = self.and_or_unknown();
         let and_boundary = and.extract_boundaries();
         let or_boundary = or.extract_boundaries();
+        let and_edge_ids: FxHashSet<_> = and_boundary
+            .iter()
+            .flat_map(|wire| wire.edge_iter().map(|e| e.id()))
+            .collect();
+        let or_edge_ids: FxHashSet<_> = or_boundary
+            .iter()
+            .flat_map(|wire| wire.edge_iter().map(|e| e.id()))
+            .collect();
         let components = unknown.connected_components();
         for comp in components {
             let boundary = comp.extract_boundaries();
-            if and_boundary
+            let comp_edge_ids: Vec<_> = boundary
                 .iter()
-                .flatten()
-                .any(|edge| edge.id() == boundary[0][0].id())
-            {
+                .flat_map(|wire| wire.edge_iter().map(|e| e.id()))
+                .collect();
+            if comp_edge_ids.is_empty() {
+                // Cannot classify; leave as Unknown.
+                continue;
+            }
+            let and_matches = comp_edge_ids
+                .iter()
+                .filter(|id| and_edge_ids.contains(id))
+                .count();
+            let or_matches = comp_edge_ids
+                .iter()
+                .filter(|id| or_edge_ids.contains(id))
+                .count();
+            if and_matches > 0 && and_matches >= or_matches {
                 comp.iter().for_each(|face| {
                     *self
                         .status
                         .get_mut(&face.id())
                         .expect("face id missing from status map") = ShapesOpStatus::And;
                 })
-            } else if or_boundary
-                .iter()
-                .flatten()
-                .any(|edge| edge.id() == boundary[0][0].id())
-            {
+            } else if or_matches > 0 && or_matches > and_matches {
                 comp.iter().for_each(|face| {
                     *self
                         .status
@@ -69,6 +85,7 @@ impl<P, C, S> FacesClassification<P, C, S> {
                         .expect("face id missing from status map") = ShapesOpStatus::Or;
                 })
             }
+            // else: tie or no matches -- leave as Unknown.
         }
     }
 }

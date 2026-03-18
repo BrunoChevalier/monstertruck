@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 9 of 12 (Boolean Repair and Tolerance Foundation)
-**Plan:** 1 of 3
+**Plan:** 2 of 3
 **Progress:**
 
 
