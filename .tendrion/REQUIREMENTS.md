@@ -36,22 +36,45 @@
 
 ### Build Fix (v0.3.0)
 
-- [ ] **BUILD-01**: Port polynomial solvers (solve_quadratic, pre_solve_cubic, solve_cubic, pre_solve_quartic, solve_quartic) from matext4cgmath to monstertruck-math, using Algorithm 954 rescaling and Newton polishing for robustness
+- [x] **BUILD-01**: Port polynomial solvers (solve_quadratic, pre_solve_cubic, solve_cubic, pre_solve_quartic, solve_quartic) from matext4cgmath to monstertruck-math, using Algorithm 954 rescaling and Newton polishing for robustness
 
 ### Topology Hardening (v0.3.0)
 
-- [ ] **TOPO-01**: Harden cut_face_by_bezier via parameter-space projection for IntersectionCurve boundary edges, with NURBS approximation fallback when projection fails
-- [ ] **TOPO-02**: Fix homogeneous coordinate seam averaging bug in fillet_along_wire — dehomogenize Vector4 control points before averaging to produce correct 3D midpoints
-- [ ] **TOPO-03**: Add Euler-Poincare debug assertions and is_oriented() post-operation checks after fillet topology modifications
+- [x] **TOPO-01**: Harden cut_face_by_bezier via parameter-space projection for IntersectionCurve boundary edges, with NURBS approximation fallback when projection fails
+- [x] **TOPO-02**: Fix homogeneous coordinate seam averaging bug in fillet_along_wire — dehomogenize Vector4 control points before averaging to produce correct 3D midpoints
+- [x] **TOPO-03**: Add Euler-Poincare debug assertions and is_oriented() post-operation checks after fillet topology modifications
 
 ### Integration Mode (v0.3.0)
 
-- [ ] **INTEG-01**: Implement FilletMode with KeepSeparateFace (default, current behavior) and IntegrateVisual (G1/G2 continuity-annotated separate faces with seamless tessellation)
-- [ ] **INTEG-02**: Add extend_mode and corner_mode fields to FilletOptions
+- [x] **INTEG-01**: Implement FilletMode with KeepSeparateFace (default, current behavior) and IntegrateVisual (G1/G2 continuity-annotated separate faces with seamless tessellation)
+- [x] **INTEG-02**: Add extend_mode and corner_mode fields to FilletOptions
 
 ### Documentation (v0.3.0)
 
-- [ ] **DOC-01**: Update FILLET_IMPLEMENTATION_PLAN.md to reflect final v0.3.0 status — mark completed items, update Phase 6 description, remove deprecated sections
+- [x] **DOC-01**: Update FILLET_IMPLEMENTATION_PLAN.md to reflect final v0.3.0 status — mark completed items, update Phase 6 description, remove deprecated sections
+
+### Boolean Operations (v0.4.0)
+
+- [ ] **BOOL-01**: Fix pre-existing boolean op bugs identified in v0.3.0 phase verification — criteria 2+4 gaps caused by boolean result face handling in truck-shapeops
+- [ ] **BOOL-02**: Add topological integration and healing hooks in truck-shapeops for new surface constructors (sweep_rail, birail, gordon)
+
+### Surface Constructors (v0.4.0)
+
+- [ ] **SURF-01**: Implement multi-rail sweep and periodic sweep variants (port ay_npt_sweep, ay_npt_sweepperiodic algorithms)
+- [ ] **SURF-02**: Add builder-level wrappers for sweep_rail, birail, and gordon in truck-modeling with typed error handling
+
+### Font/Profile Pipeline (v0.4.0)
+
+- [ ] **FONT-01**: End-to-end text profile creation tests with real-font fixtures including hole-preserving glyphs (validates Phase 5 done criteria from Ayam plan)
+
+### Testing & Quality (v0.4.0)
+
+- [ ] **TEST-01**: Create fixture corpus for problematic rail/section combinations, near-degenerate NURBS cases, and representative fonts/glyph sets
+- [ ] **TEST-02**: Define numeric tolerance policy and shared constants across crates
+
+### Documentation (v0.4.0)
+
+- [ ] **DOC-02**: Update AYAM_PORT_PLAN.md to reflect current implementation status — mark deprecated items, document remaining work, verify all checkboxes
 
 ## Out of Scope
 
@@ -60,12 +83,23 @@
 - Automatic feature recognition UI
 - Literal NURBS surface merging (IntegrateIntoHost) — research confirms this is an anti-pattern
 - relay_spheres convergence on high-curvature surfaces (unless it blocks test cases)
+- Option structs for orientation/frame rules and interpolation modes (deferred)
+- Gordon intersection-grid driven variants and invalid network diagnostics (deferred)
+- Patch split/extract workflows (deferred)
+- Solid creation by revolve/sweep — v2 font track (deferred)
+- Font track milestones M1-M4 with real-font fixtures (deferred — FONT-01 covers basic coverage)
+- Curated pathological geometry regression corpus (deferred)
+- cargo test + cargo clippy verification gates (deferred)
+- Migration guidance for manual workflow users (deferred)
+- Tessellation robustness improvements — Phase 8 of Ayam plan (explicitly deferred, no regressions identified)
 
 ## Traceability
 
 - v0.2.0: CORE-01 through EVOLVE-03
 - v0.3.0: BUILD-01, TOPO-01 through TOPO-03, INTEG-01 through INTEG-02, DOC-01
+- v0.4.0: BOOL-01 through BOOL-02, SURF-01 through SURF-02, FONT-01, TEST-01 through TEST-02, DOC-02
 
 ---
 *Generated: 2026-03-08 via /td:new-project*
 *Updated: 2026-03-16 via /td:new-milestone (v0.3.0)*
+*Updated: 2026-03-18 via /td:new-milestone (v0.4.0)*
