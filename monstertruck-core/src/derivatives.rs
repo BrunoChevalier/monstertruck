@@ -757,7 +757,7 @@ impl<V> SurfaceDerivatives<V> {
                     for j in 0..=n {
                         // SAFETY: `c0` and `c1` are small binomial coefficients.
                         let (c0_s, c1_s) = (from(c0).unwrap(), from(c1).unwrap());
-                        sum = sum + evals[j] * (ders[n - j].weight() * c0_s * c1_s);
+                        sum += evals[j] * (ders[n - j].weight() * c0_s * c1_s);
                         c1 = c1 * (n - j) / (j + 1);
                     }
                     c0 = c0 * (m - i) / (i + 1);
