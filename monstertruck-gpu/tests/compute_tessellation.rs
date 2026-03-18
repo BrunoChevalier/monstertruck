@@ -3,11 +3,11 @@
 //! These tests compare GPU compute output against a CPU reference evaluator.
 //! Tests are skipped gracefully if no GPU adapter is available.
 
-use monstertruck_gpu::compute::{
-    AdaptiveResult, GpuTessellator, GpuTessellatorError, NurbsSurfaceData, TessellationResult,
-    MAX_DEGREE,
-};
 use monstertruck_gpu::DeviceHandler;
+use monstertruck_gpu::compute::{
+    AdaptiveResult, GpuTessellator, GpuTessellatorError, MAX_DEGREE, NurbsSurfaceData,
+    TessellationResult,
+};
 
 /// Attempt to create a [`DeviceHandler`]. Returns `None` if no GPU adapter is
 /// available (e.g. CI without a GPU).
@@ -198,10 +198,7 @@ fn test_flat_plane_tessellation() {
     // All normals should point in the +Z or -Z direction.
     for (i, norm) in result.normals.iter().enumerate() {
         let nz = norm[2].abs();
-        assert!(
-            nz > 0.9,
-            "Normal {i} z-component {nz} is not close to 1.0."
-        );
+        assert!(nz > 0.9, "Normal {i} z-component {nz} is not close to 1.0.");
     }
 }
 
@@ -210,9 +207,7 @@ fn test_sphere_tessellation_matches_cpu() {
     let handler = match try_init_device() {
         Some(h) => h,
         None => {
-            eprintln!(
-                "Skipping test_sphere_tessellation_matches_cpu: no GPU adapter available."
-            );
+            eprintln!("Skipping test_sphere_tessellation_matches_cpu: no GPU adapter available.");
             return;
         }
     };

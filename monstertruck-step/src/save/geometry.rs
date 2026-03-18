@@ -273,7 +273,8 @@ impl DisplayByStep for Processor<TrimmedCurve<UnitHyperbola<Point2>>, Matrix3> {
         let ref_direction_idx = idx + 3;
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
-        let ref_direction_raw = VectorAsDirection(Vector2::new(transform[0][0], transform[0][1]) / r0);
+        let ref_direction_raw =
+            VectorAsDirection(Vector2::new(transform[0][0], transform[0][1]) / r0);
         let ref_direction = StepDisplay::new(ref_direction_raw, ref_direction_idx);
         let location = StepDisplay::new(transform[2].to_point(), location_idx);
         let (r0, r1) = (FloatDisplay(r0), FloatDisplay(r1));
@@ -294,11 +295,13 @@ impl DisplayByStep for Processor<TrimmedCurve<UnitHyperbola<Point3>>, Matrix4> {
         let axis_idx = idx + 3;
         let ref_direction_idx = idx + 4;
         let location = StepDisplay::new(transform[3].to_point(), location_idx);
-        let axis_raw = VectorAsDirection(Vector2::new(transform[2][0], transform[2][1]).normalize());
+        let axis_raw =
+            VectorAsDirection(Vector2::new(transform[2][0], transform[2][1]).normalize());
         let axis = StepDisplay::new(axis_raw, axis_idx);
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
-        let ref_direction_raw = VectorAsDirection(Vector2::new(transform[0][0], transform[0][1]) / r0);
+        let ref_direction_raw =
+            VectorAsDirection(Vector2::new(transform[0][0], transform[0][1]) / r0);
         let ref_direction = StepDisplay::new(ref_direction_raw, ref_direction_idx);
         let (r0, r1) = (FloatDisplay(r0), FloatDisplay(r1));
         f.write_fmt(format_args!(
@@ -319,7 +322,8 @@ impl DisplayByStep for Processor<TrimmedCurve<UnitParabola<Point2>>, Matrix3> {
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
         let focal_dist = FloatDisplay(r1 * r1 / r0);
-        let ref_direction_raw = VectorAsDirection(Vector2::new(transform[0][0], transform[0][1]) / r0);
+        let ref_direction_raw =
+            VectorAsDirection(Vector2::new(transform[0][0], transform[0][1]) / r0);
         let ref_direction = StepDisplay::new(ref_direction_raw, ref_direction_idx);
         let location = StepDisplay::new(transform[2].to_point(), location_idx);
         f.write_fmt(format_args!(
@@ -339,12 +343,14 @@ impl DisplayByStep for Processor<TrimmedCurve<UnitParabola<Point3>>, Matrix4> {
         let axis_idx = idx + 3;
         let ref_direction_idx = idx + 4;
         let location = StepDisplay::new(transform[3].to_point(), location_idx);
-        let axis_raw = VectorAsDirection(Vector2::new(transform[2][0], transform[2][1]).normalize());
+        let axis_raw =
+            VectorAsDirection(Vector2::new(transform[2][0], transform[2][1]).normalize());
         let axis = StepDisplay::new(axis_raw, axis_idx);
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
         let focal_dist = FloatDisplay(r1 * r1 / r0);
-        let ref_direction_raw = VectorAsDirection(Vector2::new(transform[0][0], transform[0][1]) / r0);
+        let ref_direction_raw =
+            VectorAsDirection(Vector2::new(transform[0][0], transform[0][1]) / r0);
         let ref_direction = StepDisplay::new(ref_direction_raw, ref_direction_idx);
         f.write_fmt(format_args!(
             "#{idx} = PARABOLA('', #{position_idx}, {focal_dist});

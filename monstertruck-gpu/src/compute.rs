@@ -505,7 +505,11 @@ impl<'a> GpuTessellator<'a> {
 
         let data = buffer_slice.get_mapped_range();
         let floats: &[[f32; 4]] = bytemuck::cast_slice(&data);
-        let result: Vec<[f32; 3]> = floats.iter().take(count).map(|v| [v[0], v[1], v[2]]).collect();
+        let result: Vec<[f32; 3]> = floats
+            .iter()
+            .take(count)
+            .map(|v| [v[0], v[1], v[2]])
+            .collect();
         drop(data);
         buffer.unmap();
         result

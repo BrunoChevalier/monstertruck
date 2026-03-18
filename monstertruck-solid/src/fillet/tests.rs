@@ -7,13 +7,13 @@ use super::types::*;
 
 use monstertruck_traits::ParametricSurface;
 
+use super::integrate::{ContinuityAnnotation, FilletResult};
+use super::ops::fillet_annotated;
+use super::params::{CornerMode, ExtendMode, FilletMode};
 use super::{
     FilletOptions, FilletProfile, RadiusSpec, fillet, fillet_along_wire, fillet_edges,
     fillet_edges_generic, fillet_with_side,
 };
-use super::integrate::{ContinuityAnnotation, FilletResult};
-use super::ops::fillet_annotated;
-use super::params::{CornerMode, ExtendMode, FilletMode};
 
 #[test]
 fn create_fillet_surface() {
@@ -3326,9 +3326,7 @@ fn fillet_boolean_subtraction_multi_wire() {
         }
     };
     let Some(mut shell) = solid.into_boundaries().into_iter().next() else {
-        eprintln!(
-            "fillet_boolean_subtraction_multi_wire: no shell in boolean result. Skipping."
-        );
+        eprintln!("fillet_boolean_subtraction_multi_wire: no shell in boolean result. Skipping.");
         return;
     };
 
@@ -3413,13 +3411,7 @@ fn integrate_visual_single_edge_annotated() {
     }
     .with_mode(FilletMode::IntegrateVisual);
 
-    let result: FilletResult = fillet_annotated(
-        &shell[1],
-        &shell[2],
-        edge[5].id(),
-        &opts,
-    )
-    .unwrap();
+    let result: FilletResult = fillet_annotated(&shell[1], &shell[2], edge[5].id(), &opts).unwrap();
 
     // The FilletResult should carry the fillet face and annotations.
     assert!(
@@ -3431,8 +3423,7 @@ fn integrate_visual_single_edge_annotated() {
     // against planar faces (which produce tangent-continuous junctions).
     for (_edge_id, annotation) in &result.annotations {
         assert!(
-            *annotation == ContinuityAnnotation::G1
-                || *annotation == ContinuityAnnotation::G2,
+            *annotation == ContinuityAnnotation::G1 || *annotation == ContinuityAnnotation::G2,
             "expected G1 or G2, got {:?}",
             annotation
         );
@@ -3449,13 +3440,7 @@ fn keep_separate_face_returns_empty_annotations() {
     }
     .with_mode(FilletMode::KeepSeparateFace);
 
-    let result = fillet_annotated(
-        &shell[1],
-        &shell[2],
-        edge[5].id(),
-        &opts,
-    )
-    .unwrap();
+    let result = fillet_annotated(&shell[1], &shell[2], edge[5].id(), &opts).unwrap();
 
     assert!(
         result.annotations.is_empty(),
@@ -3567,13 +3552,7 @@ fn keep_separate_face_unchanged_behavior() {
     }
     .with_mode(FilletMode::KeepSeparateFace);
 
-    let result_explicit = fillet(
-        &shell[1],
-        &shell[2],
-        edge[5].id(),
-        &opts_explicit,
-    )
-    .unwrap();
+    let result_explicit = fillet(&shell[1], &shell[2], edge[5].id(), &opts_explicit).unwrap();
 
     // Fillet with default mode (should be KeepSeparateFace).
     let opts_default = FilletOptions {
@@ -3581,13 +3560,7 @@ fn keep_separate_face_unchanged_behavior() {
         ..Default::default()
     };
 
-    let result_default = fillet(
-        &shell[1],
-        &shell[2],
-        edge[5].id(),
-        &opts_default,
-    )
-    .unwrap();
+    let result_default = fillet(&shell[1], &shell[2], edge[5].id(), &opts_default).unwrap();
 
     // Both should produce the same number of boundary edges on the fillet face.
     assert_eq!(

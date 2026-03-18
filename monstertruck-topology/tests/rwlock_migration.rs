@@ -83,9 +83,8 @@ fn concurrent_mixed_vertex_access() {
     use rayon::prelude::*;
     use std::sync::atomic::{AtomicBool, Ordering};
 
-    let vertices: Vec<Vertex<[f64; 3]>> = (0..20)
-        .map(|i| Vertex::new([i as f64, 0.0, 0.0]))
-        .collect();
+    let vertices: Vec<Vertex<[f64; 3]>> =
+        (0..20).map(|i| Vertex::new([i as f64, 0.0, 0.0])).collect();
     let write_completed = AtomicBool::new(false);
     let v0_clone = vertices[0].clone();
 
@@ -112,9 +111,7 @@ fn concurrent_mixed_vertex_access() {
 fn concurrent_edge_oriented_curve_reads() {
     use rayon::prelude::*;
 
-    let vertices: Vec<Vertex<usize>> = (0..20)
-        .map(|i| Vertex::new(i))
-        .collect();
+    let vertices: Vec<Vertex<usize>> = (0..20).map(|i| Vertex::new(i)).collect();
     let edges: Vec<Edge<usize, (usize, usize)>> = (0..20)
         .map(|i| {
             let j = (i + 1) % 20;

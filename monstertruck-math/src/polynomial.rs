@@ -219,11 +219,7 @@ mod tests {
         // x^3 - 7x - 6 = 0 => roots: -2, -1, 3.
         let mut res = pre_solve_cubic(-7.0, -6.0);
         res.sort_by(|x, y| x.re.partial_cmp(&y.re).unwrap());
-        let ans = [
-            Complex::from(-2.0),
-            Complex::from(-1.0),
-            Complex::from(3.0),
-        ];
+        let ans = [Complex::from(-2.0), Complex::from(-1.0), Complex::from(3.0)];
         for (x, y) in res.iter().zip(ans.iter()) {
             assert!(Complex::norm(x - y) < EPS, "got {x}, expected {y}");
         }
@@ -234,11 +230,7 @@ mod tests {
         // x^3 - 3x^2 + 4 = 0 => roots: -1, 2, 2.
         let mut res = solve_cubic(-3.0, 0.0, 4.0);
         res.sort_by(|x, y| x.re.partial_cmp(&y.re).unwrap());
-        let ans = [
-            Complex::from(-1.0),
-            Complex::from(2.0),
-            Complex::from(2.0),
-        ];
+        let ans = [Complex::from(-1.0), Complex::from(2.0), Complex::from(2.0)];
         for (x, y) in res.iter().zip(ans.iter()) {
             assert!(Complex::norm(x - y) < EPS, "got {x}, expected {y}");
         }
@@ -256,10 +248,7 @@ mod tests {
             Complex::from(2.0),
         ];
         for (x, y) in res.iter().zip(ans.iter()) {
-            assert!(
-                Complex::norm(x - y) < EPS_QUARTIC,
-                "got {x}, expected {y}",
-            );
+            assert!(Complex::norm(x - y) < EPS_QUARTIC, "got {x}, expected {y}",);
         }
     }
 
@@ -275,10 +264,7 @@ mod tests {
             Complex::from(2.0),
         ];
         for (x, y) in res.iter().zip(ans.iter()) {
-            assert!(
-                Complex::norm(x - y) < EPS_QUARTIC,
-                "got {x}, expected {y}",
-            );
+            assert!(Complex::norm(x - y) < EPS_QUARTIC, "got {x}, expected {y}",);
         }
     }
 
@@ -287,8 +273,7 @@ mod tests {
         // For each root r of x^4 + x^3 - 7x^2 - x + 6 = 0, verify substitution.
         let res = solve_quartic(1.0, -7.0, -1.0, 6.0);
         for r in &res {
-            let val: Complex<f64> =
-                r * r * r * r + r * r * r - 7.0 * r * r - r + 6.0;
+            let val: Complex<f64> = r * r * r * r + r * r * r - 7.0 * r * r - r + 6.0;
             assert!(
                 val.norm() < EPS,
                 "Substitution check failed: f({r}) = {val}",

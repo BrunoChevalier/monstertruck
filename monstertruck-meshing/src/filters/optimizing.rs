@@ -364,9 +364,7 @@ fn split_into_nondegenerate(poly: Vec<Vertex>) -> Vec<Vec<Vertex>> {
     vec![poly]
 }
 
-trait CastIntVector:
-    Sized + Mul<f64, Output = Self> + Div<f64, Output = Self>
-{
+trait CastIntVector: Sized + Mul<f64, Output = Self> + Div<f64, Output = Self> {
     type IntVector: IntVector;
     fn cast_int(self) -> Self::IntVector;
     fn round(self, tol: f64) -> Self::IntVector;

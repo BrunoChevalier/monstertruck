@@ -83,7 +83,11 @@ pub(super) fn classify_edge_continuity(
 
         let fillet_len = fillet_normal.magnitude();
         let host_len = host_normal.magnitude();
-        if !fillet_len.is_finite() || fillet_len < 1.0e-12 || !host_len.is_finite() || host_len < 1.0e-12 {
+        if !fillet_len.is_finite()
+            || fillet_len < 1.0e-12
+            || !host_len.is_finite()
+            || host_len < 1.0e-12
+        {
             all_g1 = false;
             all_g2 = false;
             continue;
@@ -184,7 +188,12 @@ pub(super) fn annotate_fillet_edges(
     let host_surface0 = new_face0.oriented_surface();
     annotations.insert(
         shared_edge0.id(),
-        classify_edge_continuity(&fillet_surface, &host_surface0, shared_edge0, DEFAULT_SAMPLE_COUNT),
+        classify_edge_continuity(
+            &fillet_surface,
+            &host_surface0,
+            shared_edge0,
+            DEFAULT_SAMPLE_COUNT,
+        ),
     );
 
     // Shared edge with new_face1 at boundary index 2.
@@ -192,7 +201,12 @@ pub(super) fn annotate_fillet_edges(
     let host_surface1 = new_face1.oriented_surface();
     annotations.insert(
         shared_edge1.id(),
-        classify_edge_continuity(&fillet_surface, &host_surface1, shared_edge1, DEFAULT_SAMPLE_COUNT),
+        classify_edge_continuity(
+            &fillet_surface,
+            &host_surface1,
+            shared_edge1,
+            DEFAULT_SAMPLE_COUNT,
+        ),
     );
 
     annotations
@@ -226,13 +240,14 @@ pub(super) fn ensure_seamless_vertices(
             let shared0 = &fillet_boundary[0];
             let f0_front = shared0.front().point();
             let f0_back = shared0.back().point();
-            let host0_verts: Vec<_> = _host_face0
-                .absolute_boundaries()[0]
+            let host0_verts: Vec<_> = _host_face0.absolute_boundaries()[0]
                 .iter()
                 .map(|e| e.front().point())
                 .collect();
             debug_assert!(
-                host0_verts.iter().any(|v| (*v - f0_front).magnitude() < tol),
+                host0_verts
+                    .iter()
+                    .any(|v| (*v - f0_front).magnitude() < tol),
                 "ensure_seamless_vertices: fillet edge 0 front vertex not found on host face 0"
             );
             debug_assert!(
@@ -244,13 +259,14 @@ pub(super) fn ensure_seamless_vertices(
             let shared2 = &fillet_boundary[2];
             let f2_front = shared2.front().point();
             let f2_back = shared2.back().point();
-            let host1_verts: Vec<_> = _host_face1
-                .absolute_boundaries()[0]
+            let host1_verts: Vec<_> = _host_face1.absolute_boundaries()[0]
                 .iter()
                 .map(|e| e.front().point())
                 .collect();
             debug_assert!(
-                host1_verts.iter().any(|v| (*v - f2_front).magnitude() < tol),
+                host1_verts
+                    .iter()
+                    .any(|v| (*v - f2_front).magnitude() < tol),
                 "ensure_seamless_vertices: fillet edge 2 front vertex not found on host face 1"
             );
             debug_assert!(

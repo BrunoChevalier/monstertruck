@@ -3,9 +3,9 @@
 //! Uses [`criterion`] to measure performance at various grid sizes.
 //! Skips GPU benchmarks if no adapter is available.
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use monstertruck_gpu::compute::{GpuTessellator, NurbsSurfaceData};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use monstertruck_gpu::DeviceHandler;
+use monstertruck_gpu::compute::{GpuTessellator, NurbsSurfaceData};
 
 // ============================================================================
 // Inline CPU evaluator (matches the WGSL shader logic).

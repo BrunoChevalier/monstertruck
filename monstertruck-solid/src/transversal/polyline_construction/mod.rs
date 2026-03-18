@@ -31,8 +31,7 @@ impl From<Point3> for PointIndex {
     fn from(pt: Point3) -> PointIndex {
         let offset = Vector3::new(TOLERANCE, TOLERANCE, TOLERANCE);
         let idx = (pt + offset) / (2.0 * TOLERANCE);
-        PointIndex([idx[0] as i64, idx[1] as i64, idx[2] as i64],
-        )
+        PointIndex([idx[0] as i64, idx[1] as i64, idx[2] as i64])
     }
 }
 

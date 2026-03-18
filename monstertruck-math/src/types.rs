@@ -265,7 +265,15 @@ impl<S: na::Scalar + Copy> Matrix3<S> {
         S: na::RealField,
     {
         Matrix3::new(
-            x, S::zero(), S::zero(), S::zero(), y, S::zero(), S::zero(), S::zero(), S::one(),
+            x,
+            S::zero(),
+            S::zero(),
+            S::zero(),
+            y,
+            S::zero(),
+            S::zero(),
+            S::zero(),
+            S::one(),
         )
     }
 
