@@ -339,6 +339,7 @@ fn try_cap_shell_with_existing_surfaces<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>
             .map(|face| {
                 let mut candidate = capped.clone();
                 candidate.push(face.clone());
+                // Mesh triangulation for capping uses at least 10x `TOLERANCE` for vertex snap reliability.
                 let triangulatable = candidate
                     .triangulation(f64::max(10.0 * TOLERANCE, tol))
                     .face_iter()
@@ -378,6 +379,7 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     type BooleanQualityScore = (ShellQualityScore, ShellQualityScore);
 
     let debug_bool = std::env::var("MT_BOOL_DEBUG_COUNTS").is_ok();
+    // Operation tolerance must be at least the global geometric coincidence threshold.
     if tol < TOLERANCE {
         return Err(ShapeOpsError::InvalidTolerance);
     }
@@ -396,6 +398,7 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
         }
     }
 
+    // Triangulation tolerance: 25% of operation tol, floored at 2x `TOLERANCE` for mesh stability.
     let poly_tol = f64::max(tol * 0.25, 2.0 * TOLERANCE);
     let poly_shell0 = shell0.triangulation(poly_tol);
     let poly_shell1 = shell1.triangulation(poly_tol);

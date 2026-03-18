@@ -285,10 +285,7 @@ fn chained_boolean_and_then_or() {
 
     // Step 2: OR intersection with adder -> union of 0.125 intersection + 0.5 adder cube.
     let result = crate::or(&intersection, &adder, 0.05);
-    assert!(
-        result.is_ok(),
-        "Chained OR step should succeed: {result:?}"
-    );
+    assert!(result.is_ok(), "Chained OR step should succeed: {result:?}");
     let solid = result.unwrap();
 
     // Topology check: result must have closed boundary shells.
