@@ -42,3 +42,7 @@ No changes to the polynomial solver module. Phase 7 focused on fillet integratio
 ## Status Update (Phase 8)
 
 No changes to the polynomial solver module. Phase 8 added topology validation (Euler-Poincare assertions and orientation checks) to the fillet pipeline in `monstertruck-solid`; the math layer was unaffected. See [ADR-0002](0002-fillet-topology-surgery-hardening.md) for related updates.
+
+## Status Update (Phase 9)
+
+No changes to the polynomial solver module. Phase 9 focused on boolean operation hardening (face classification, shell healing, tolerance documentation) and establishing a tolerance policy in `monstertruck-core`. The math layer was unaffected.

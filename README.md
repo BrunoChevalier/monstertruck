@@ -124,7 +124,16 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 8)
+### Recent Changes (Phase 9 -- Boolean Repair & Tolerance Foundation)
+
+- **Tolerance policy** -- `monstertruck-core::tolerance` now has comprehensive documentation of the numeric tolerance policy (TOLERANCE, TOLERANCE2, Tolerance trait, OperationTolerance). The hardcoded `1.0e-6` in fillet `edge_select` was replaced with the canonical `TOLERANCE` constant. Regression tests pin tolerance values.
+- **Boolean face classification hardening** -- `faces_classification::integrate_by_component` uses majority-edge scoring with `FxHashSet` and no longer panics on empty boundary components. Unknown-face classification falls back to a conservative default instead of returning an error.
+- **3-stage shell healing** -- Boolean `heal_shell_if_needed` now uses a 3-stage fallback (healed, unhealed, original) and never returns `None` for non-empty shells.
+- **Diagnostic logging** -- Coincident-face detection (`MT_BOOL_DEBUG_COINCIDENT`), healing diagnostics (`MT_BOOL_DEBUG_HEAL`), and dropped-boundary logging (`MT_BOOL_DEBUG_COMPONENTS`) are available as opt-in environment variables.
+- **Tolerance documentation in boolean pipeline** -- Doc comments in `integrate/mod.rs` and `loops_store/mod.rs` explain tolerance multipliers (operation tolerance floor, triangulation tolerance, snap tolerance 10x, vertex merge 100x).
+- **Topology validation tests** -- New tests for AND, OR, difference, and chained boolean operations with closed-shell and singular-vertex assertions.
+
+### Earlier Changes (Phase 8)
 
 - **Topology validation module** -- New `monstertruck-solid::fillet::validate` module with Euler-Poincare characteristic checks and face orientation validation. Debug assertions (`debug_assert_topology`, `debug_assert_euler`) run automatically after fillet modifications in debug builds with zero runtime cost in release builds.
 - **Fillet implementation plan v0.3.0** -- Updated test inventory, API surface documentation, and known-limitations tracking.

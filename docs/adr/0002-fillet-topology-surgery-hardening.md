@@ -41,3 +41,7 @@ Phase 8 added formal topology invariant validation to the fillet pipeline via `m
 - **`debug_assert_topology` / `debug_assert_euler`** -- Debug-only assertions that fire on Euler-Poincare or orientation violations, providing early detection of the topology corruption classes described in this ADR.
 
 These checks are integrated into fillet operations (`ops.rs`, `edge_select.rs`) and run automatically in debug builds with zero cost in release builds. Four new tests validate the assertions against closed boxes, tetrahedra, open shells, and deliberately corrupted orientations.
+
+## Status Update (Phase 9)
+
+Phase 9 replaced the hardcoded `1.0e-6` in `edge_select.rs` with the canonical `TOLERANCE` constant from `monstertruck-core`, aligning fillet edge selection with the project-wide tolerance policy established in this phase. The topology surgery hardening from this ADR remains unchanged.

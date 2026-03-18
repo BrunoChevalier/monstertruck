@@ -34,3 +34,7 @@ Additionally, there was no mechanism for downstream consumers to query the geome
 ## Status Update (Phase 8)
 
 Phase 8 added debug-only topology validation (`fillet::validate` module) that runs after fillet operations in both `KeepSeparateFace` and `IntegrateVisual` modes. Euler-Poincare and orientation assertions now guard the post-fillet shell state, catching topology corruption early in debug builds. This complements the continuity annotations from this ADR by validating structural integrity in addition to geometric smoothness.
+
+## Status Update (Phase 9)
+
+No changes to fillet integration mode logic. Phase 9 established a tolerance policy in `monstertruck-core` and hardened the boolean pipeline (face classification, shell healing). The fillet integration mode and continuity annotations from this ADR are unaffected.
