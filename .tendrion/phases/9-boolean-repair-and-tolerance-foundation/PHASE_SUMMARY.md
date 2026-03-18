@@ -32,16 +32,16 @@ deviations_approval_needed: 0
 
 | Requirement | Plans | Status |
 |-------------|-------|--------|
-| BOOL-01 | 9-2, 9-3 | PARTIAL -- face classification hardened, but `adjacent_cubes_or` and `punched_cube` still fail (pre-existing MissingPolygon bug) |
-| TEST-02 | 9-1, 9-3 | PARTIAL -- monstertruck-solid and monstertruck-core covered; monstertruck-modeling and monstertruck-meshing do not explicitly import tolerance module |
+| BOOL-01 | 9-2, 9-3 | PARTIAL -- face classification hardened, but `adjacent_cubes_or` and `punched_cube` still fail (pre-existing MissingPolygon bug in meshing triangulation layer) |
+| TEST-02 | 9-1, 9-3 | PARTIAL -- monstertruck-core and monstertruck-solid covered; monstertruck-meshing has existing TOLERANCE import (vtk.rs) but not phase-delivered; monstertruck-modeling has existing use |
 
 ## Test Results
 
 - monstertruck-core lib: 10/10 pass
 - monstertruck-core tolerance_policy: 4/4 pass
-- monstertruck-solid new unit tests (heal, cap, classify): pass
-- monstertruck-solid boolean integration (`adjacent_cubes_or`, `punched_cube`, overlapping/chained tests): FAIL (pre-existing MissingPolygon in meshing triangulation layer)
-- boolean_edge_cases integration tests: 4/7 fail, 2 timeout, 1 pass
+- monstertruck-solid resilience unit tests (heal, cap, classify, coincident): 6/6 pass
+- monstertruck-solid boolean integration (adjacent_cubes_or, punched_cube, overlapping/chained): FAIL (pre-existing MissingPolygon in meshing triangulation)
+- monstertruck-solid transversal total: 20 passed, 7 failed (all 7 failures pre-existing)
 
 ## TDD Compliance
 
@@ -59,3 +59,9 @@ deviations_approval_needed: 0
 - 3-stage healing: healed > unhealed > original; never returns None
 - Coincident detection wired as logging-only behind env var flag
 - Boolean pipeline tests correctly written but blocked by pre-existing MissingPolygon bug (documented, not fixed -- outside plan scope)
+
+## Gaps (Blocking Pass)
+
+1. **Criteria 1 and 3**: `cargo test -p monstertruck-solid` has 7 boolean-related failures in `transversal::integrate` and `transversal::loops_store`. All are `CreateLoopsStoreFailed { source: MissingPolygon }` from a pre-existing bug in `to_polygon()` for `Plane` surfaces. These failures existed before phase 9 and are not regressions, but the ROADMAP success criterion requires zero boolean-related test failures.
+2. **Criterion 2**: monstertruck-meshing does not have a phase-9-delivered explicit tolerance import. `vtk.rs` uses `TOLERANCE` but this predates the phase.
+3. **TDD**: 0% compliance under strict mode (missing REFACTOR commits in all 3 plans).
