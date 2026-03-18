@@ -802,8 +802,10 @@ where
         + SearchParameter<D2, Point = Point3>
         + SearchNearestParameter<D2, Point = Point3>,
 {
+    // Snap tolerance floor: mesh vertex snapping needs at least 10x `TOLERANCE`.
     let snap_tol = f64::max(snap_tol, 10.0 * TOLERANCE);
     let debug_missing = std::env::var("MT_BOOL_DEBUG_ENDPOINTS").is_ok();
+    // Vertex merge tolerance: 100x `TOLERANCE` for merging nearby vertices during loop construction.
     let vertex_merge_tol = 100.0 * TOLERANCE;
     let to_vertex_key = |face_index: usize, point: Point3| {
         let x = (point[0] / vertex_merge_tol).round() as i64;

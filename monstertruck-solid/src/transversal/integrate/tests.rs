@@ -1,5 +1,6 @@
 use monstertruck_meshing::prelude::*;
 use monstertruck_modeling::*;
+use monstertruck_topology::shell::ShellCondition;
 
 /// Verify that `detect_coincident_faces` is callable from the integrate module
 /// and returns a valid (possibly empty) result. This exercises the wiring
@@ -136,6 +137,17 @@ fn adjacent_cubes_or() {
     assert_near!(bbx.max(), Point3::new(1.5, 1.5, 2.0));
 
     assert_eq!(solid.face_iter().count(), 12);
+
+    let shell = &solid.boundaries()[0];
+    assert_eq!(
+        shell.shell_condition(),
+        ShellCondition::Closed,
+        "adjacent_cubes_or: shell should be closed."
+    );
+    assert!(
+        shell.singular_vertices().is_empty(),
+        "adjacent_cubes_or: no singular vertices."
+    );
 }
 
 #[test]
@@ -161,4 +173,143 @@ fn punched_cube() {
     let poly = and.triangulation(0.01).to_polygon();
     let file = std::fs::File::create("punched-cube.obj").unwrap();
     obj::write(&poly, file).unwrap();
+}
+
+#[test]
+fn overlapping_cubes_and_topology() {
+    let v = builder::vertex(Point3::origin());
+    let e = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&e, Vector3::unit_y());
+    let cube: Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let v = builder::vertex(Point3::new(0.5, 0.5, 0.5));
+    let w = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&w, Vector3::unit_y());
+    let cube2: Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let result = crate::and(&cube, &cube2, 0.05);
+    assert!(
+        result.is_ok(),
+        "Overlapping cubes AND should succeed: {result:?}"
+    );
+    let solid = result.unwrap();
+    assert_eq!(solid.boundaries().len(), 1);
+    let shell = &solid.boundaries()[0];
+    assert_eq!(shell.shell_condition(), ShellCondition::Closed);
+    assert!(shell.singular_vertices().is_empty());
+
+    let poly = solid.triangulation(0.01).to_polygon();
+    // AND of two unit cubes offset by (0.5, 0.5, 0.5): intersection is 0.5^3 = 0.125.
+    assert_near!(poly.volume(), 0.125);
+}
+
+#[test]
+fn overlapping_cubes_or_topology() {
+    let v = builder::vertex(Point3::origin());
+    let e = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&e, Vector3::unit_y());
+    let cube: Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let v = builder::vertex(Point3::new(0.5, 0.5, 0.5));
+    let w = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&w, Vector3::unit_y());
+    let cube2: Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let result = crate::or(&cube, &cube2, 0.05);
+    assert!(
+        result.is_ok(),
+        "Overlapping cubes OR should succeed: {result:?}"
+    );
+    let solid = result.unwrap();
+    assert_eq!(solid.boundaries().len(), 1);
+    let shell = &solid.boundaries()[0];
+    assert_eq!(shell.shell_condition(), ShellCondition::Closed);
+    assert!(shell.singular_vertices().is_empty());
+
+    let poly = solid.triangulation(0.01).to_polygon();
+    // OR volume = 2*1.0 - 0.125 = 1.875.
+    assert_near!(poly.volume(), 1.875);
+}
+
+#[test]
+fn overlapping_cubes_difference_topology() {
+    let v = builder::vertex(Point3::origin());
+    let e = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&e, Vector3::unit_y());
+    let cube: Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let v = builder::vertex(Point3::new(0.5, 0.5, 0.5));
+    let w = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&w, Vector3::unit_y());
+    let cube2: Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let result = crate::difference(&cube, &cube2, 0.05);
+    assert!(
+        result.is_ok(),
+        "Overlapping cubes difference should succeed: {result:?}"
+    );
+    let solid = result.unwrap();
+    assert_eq!(solid.boundaries().len(), 1);
+    let shell = &solid.boundaries()[0];
+    assert_eq!(shell.shell_condition(), ShellCondition::Closed);
+    assert!(shell.singular_vertices().is_empty());
+
+    let poly = solid.triangulation(0.01).to_polygon();
+    // Difference volume = 1.0 - 0.125 = 0.875.
+    assert_near!(poly.volume(), 0.875);
+}
+
+#[test]
+fn chained_boolean_and_then_or() {
+    // Create three cubes: base, cutter, and adder.
+    let v = builder::vertex(Point3::origin());
+    let e = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&e, Vector3::unit_y());
+    let base: Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let v = builder::vertex(Point3::new(0.5, 0.5, 0.5));
+    let w = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&w, Vector3::unit_y());
+    let cutter: Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let v = builder::vertex(Point3::new(-0.5, 0.0, 0.0));
+    let w = builder::extrude(&v, Vector3::unit_x() * 0.5);
+    let f = builder::extrude(&w, Vector3::unit_y());
+    let adder: Solid = builder::extrude(&f, Vector3::unit_z());
+
+    // Step 1: AND base with cutter -> intersection volume = 0.125.
+    let intersection = crate::and(&base, &cutter, 0.05);
+    assert!(
+        intersection.is_ok(),
+        "AND step should succeed: {intersection:?}"
+    );
+    let intersection = intersection.unwrap();
+
+    // Step 2: OR intersection with adder -> union of 0.125 intersection + 0.5 adder cube.
+    let result = crate::or(&intersection, &adder, 0.05);
+    assert!(
+        result.is_ok(),
+        "Chained OR step should succeed: {result:?}"
+    );
+    let solid = result.unwrap();
+
+    // Topology check: result must have closed boundary shells.
+    for (i, shell) in solid.boundaries().iter().enumerate() {
+        assert_eq!(
+            shell.shell_condition(),
+            ShellCondition::Closed,
+            "chained boolean: boundary shell[{i}] should be closed."
+        );
+        assert!(
+            shell.singular_vertices().is_empty(),
+            "chained boolean: boundary shell[{i}] has singular vertices."
+        );
+    }
+
+    // Volume sanity: the result has positive volume.
+    let poly = solid.triangulation(0.01).to_polygon();
+    assert!(
+        poly.volume() > 0.0,
+        "Chained boolean result should have positive volume."
+    );
 }
