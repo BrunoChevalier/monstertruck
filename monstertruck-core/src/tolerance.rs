@@ -1,3 +1,36 @@
+//! # Numeric Tolerance Policy
+//!
+//! All crates in the monstertruck workspace SHOULD import [`TOLERANCE`] and [`TOLERANCE2`]
+//! from this module rather than hardcoding `1.0e-6`. This ensures a single source of truth
+//! for the geometric coincidence threshold.
+//!
+//! ## Constants
+//!
+//! - [`TOLERANCE`] (`1.0e-6`): General geometric coincidence threshold. Use when comparing
+//!   whether two points, distances, or parameter values are "the same."
+//! - [`TOLERANCE2`] (`TOLERANCE * TOLERANCE`): Squared-order tolerance for squared-distance
+//!   comparisons, avoiding an unnecessary `sqrt`.
+//!
+//! ## Traits
+//!
+//! - [`Tolerance`]: Provides `.near()` (within [`TOLERANCE`]) and `.near2()` (within
+//!   [`TOLERANCE2`]) methods on any type implementing `AbsDiffEq<Epsilon = f64>`.
+//! - [`Origin`]: Extends [`Tolerance`] with `.so_small()` and `.so_small2()` for
+//!   near-zero checks.
+//!
+//! ## Per-operation tracking
+//!
+//! - [`OperationTolerance`]: Tracks accumulated numeric error across chained operations
+//!   (boolean -> fillet -> tessellation). Use `OperationTolerance::from_global()` to
+//!   start a pipeline from the canonical TOLERANCE.
+//!
+//! ## When to use a local constant instead
+//!
+//! Domain-specific constants that coincidentally share the same numeric magnitude
+//! (e.g., finite-difference step sizes in `t_mesh.rs`, STEP file format values,
+//! fillet continuity angle thresholds) may remain as local constants with a comment
+//! explaining why they are not [`TOLERANCE`].
+
 use crate::cgmath64::*;
 use monstertruck_math::AbsDiffEq;
 use std::fmt::Debug;

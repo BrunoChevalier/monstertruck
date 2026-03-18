@@ -7,6 +7,8 @@ use monstertruck_traits::{
 };
 use smallvec::SmallVec;
 
+use monstertruck_core::tolerance::TOLERANCE;
+
 use super::convert::{FilletableCurve, FilletableSurface, convert_shell_in, convert_shell_out};
 use super::error::FilletError;
 use super::ops;
@@ -64,7 +66,7 @@ fn rematch_selected_edge_id(
     original_curve: &Curve,
     used_ids: &HashSet<EdgeId>,
 ) -> Option<EdgeId> {
-    let tolerance = 1.0e-6;
+    let tolerance = TOLERANCE;
     let tolerance_squared = tolerance * tolerance;
     shell
         .edge_iter()
