@@ -52,7 +52,6 @@ fn heal_shell_never_returns_none() {
 /// shell and that the result quality is no worse than the input.
 #[test]
 fn heal_shell_open_shell_returns_some() {
-    use monstertruck_topology::shell::ShellCondition;
     // Build a single face (open shell -- not closed).
     let v = builder::vertex(Point3::origin());
     let e = builder::extrude(&v, Vector3::unit_x());
@@ -81,7 +80,6 @@ fn heal_shell_open_shell_returns_some() {
 /// unchanged when it is already closed (early-return optimization).
 #[test]
 fn cap_shell_early_return_for_closed() {
-    use monstertruck_topology::shell::ShellCondition;
     // Build a closed cube shell.
     let v = builder::vertex(Point3::origin());
     let e = builder::extrude(&v, Vector3::unit_x());
