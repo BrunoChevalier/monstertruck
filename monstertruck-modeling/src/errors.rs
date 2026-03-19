@@ -23,6 +23,40 @@ pub enum Error {
     /// No outer loop found among the provided wires.
     #[error("no outer loop found; at least one wire must have positive signed area.")]
     NoOuterLoop,
+    /// Too few rails provided for a multi-rail sweep (need >= 2).
+    #[error("multi-rail sweep requires at least {required} rails, got {got}.")]
+    InsufficientRails {
+        /// Minimum number of rails required.
+        required: usize,
+        /// Number of rails actually provided.
+        got: usize,
+    },
+    /// Too few sections for surface construction.
+    #[error("surface construction requires at least {required} sections, got {got}.")]
+    InsufficientSections {
+        /// Minimum number of sections required.
+        required: usize,
+        /// Number of sections actually provided.
+        got: usize,
+    },
+    /// Surface construction algorithm failed (e.g., degenerate geometry, incompatible curves).
+    #[error("surface construction failed: {reason}")]
+    SurfaceConstructionFailed {
+        /// Description of the failure.
+        reason: String,
+    },
+    /// Curve grid dimensions mismatch for [`gordon`](crate::builder::try_gordon) surface.
+    #[error("gordon surface requires matching grid dimensions: expected {expected_rows}x{expected_cols}, got {actual_rows}x{actual_cols}.")]
+    GridDimensionMismatch {
+        /// Expected number of rows.
+        expected_rows: usize,
+        /// Expected number of columns.
+        expected_cols: usize,
+        /// Actual number of rows.
+        actual_rows: usize,
+        /// Actual number of columns.
+        actual_cols: usize,
+    },
 }
 
 #[test]
@@ -43,6 +77,43 @@ fn print_messages() {
     writeln!(&mut std::io::stderr(), "{}\n", Error::OpenWire).unwrap();
     writeln!(&mut std::io::stderr(), "{}\n", Error::AmbiguousNesting).unwrap();
     writeln!(&mut std::io::stderr(), "{}\n", Error::NoOuterLoop).unwrap();
+    writeln!(
+        &mut std::io::stderr(),
+        "{}\n",
+        Error::InsufficientRails {
+            required: 2,
+            got: 1
+        }
+    )
+    .unwrap();
+    writeln!(
+        &mut std::io::stderr(),
+        "{}\n",
+        Error::InsufficientSections {
+            required: 2,
+            got: 1
+        }
+    )
+    .unwrap();
+    writeln!(
+        &mut std::io::stderr(),
+        "{}\n",
+        Error::SurfaceConstructionFailed {
+            reason: "test".into()
+        }
+    )
+    .unwrap();
+    writeln!(
+        &mut std::io::stderr(),
+        "{}\n",
+        Error::GridDimensionMismatch {
+            expected_rows: 2,
+            expected_cols: 3,
+            actual_rows: 1,
+            actual_cols: 2,
+        }
+    )
+    .unwrap();
     writeln!(
         &mut std::io::stderr(),
         "*******************************************************"
