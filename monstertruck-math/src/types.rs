@@ -989,8 +989,8 @@ mod tests {
     /// in the wrong matrix position, creating a projective transform instead of
     /// an affine translation.
     #[test]
-    fn should_not_create_projective_transform_from_translation_regression_missing_polygon_boolean_tests(
-    ) {
+    fn should_not_create_projective_transform_from_translation_regression_missing_polygon_boolean_tests()
+     {
         let v = Vector3::<f64>::new(1.0, 2.0, 3.0);
         let m = Matrix4::from_translation(v);
 
