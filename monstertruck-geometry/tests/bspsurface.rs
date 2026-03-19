@@ -468,3 +468,169 @@ fn vcut_knot_boundary_sweep_regression() {
             });
         });
 }
+
+// ---- Multi-rail sweep tests ----
+
+#[test]
+fn test_sweep_multi_rail_three_rails() {
+    // Three diverging straight-line rails in the z-direction with different x-offsets.
+    let rail0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-2.0, 0.0, 5.0)],
+    );
+    let rail1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 2.0, 5.0)],
+    );
+    let rail2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(1.0, 0.0, 0.0), Point3::new(2.0, 0.0, 5.0)],
+    );
+
+    // Profile connecting the rail start positions.
+    let profile = BsplineCurve::new(
+        KnotVector::bezier_knot(2),
+        vec![
+            Point3::new(-1.0, 0.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+        ],
+    );
+
+    let result =
+        BsplineSurface::sweep_multi_rail(profile.clone(), &[rail0, rail1, rail2], 5);
+    assert!(result.is_ok(), "sweep_multi_rail should succeed with 3 rails");
+    let surface = result.unwrap();
+
+    // The u-degree should match the profile degree.
+    assert_eq!(surface.udegree(), profile.degree());
+}
+
+#[test]
+fn test_sweep_multi_rail_error_on_single_rail() {
+    let rail = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0)],
+    );
+    let profile = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let result = BsplineSurface::sweep_multi_rail(profile, &[rail], 3);
+    assert!(result.is_err(), "sweep_multi_rail should fail with a single rail");
+}
+
+#[test]
+fn test_sweep_multi_rail_matches_birail1_for_two_rails() {
+    // Two parallel straight rails.
+    let rail1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0)],
+    );
+    let rail2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0)],
+    );
+    let profile = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+
+    let multi =
+        BsplineSurface::sweep_multi_rail(profile.clone(), &[rail1.clone(), rail2.clone()], 5)
+            .expect("sweep_multi_rail should succeed with 2 rails");
+    let birail = BsplineSurface::birail1(profile, &rail1, &rail2, 5);
+
+    // Compare evaluation at several sample points.
+    for i in 0..=4 {
+        for j in 0..=4 {
+            let u = i as f64 / 4.0;
+            let v = j as f64 / 4.0;
+            assert_near2!(multi.subs(u, v), birail.subs(u, v));
+        }
+    }
+}
+
+#[test]
+fn test_sweep_multi_rail_degenerate_collinear_rails() {
+    // Three rails whose start points are collinear (all on the x-axis).
+    let rail0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0)],
+    );
+    let rail1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0)],
+    );
+    let rail2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0)],
+    );
+
+    let profile = BsplineCurve::new(
+        KnotVector::bezier_knot(2),
+        vec![
+            Point3::new(-1.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+        ],
+    );
+
+    let result = BsplineSurface::sweep_multi_rail(profile, &[rail0, rail1, rail2], 5);
+    assert!(
+        result.is_err(),
+        "sweep_multi_rail should fail for collinear reference points (singular covariance)",
+    );
+}
+
+// ---- Periodic sweep tests ----
+
+#[test]
+fn test_sweep_periodic_closed_seam() {
+    // Closed rail: degree-1 polygon loop in the xy-plane.
+    let rail = BsplineCurve::new(
+        KnotVector::from(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]),
+        vec![
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(-1.0, 0.0, 0.0),
+            Point3::new(0.0, -1.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+        ],
+    );
+
+    // Small profile perpendicular to the rail start tangent.
+    let profile = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![
+            Point3::new(1.0, 0.0, -0.2),
+            Point3::new(1.0, 0.0, 0.2),
+        ],
+    );
+
+    let result = BsplineSurface::sweep_periodic(profile, &rail, 8);
+    assert!(result.is_ok(), "sweep_periodic should succeed");
+    let surface = result.unwrap();
+
+    // Verify C0 seam: subs(u, 0) == subs(u, 1) for several u values.
+    for i in 0..=10 {
+        let u = i as f64 / 10.0;
+        let at_start = surface.subs(u, 0.0);
+        let at_end = surface.subs(u, 1.0);
+        assert_near2!(at_start, at_end);
+    }
+}
+
+#[test]
+fn test_sweep_periodic_error_on_too_few_sections() {
+    let rail = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let profile = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, -0.1), Point3::new(0.0, 0.0, 0.1)],
+    );
+    let result = BsplineSurface::sweep_periodic(profile, &rail, 2);
+    assert!(result.is_err(), "sweep_periodic should fail with n_sections < 3");
+}
