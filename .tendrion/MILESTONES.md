@@ -2,13 +2,16 @@
 
 ## Current Milestone
 
+No active milestone. Run `/td:new-milestone` to start one.
+
+## History
+
 ### v0.4.0
 **Started:** 2026-03-18
 **Goal:** Fix pre-existing boolean op bugs from v0.3.0 verification. Complete remaining high-value Ayam port items: multi-rail sweep, builder wrappers, real-font test coverage, fixture corpus, tolerance policy. Update AYAM_PORT_PLAN.md to reflect final status.
 **Phases:** 9-TBD
-**Status:** In Progress
-
-## History
+**Status:** Complete
+**Completed:** 2026-03-19
 
 ### v0.3.0
 **Started:** 2026-03-16
@@ -25,4 +28,4 @@
 **Completed:** 2026-03-16
 
 ---
-*Last updated: 2026-03-18*
+*Last updated: 2026-03-19*

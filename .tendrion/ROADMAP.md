@@ -75,44 +75,25 @@
 **Goal**: Boolean operations on complex faces produce correct topology and all crates share a consistent numeric tolerance policy
 **Depends on**: None
 **Requirements**: BOOL-01, TEST-02
-**Success Criteria** (what must be TRUE):
-  1. The v0.3.0 criteria 2 and 4 gaps (boolean result face handling) pass their original verification checks without manual workarounds
-  2. A shared tolerance constants module exists and is imported by truck-shapeops, truck-modeling, and truck-meshalgo
-  3. Running `cargo test -p truck-shapeops` passes with no boolean-related test failures
-  4. Tolerance constants are documented with rationale for each value choice
-**Plans**: TBD
+**Plans**: Archived — see `.tendrion/milestones/v0.4.0-ROADMAP.md`
 
 ### Phase 10: Test Infrastructure and Healing Hooks
 **Goal**: A fixture corpus of problematic geometries exists for regression testing and truck-shapeops can heal topology after surface construction
 **Depends on**: Phase 9
 **Requirements**: BOOL-02, TEST-01
-**Success Criteria** (what must be TRUE):
-  1. Fixture files for problematic rail/section combos, near-degenerate NURBS, and representative font glyphs are loadable via test helpers
-  2. truck-shapeops exposes healing hooks that detect and repair topology gaps introduced by sweep_rail, birail, and gordon constructors
-  3. At least 3 degenerate-geometry fixtures trigger healing code paths and produce valid topology
-  4. Running `cargo test` with the new fixtures produces no panics or timeouts
-**Plans**: TBD
+**Plans**: Archived — see `.tendrion/milestones/v0.4.0-ROADMAP.md`
 
 ### Phase 11: Surface Constructors
 **Goal**: Users can create multi-rail sweeps, periodic sweeps, and birail/gordon surfaces through typed builder APIs in truck-modeling
 **Depends on**: Phase 10
 **Requirements**: SURF-01, SURF-02
-**Success Criteria** (what must be TRUE):
-  1. `SweepBuilder::multi_rail()` and `SweepBuilder::periodic()` produce valid BSplineSurface results for 3+ rail curves
-  2. Builder wrappers for sweep_rail, birail, and gordon in truck-modeling return typed Result errors instead of panicking on invalid input
-  3. Generated surfaces pass Euler-Poincare topology checks when converted to solids
-  4. At least one periodic sweep test demonstrates closed-surface continuity at the wrap seam
-**Plans**: TBD
+**Plans**: Archived — see `.tendrion/milestones/v0.4.0-ROADMAP.md`
 
 ### Phase 12: Font Pipeline and Final Documentation
 **Goal**: Text profile creation from real fonts works end-to-end with hole preservation and the Ayam port plan reflects current status
 **Depends on**: Phase 11
 **Requirements**: FONT-01, DOC-02
-**Success Criteria** (what must be TRUE):
-  1. End-to-end tests load a real font fixture, generate glyph profiles for characters with holes (e.g., "B", "O"), and verify inner loop preservation
-  2. Generated text profiles produce valid Wire topology suitable for extrusion
-  3. AYAM_PORT_PLAN.md has all completed items checked, deprecated items marked, and remaining work documented
-**Plans**: TBD
+**Plans**: Archived — see `.tendrion/milestones/v0.4.0-ROADMAP.md`
 
 ## Progress
 
