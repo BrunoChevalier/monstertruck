@@ -1308,6 +1308,106 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
         res
     }
 
+    /// Splits the surface at parameter `u`, returning `(left, right)` without mutating `self`.
+    ///
+    /// `left` covers `[u_start, u]` and `right` covers `[u, u_end]`.
+    /// Both halves evaluate identically to `self` at corresponding parameters.
+    ///
+    /// # Examples
+    /// ```
+    /// use monstertruck_geometry::prelude::*;
+    ///
+    /// let knot_u = KnotVector::uniform_knot(2, 2);
+    /// let knot_v = KnotVector::uniform_knot(2, 2);
+    /// let cp: Vec<Vec<Point3>> = (0..4)
+    ///     .map(|i| {
+    ///         (0..4)
+    ///             .map(|j| Point3::new(i as f64, j as f64, 0.1 * (i * i + j * j) as f64))
+    ///             .collect()
+    ///     })
+    ///     .collect();
+    /// let surface = BsplineSurface::new((knot_u, knot_v), cp);
+    /// let (left, right) = surface.split_at_u(0.5);
+    /// assert_near2!(left.subs(0.25, 0.5), surface.subs(0.25, 0.5));
+    /// assert_near2!(right.subs(0.75, 0.5), surface.subs(0.75, 0.5));
+    /// ```
+    pub fn split_at_u(&self, u: f64) -> (BsplineSurface<P>, BsplineSurface<P>) {
+        let mut left = self.clone();
+        let right = left.cut_u(u);
+        (left, right)
+    }
+
+    /// Splits the surface at parameter `v`, returning `(bottom, top)` without mutating `self`.
+    ///
+    /// `bottom` covers `[v_start, v]` and `top` covers `[v, v_end]`.
+    /// Both halves evaluate identically to `self` at corresponding parameters.
+    ///
+    /// # Examples
+    /// ```
+    /// use monstertruck_geometry::prelude::*;
+    ///
+    /// let knot_u = KnotVector::uniform_knot(2, 2);
+    /// let knot_v = KnotVector::uniform_knot(2, 2);
+    /// let cp: Vec<Vec<Point3>> = (0..4)
+    ///     .map(|i| {
+    ///         (0..4)
+    ///             .map(|j| Point3::new(i as f64, j as f64, 0.1 * (i * i + j * j) as f64))
+    ///             .collect()
+    ///     })
+    ///     .collect();
+    /// let surface = BsplineSurface::new((knot_u, knot_v), cp);
+    /// let (bottom, top) = surface.split_at_v(0.5);
+    /// assert_near2!(bottom.subs(0.5, 0.25), surface.subs(0.5, 0.25));
+    /// assert_near2!(top.subs(0.5, 0.75), surface.subs(0.5, 0.75));
+    /// ```
+    pub fn split_at_v(&self, v: f64) -> (BsplineSurface<P>, BsplineSurface<P>) {
+        let mut bottom = self.clone();
+        let top = bottom.cut_v(v);
+        (bottom, top)
+    }
+
+    /// Extracts a rectangular sub-patch from the surface over `[u0, u1] x [v0, v1]`.
+    ///
+    /// The returned surface evaluates identically to `self` at parameters within
+    /// the specified range.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `u0 >= u1` or `v0 >= v1`, or if the range is outside the surface domain.
+    ///
+    /// # Examples
+    /// ```
+    /// use monstertruck_geometry::prelude::*;
+    ///
+    /// let knot_u = KnotVector::uniform_knot(2, 2);
+    /// let knot_v = KnotVector::uniform_knot(2, 2);
+    /// let cp: Vec<Vec<Point3>> = (0..4)
+    ///     .map(|i| {
+    ///         (0..4)
+    ///             .map(|j| Point3::new(i as f64, j as f64, 0.1 * (i * i + j * j) as f64))
+    ///             .collect()
+    ///     })
+    ///     .collect();
+    /// let surface = BsplineSurface::new((knot_u, knot_v), cp);
+    /// let patch = surface.sub_patch((0.25, 0.75), (0.3, 0.8));
+    /// assert_near2!(patch.subs(0.5, 0.5), surface.subs(0.5, 0.5));
+    /// ```
+    pub fn sub_patch(
+        &self,
+        u_range: (f64, f64),
+        v_range: (f64, f64),
+    ) -> BsplineSurface<P> {
+        let (u0, u1) = u_range;
+        let (v0, v1) = v_range;
+        // Cut in u: keep the part [u0, u_end], then cut off [u1, u_end].
+        let (_, right_of_u0) = self.split_at_u(u0);
+        let (middle, _) = right_of_u0.split_at_u(u1);
+        // Cut in v: keep [v0, v_end], then cut off [v1, v_end].
+        let (_, above_v0) = middle.split_at_v(v0);
+        let (patch, _) = above_v0.split_at_v(v1);
+        patch
+    }
+
     /// Creates a sectional curve with normalized knot vector from the parameter `p` to the parameter `q`.
     /// # Examples
     /// ```
