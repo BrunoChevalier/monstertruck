@@ -459,6 +459,92 @@ fn validate_tessellation_smoke() {
     }
 }
 
+// -- Phase 14-3 Task 3: cross-cutting validation tests --
+
+#[test]
+fn all_profile_ops_euler_poincare() {
+    // Extrude.
+    let outer = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let extruded = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![outer],
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .unwrap();
+    let report = profile::validate_solid(&extruded).unwrap();
+    assert_eq!(report.euler_characteristic, 2, "extruded box euler must be 2");
+
+    // Revolve (torus, genus-1 => euler = 0).
+    let wire = rect_wire_xz(3.0, -0.5, 4.0, 0.5);
+    let revolved = profile::revolve_from_planar_profile::<Curve, Surface, _>(
+        vec![wire],
+        Point3::origin(),
+        Vector3::unit_y(),
+        Rad(2.0 * std::f64::consts::PI),
+        4,
+    )
+    .unwrap();
+    let report = profile::validate_solid(&revolved).unwrap();
+    assert_eq!(report.euler_characteristic, 0, "torus euler must be 0");
+
+    // Sweep (oriented, not closed -- euler not checked).
+    let wire = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let guide = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0)],
+    );
+    let swept = profile::sweep_from_planar_profile(vec![wire], &guide, 4).unwrap();
+    let report = profile::validate_solid(&swept).unwrap();
+    // Swept solid is oriented but not closed.
+    assert!(report.is_oriented, "swept solid must be oriented");
+}
+
+#[test]
+fn validation_report_metrics_consistent() {
+    let outer = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![outer],
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .unwrap();
+    let report = profile::validate_solid(&solid).unwrap();
+    assert_eq!(report.vertices, 8, "box has 8 vertices");
+    assert_eq!(report.edges, 12, "box has 12 edges");
+    assert_eq!(report.faces, 6, "box has 6 faces");
+    assert_eq!(report.euler_characteristic, 2);
+    assert!(report.is_oriented);
+    assert!(report.is_closed);
+    assert!(report.is_geometric_consistent);
+}
+
+#[test]
+fn validation_report_tube_metrics() {
+    let outer = rect_wire(-2.0, -2.0, 2.0, 2.0);
+    let hole = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![outer, hole],
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .unwrap();
+    let report = profile::validate_solid(&solid).unwrap();
+    assert_eq!(report.faces, 10, "tube has 10 faces (2 caps + 4 outer + 4 inner)");
+    assert!(report.is_geometric_consistent);
+}
+
+#[test]
+fn profile_revolved_torus_closed() {
+    let wire = rect_wire_xz(3.0, -0.5, 4.0, 0.5);
+    let solid = profile::revolve_from_planar_profile::<Curve, Surface, _>(
+        vec![wire],
+        Point3::origin(),
+        Vector3::unit_y(),
+        Rad(2.0 * std::f64::consts::PI),
+        4,
+    )
+    .unwrap();
+    let report = profile::validate_solid(&solid).unwrap();
+    assert!(report.is_closed, "full-revolve torus must be closed");
+}
+
 // -- Non-XY planes --
 
 #[test]
