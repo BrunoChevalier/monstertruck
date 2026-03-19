@@ -204,6 +204,40 @@ fn test_try_sweep_periodic_closed_seam() {
     }
 }
 
+/// Verify that a periodic sweep shell passes the Euler-Poincare topology check.
+#[test]
+fn test_try_sweep_periodic_euler_poincare() {
+    let rail = BsplineCurve::new(
+        KnotVector::from(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]),
+        vec![
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(-1.0, 0.0, 0.0),
+            Point3::new(0.0, -1.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+        ],
+    );
+    let profile = line_bspline(Point3::new(1.0, 0.0, -0.2), Point3::new(1.0, 0.0, 0.2));
+    let shell = builder::try_sweep_periodic(&profile, &rail, 8).unwrap();
+    assert!(shell.is_geometric_consistent());
+}
+
+/// Verify corner vertex positions for a swept-rail face.
+#[test]
+fn test_try_sweep_rail_vertex_positions() {
+    let profile = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    let rail = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0));
+    let face = builder::try_sweep_rail(&profile, &rail, 3).unwrap();
+    let wire = &face.boundaries()[0];
+    // Collect all vertex positions around the boundary.
+    let pts: Vec<Point3> = wire.vertex_iter().map(|v| v.point()).collect();
+    // The four corners should be approximately at the expected positions.
+    assert!(pts.iter().any(|p| p.near(&Point3::new(-1.0, 0.0, 0.0))));
+    assert!(pts.iter().any(|p| p.near(&Point3::new(1.0, 0.0, 0.0))));
+    assert!(pts.iter().any(|p| p.near(&Point3::new(-1.0, 0.0, 5.0))));
+    assert!(pts.iter().any(|p| p.near(&Point3::new(1.0, 0.0, 5.0))));
+}
+
 #[test]
 fn test_try_sweep_periodic_insufficient_sections() {
     let profile = line_bspline(Point3::new(1.0, 0.0, -0.2), Point3::new(1.0, 0.0, 0.2));
