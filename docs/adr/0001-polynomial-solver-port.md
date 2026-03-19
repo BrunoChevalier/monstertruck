@@ -62,3 +62,7 @@ No changes to the polynomial solver module. Phase 12 added end-to-end font pipel
 ## Status Update (Phase 13 -- v0.5.0 API Polish)
 
 No changes to the polynomial solver module. Phase 13 added typed option structs, fallible `try_*` surface constructors, and patch split/extract methods in `monstertruck-geometry`, plus option-struct builder functions in `monstertruck-modeling`. The math layer was unaffected.
+
+## Status Update (Phase 14 -- Profile Solid Pipeline)
+
+No changes to the polynomial solver module. Phase 14 added profile revolve/sweep functions, mixed profile face construction, and solid validation in `monstertruck-modeling`. The math layer was unaffected.

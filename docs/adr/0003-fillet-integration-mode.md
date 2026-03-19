@@ -54,3 +54,7 @@ No changes to fillet integration mode logic. Phase 12 added end-to-end font pipe
 ## Status Update (Phase 13 -- v0.5.0 API Polish)
 
 No changes to fillet integration mode logic. Phase 13 added typed option structs, fallible `try_*` surface constructors, and patch split/extract methods in `monstertruck-geometry`, plus option-struct builder functions in `monstertruck-modeling`. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 14 -- Profile Solid Pipeline)
+
+No changes to fillet integration mode logic. Phase 14 added profile revolve/sweep functions, mixed profile face construction, and solid validation in `monstertruck-modeling`. The fillet integration mode and continuity annotations from this ADR are unaffected.

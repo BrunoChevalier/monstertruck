@@ -61,3 +61,7 @@ No changes to fillet topology surgery. Phase 12 added end-to-end font pipeline i
 ## Status Update (Phase 13 -- v0.5.0 API Polish)
 
 No changes to fillet topology surgery. Phase 13 added typed option structs, fallible `try_*` surface constructors, and patch split/extract methods in `monstertruck-geometry`, plus option-struct builder functions in `monstertruck-modeling`. The fillet surgery code was unaffected.
+
+## Status Update (Phase 14 -- Profile Solid Pipeline)
+
+No changes to fillet topology surgery. Phase 14 added profile revolve/sweep, mixed profile faces, and solid validation (`validate_solid` with `ValidationReport`) in `monstertruck-modeling`. The Euler-Poincare checks in `validate_solid` complement the fillet validation from Phase 8 but operate at the solid level rather than the fillet-specific pipeline. The fillet surgery code was unaffected.

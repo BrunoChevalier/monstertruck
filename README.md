@@ -124,7 +124,13 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 13 -- v0.5.0 API Polish & Surface Operations)
+### Recent Changes (Phase 14 -- Profile Solid Pipeline)
+
+- **Profile revolve & sweep** -- New `revolve_from_planar_profile` and `sweep_from_planar_profile` functions in `monstertruck-modeling` construct solids directly from planar profile wires.
+- **Mixed profiles** -- `mixed_profile_face` combines font glyph wires with custom sketch loops into a single face for extrusion and sweep workflows.
+- **Solid validation** -- `validate_solid` with `ValidationReport` performs Euler-Poincare and tessellation checks on constructed solids.
+
+### Earlier Changes (Phase 13 -- v0.5.0 API Polish & Surface Operations)
 
 - **Typed option structs** -- New `SweepRailOptions`, `Birail1Options`, `Birail2Options`, `GordonOptions`, `SkinOptions` structs and `CurveNetworkDiagnostic` error reporting for surface constructors in `monstertruck-geometry`.
 - **Fallible surface constructors** -- `BsplineSurface` gains `try_*` methods that return `Result` instead of panicking, with error variants in `monstertruck-geometry::errors`.
