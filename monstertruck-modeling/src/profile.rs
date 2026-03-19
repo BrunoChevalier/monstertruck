@@ -205,6 +205,44 @@ where
     Ok(result)
 }
 
+/// Merges multiple sets of wires into a single flat wire collection.
+///
+/// This is the primary entry point for combining wires from different sources
+/// (e.g., font glyph outlines, custom sketch loops) into a single profile
+/// that can be passed to [`attach_plane_normalized`] or
+/// [`solid_from_planar_profile`].
+///
+/// The merged wires do not need pre-normalized winding -- the downstream
+/// [`attach_plane_normalized`] call handles outer/hole classification and
+/// winding normalization automatically.
+///
+/// # Examples
+///
+/// ```ignore
+/// let glyph_wires = text::glyph_profile(&face, glyph_id, &opts)?;
+/// let custom_outer = vec![my_rectangle_wire];
+/// let merged = profile::merge_profiles(vec![custom_outer, glyph_wires]);
+/// let face = profile::attach_plane_normalized(merged)?;
+/// ```
+pub fn merge_profiles<C>(wire_sets: Vec<Vec<Wire<C>>>) -> Vec<Wire<C>> {
+    wire_sets.into_iter().flatten().collect()
+}
+
+/// Constructs a [`Face`] from a mixture of wire sources with automatic
+/// outer/hole classification.
+///
+/// Equivalent to calling [`merge_profiles`] followed by
+/// [`attach_plane_normalized`], but provides a single-call API for the
+/// common use case.
+pub fn face_from_mixed_profiles<C, S>(wire_sets: Vec<Vec<Wire<C>>>) -> Result<Face<C, S>>
+where
+    C: ParametricCurve3D + BoundedCurve + Clone + Invertible,
+    Plane: IncludeCurve<C> + ToSameGeometry<S>,
+{
+    let merged = merge_profiles(wire_sets);
+    attach_plane_normalized(merged)
+}
+
 /// Attaches a plane to a set of wires with automatic loop orientation
 /// normalization.
 ///
@@ -521,6 +559,30 @@ mod tests {
         let shell = &solid.boundaries()[0];
         // Bottom face + top face + 4 outer sides + 4 inner sides = 10 faces.
         assert_eq!(shell.len(), 10);
+    }
+
+    #[test]
+    fn merge_profiles_flat() {
+        let w1 = rect_wire(-1.0, -1.0, 0.0, 0.0);
+        let w2 = rect_wire(1.0, 1.0, 2.0, 2.0);
+        let w3 = rect_wire(3.0, 3.0, 4.0, 4.0);
+        let merged = merge_profiles(vec![vec![w1], vec![w2], vec![w3]]);
+        assert_eq!(merged.len(), 3);
+    }
+
+    #[test]
+    fn merge_profiles_empty() {
+        let merged = merge_profiles::<Curve>(vec![vec![], vec![]]);
+        assert_eq!(merged.len(), 0);
+    }
+
+    #[test]
+    fn merge_profiles_mixed_sizes() {
+        let w1 = rect_wire(-2.0, -2.0, 0.0, 0.0);
+        let w2 = rect_wire(1.0, 1.0, 2.0, 2.0);
+        let w3 = rect_wire(3.0, 3.0, 4.0, 4.0);
+        let merged = merge_profiles(vec![vec![w1, w2], vec![w3]]);
+        assert_eq!(merged.len(), 3);
     }
 
     #[test]
