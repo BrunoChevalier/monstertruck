@@ -165,6 +165,12 @@ pub mod fair;
 /// Curve and surface offset operations.
 pub mod offset;
 
+/// Typed option structs for surface construction methods.
+pub mod surface_options;
+
+/// Diagnostic types for curve network compatibility errors.
+pub mod surface_diagnostics;
+
 mod bspline_curve;
 mod bspline_surface;
 mod knot_vector;
