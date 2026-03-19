@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 23 | Approval-needed: 0 | Total: 23
+**Summary:** Auto-fixes: 26 | Approval-needed: 0 | Total: 26
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -160,4 +160,25 @@
 **Category:** bug
 **Description:** Boolean unit tests (adjacent_cubes_or, punched_cube, and all new overlapping/chained tests) fail with pre-existing MissingPolygon error -- boolean operations fail on builder::extrude cubes. This is outside plan scope (monstertruck-meshing triangulation). Tests are correctly written and will pass when the underlying bug is fixed.
 **Files changed:** monstertruck-solid/src/transversal/integrate/tests.rs
+**Status:** applied
+
+### [2026-03-19T09:15:13.516Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** TDD exempt: Task adds explicit use-imports for symbols already in scope via glob re-export. No behavioral change. Falls under TD-03 re-export exemption.
+**Files changed:** monstertruck-meshing/src/tessellation/mod.rs, monstertruck-meshing/src/tessellation/triangulation.rs, monstertruck-meshing/src/tessellation/boundary_stitching.rs, monstertruck-meshing/src/analyzers/collision.rs
+**Status:** applied
+
+### [2026-03-19T09:16:57.674Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** boundary_stitching.rs: TOLERANCE only used in #[cfg(test)] block, not in non-test code. Moved explicit import into test module to avoid unused-import warning.
+**Files changed:** monstertruck-meshing/src/tessellation/boundary_stitching.rs
+**Status:** applied
+
+### [2026-03-19T09:17:42.737Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing test compilation errors in monstertruck-meshing/tests/vtk.rs (truncate ambiguity) and tests/analyzers/collision.rs (cross method reference). These block cargo nextest run -p monstertruck-meshing but are unrelated to tolerance import changes.
+**Files changed:** monstertruck-meshing/tests/vtk.rs, monstertruck-meshing/tests/analyzers/collision.rs
 **Status:** applied
