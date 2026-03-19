@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 12 of 12 (Font Pipeline and Final Documentation)
-**Plan:** 1 of 2
+**Plan:** 2 of 2
 **Progress:**
 
 
