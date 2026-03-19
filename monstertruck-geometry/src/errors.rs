@@ -1,3 +1,4 @@
+use crate::nurbs::surface_diagnostics::CurveNetworkDiagnostic;
 use thiserror::Error;
 
 /// Error handler for [`Error`](./errors/enum.Error.html)
@@ -255,6 +256,29 @@ the number of control points: {1}"
     /// An edge in T-NURCC constructor has more than 2 faces.
     #[error("An edge in T-NURCC constructor has been defined to have more than 2 faces.")]
     TnurccEdgeTripleFace,
+    /// Surface construction failed due to invalid curve network.
+    #[error("curve network is incompatible: {0}")]
+    CurveNetworkIncompatible(CurveNetworkDiagnostic),
+    /// Surface construction requires more sections.
+    #[error("surface construction requires at least {required} sections, got {got}")]
+    InsufficientSections {
+        /// Minimum required count.
+        required: usize,
+        /// Actual count provided.
+        got: usize,
+    },
+    /// Surface construction failed due to degenerate or invalid inputs.
+    #[error("surface construction failed: {reason}")]
+    SurfaceConstructionFailed {
+        /// Description of the failure.
+        reason: String,
+    },
+}
+
+impl From<CurveNetworkDiagnostic> for Error {
+    fn from(d: CurveNetworkDiagnostic) -> Self {
+        Error::CurveNetworkIncompatible(d)
+    }
 }
 
 #[test]
@@ -272,5 +296,31 @@ fn print_messages() {
     writeln!(stderr, "{}\n", Error::EmptyControlPoints).unwrap();
     writeln!(stderr, "{}\n", Error::TooShortKnotVector(1, 2)).unwrap();
     writeln!(stderr, "{}\n", Error::IrregularControlPoints).unwrap();
+    writeln!(
+        stderr,
+        "{}\n",
+        Error::CurveNetworkIncompatible(CurveNetworkDiagnostic::InsufficientCurves {
+            required: 2,
+            got: 0,
+        })
+    )
+    .unwrap();
+    writeln!(
+        stderr,
+        "{}\n",
+        Error::InsufficientSections {
+            required: 2,
+            got: 1,
+        }
+    )
+    .unwrap();
+    writeln!(
+        stderr,
+        "{}\n",
+        Error::SurfaceConstructionFailed {
+            reason: "test".into(),
+        }
+    )
+    .unwrap();
     writeln!(stderr, "*******************************************************").unwrap();
 }
