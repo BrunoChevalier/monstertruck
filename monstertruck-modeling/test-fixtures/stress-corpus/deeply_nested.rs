@@ -1,6 +1,7 @@
 //! Deeply nested hole fixtures for the stress corpus.
 
-use monstertruck_modeling::*;
+use super::make_rectangle;
+use monstertruck_modeling::Wire;
 
 /// Five concentric rectangular wires simulating deeply nested containment.
 ///
@@ -23,7 +24,7 @@ pub fn deeply_nested_holes() -> Vec<Wire> {
         .iter()
         .map(|&size| {
             let half = size / 2.0;
-            make_centered_rectangle(half)
+            make_rectangle(-half, -half, half, half)
         })
         .collect()
 }
@@ -43,10 +44,7 @@ pub fn deeply_nested_holes() -> Vec<Wire> {
 /// **Real-world analog:** Perforated or dotted patterns in decorative
 /// fonts, or bitmap-style fonts with many small features.
 pub fn high_loop_count() -> Vec<Wire> {
-    let mut wires = Vec::with_capacity(21);
-
-    // Outer rectangle: 0..20 x 0..25.
-    wires.push(make_rectangle(0.0, 0.0, 20.0, 25.0));
+    let mut wires = vec![make_rectangle(0.0, 0.0, 20.0, 25.0)];
 
     // 4x5 grid of small rectangles inside the outer one.
     for row in 0..5 {
@@ -58,24 +56,4 @@ pub fn high_loop_count() -> Vec<Wire> {
     }
 
     wires
-}
-
-/// Helper: constructs a closed rectangular wire centered at origin.
-fn make_centered_rectangle(half: f64) -> Wire {
-    make_rectangle(-half, -half, half, half)
-}
-
-/// Helper: constructs a closed rectangular wire from corner coordinates.
-fn make_rectangle(x0: f64, y0: f64, x1: f64, y1: f64) -> Wire {
-    let v0 = builder::vertex(Point3::new(x0, y0, 0.0));
-    let v1 = builder::vertex(Point3::new(x1, y0, 0.0));
-    let v2 = builder::vertex(Point3::new(x1, y1, 0.0));
-    let v3 = builder::vertex(Point3::new(x0, y1, 0.0));
-
-    let e0: Edge = builder::line(&v0, &v1);
-    let e1: Edge = builder::line(&v1, &v2);
-    let e2: Edge = builder::line(&v2, &v3);
-    let e3: Edge = builder::line(&v3, &v0);
-
-    vec![e0, e1, e2, e3].into()
 }

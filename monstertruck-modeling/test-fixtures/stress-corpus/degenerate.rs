@@ -1,5 +1,6 @@
 //! Degenerate geometry fixtures for the stress corpus.
 
+use super::make_rectangle;
 use monstertruck_modeling::*;
 
 /// A closed contour of cubic Bezier edges where all control points
@@ -56,10 +57,10 @@ pub fn coincident_control_points() -> Vec<Wire> {
 /// applied).
 pub fn reverse_wound_hole() -> Vec<Wire> {
     // Outer rectangle: (0,0) to (4,4), wound CCW.
-    let outer = make_rectangle_ccw(0.0, 0.0, 4.0, 4.0);
+    let outer = make_rectangle(0.0, 0.0, 4.0, 4.0);
 
     // Inner rectangle: (1,1) to (3,3), wound CW via inverse.
-    let inner_ccw = make_rectangle_ccw(1.0, 1.0, 3.0, 3.0);
+    let inner_ccw = make_rectangle(1.0, 1.0, 3.0, 3.0);
     let inner_cw = inner_ccw.inverse();
 
     vec![outer, inner_cw]
@@ -95,19 +96,4 @@ pub fn single_point_degeneracy() -> Vec<Wire> {
     let e4: Edge = builder::line(&v4, &v0);
 
     vec![vec![e0, e1, e2, e3, e4].into()]
-}
-
-/// Helper: constructs a closed rectangular wire wound CCW.
-fn make_rectangle_ccw(x0: f64, y0: f64, x1: f64, y1: f64) -> Wire {
-    let v0 = builder::vertex(Point3::new(x0, y0, 0.0));
-    let v1 = builder::vertex(Point3::new(x1, y0, 0.0));
-    let v2 = builder::vertex(Point3::new(x1, y1, 0.0));
-    let v3 = builder::vertex(Point3::new(x0, y1, 0.0));
-
-    let e0: Edge = builder::line(&v0, &v1);
-    let e1: Edge = builder::line(&v1, &v2);
-    let e2: Edge = builder::line(&v2, &v3);
-    let e3: Edge = builder::line(&v3, &v0);
-
-    vec![e0, e1, e2, e3].into()
 }
