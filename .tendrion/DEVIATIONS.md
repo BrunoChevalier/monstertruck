@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 29 | Approval-needed: 0 | Total: 29
+**Summary:** Auto-fixes: 30 | Approval-needed: 0 | Total: 30
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -202,4 +202,11 @@
 **Category:** design
 **Description:** Used SVD-based pseudoinverse instead of direct matrix inverse for affine_fit_3x3 to handle coplanar reference points (rank 2 covariance). Direct inverse fails when reference points lie in a plane; pseudoinverse gracefully handles rank-deficient cases while still detecting truly degenerate (rank < 2) configurations.
 **Files changed:** monstertruck-geometry/src/nurbs/bspline_surface.rs
+**Status:** applied
+
+### [2026-03-19T13:25:09.018Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing compilation error in geom_impls.rs proptest: prop_assert_near! comparing Rad<f64> instead of f64. Fixed by extracting .0 fields.
+**Files changed:** monstertruck-modeling/src/geom_impls.rs
 **Status:** applied
