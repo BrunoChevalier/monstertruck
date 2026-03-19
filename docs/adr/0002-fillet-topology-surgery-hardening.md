@@ -45,3 +45,7 @@ These checks are integrated into fillet operations (`ops.rs`, `edge_select.rs`) 
 ## Status Update (Phase 9)
 
 Phase 9 replaced the hardcoded `1.0e-6` in `edge_select.rs` with the canonical `TOLERANCE` constant from `monstertruck-core`, aligning fillet edge selection with the project-wide tolerance policy established in this phase. Gap-fix work also hardened the boolean pipeline: `weld_compressed_shell` was corrected and coincident face detection no longer self-compares, improving stability of boolean-produced solids that feed into fillet operations. The topology surgery hardening from this ADR remains unchanged.
+
+## Status Update (Phase 10)
+
+No changes to fillet topology surgery. Phase 10 added a NURBS fixture corpus with degenerate surface cases and surface healing hooks (`heal_surface_shell`) for sweep/birail/gordon constructors in `monstertruck-solid::healing`. The healing pipeline complements this ADR's pre-cut edge conversion by ensuring surfaces are well-formed before they enter topology operations. Integration tests validate that healed surfaces produce valid closed shells.

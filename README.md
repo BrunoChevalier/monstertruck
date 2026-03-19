@@ -124,7 +124,13 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 9 -- Boolean Repair & Tolerance Foundation)
+### Recent Changes (Phase 10 -- NURBS Fixture Corpus & Surface Healing)
+
+- **NURBS fixture corpus** -- 10 reusable NURBS fixtures (`monstertruck-geometry/src/nurbs/test_fixtures.rs`) covering degenerate surfaces (collapsed edges, zero-area patches, self-intersecting control nets, near-singular parameterizations) and topology builders (`monstertruck-solid/tests/fixture_helpers.rs`) for constructing shells from fixture surfaces.
+- **Surface healing hooks** -- New `heal_surface_shell` in `monstertruck-solid::healing::surface_healing` detects and repairs degenerate NURBS surfaces produced by `sweep_rail`, `birail`, and `gordon` constructors, applying knot-insertion and control-point perturbation before downstream topology assembly.
+- **Integration tests** -- 7 integration tests exercise 4+ degenerate fixtures through the healing pipeline, asserting that healed surfaces produce valid closed shells with correct Euler-Poincare invariants.
+
+### Earlier Changes (Phase 9 -- Boolean Repair & Tolerance Foundation)
 
 - **Tolerance policy** -- `monstertruck-core::tolerance` now has comprehensive documentation of the numeric tolerance policy (TOLERANCE, TOLERANCE2, Tolerance trait, OperationTolerance). The hardcoded `1.0e-6` in fillet `edge_select` was replaced with the canonical `TOLERANCE` constant. Regression tests pin tolerance values.
 - **Boolean face classification hardening** -- `faces_classification::integrate_by_component` uses majority-edge scoring with `FxHashSet` and no longer panics on empty boundary components. Unknown-face classification falls back to a conservative default instead of returning an error.

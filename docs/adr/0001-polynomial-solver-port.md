@@ -46,3 +46,7 @@ No changes to the polynomial solver module. Phase 8 added topology validation (E
 ## Status Update (Phase 9)
 
 No changes to the polynomial solver module. Phase 9 focused on boolean operation hardening (face classification, shell healing, tolerance documentation) and establishing a tolerance policy in `monstertruck-core`. A `Matrix4::from_translation` column-placement bug in `monstertruck-math` was fixed during gap-fix verification, but the polynomial solver module itself was unaffected.
+
+## Status Update (Phase 10)
+
+No changes to the polynomial solver module. Phase 10 introduced a NURBS fixture corpus and surface healing hooks in `monstertruck-solid`; the math layer was unaffected.
