@@ -1,5 +1,4 @@
 use monstertruck_geometry::errors::Error;
-use monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic;
 use monstertruck_geometry::nurbs::surface_options::{Birail1Options, Birail2Options, SweepRailOptions};
 use monstertruck_geometry::prelude::*;
 

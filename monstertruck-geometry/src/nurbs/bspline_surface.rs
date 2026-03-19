@@ -1,5 +1,7 @@
 use super::*;
 use crate::errors::Error;
+use crate::nurbs::surface_diagnostics::CurveNetworkDiagnostic;
+use crate::nurbs::surface_options::{Birail1Options, Birail2Options, SweepRailOptions};
 use algo::surface::{SearchNearestParameterVector, SearchParameterVector};
 use std::iter::FusedIterator;
 use std::ops::*;
@@ -1549,6 +1551,7 @@ impl BsplineSurface<Point3> {
     /// assert_near2!(surface.subs(0.0, 1.0), Point3::new(-1.0, 0.0, 5.0));
     /// assert_near2!(surface.subs(1.0, 1.0), Point3::new(1.0, 0.0, 5.0));
     /// ```
+    #[deprecated(since = "0.5.0", note = "use try_sweep_rail with SweepRailOptions")]
     pub fn sweep_rail(
         profile: BsplineCurve<Point3>,
         rail: &BsplineCurve<Point3>,
@@ -1629,6 +1632,7 @@ impl BsplineSurface<Point3> {
     /// assert_near2!(surface.subs(0.0, 1.0), Point3::new(-1.0, 0.0, 5.0));
     /// assert_near2!(surface.subs(1.0, 1.0), Point3::new(1.0, 0.0, 5.0));
     /// ```
+    #[deprecated(since = "0.5.0", note = "use try_birail1 with Birail1Options")]
     pub fn birail1(
         profile: BsplineCurve<Point3>,
         rail1: &BsplineCurve<Point3>,
@@ -1723,6 +1727,7 @@ impl BsplineSurface<Point3> {
     /// assert_near2!(surface.subs(0.0, 1.0), Point3::new(0.0, 0.0, 4.0));
     /// assert_near2!(surface.subs(1.0, 1.0), Point3::new(2.0, 0.0, 4.0));
     /// ```
+    #[deprecated(since = "0.5.0", note = "use try_birail2 with Birail2Options")]
     pub fn birail2(
         profile1: BsplineCurve<Point3>,
         profile2: BsplineCurve<Point3>,
@@ -1799,6 +1804,219 @@ impl BsplineSurface<Point3> {
             .collect();
 
         BsplineSurface::skin(sections)
+    }
+
+    /// Fallible single-rail sweep using typed options.
+    ///
+    /// Returns [`Error::InsufficientSections`] if `options.n_sections < 2`.
+    /// Returns [`Error::SurfaceConstructionFailed`] if the rail tangent at the
+    /// start is degenerate (zero-length).
+    pub fn try_sweep_rail(
+        profile: BsplineCurve<Point3>,
+        rail: &BsplineCurve<Point3>,
+        options: &SweepRailOptions,
+    ) -> Result<BsplineSurface<Point3>> {
+        let n_sections = options.n_sections;
+        if n_sections < 2 {
+            return Err(Error::InsufficientSections {
+                required: 2,
+                got: n_sections,
+            });
+        }
+
+        let (t_start, t_end) = rail.range_tuple();
+        let rail_origin = rail.subs(t_start);
+        let tangent0 = rail.derivative(t_start);
+        let t0_len = tangent0.magnitude();
+
+        if t0_len.so_small() {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::DegenerateGeometry {
+                    description: "rail tangent at start is zero-length".into(),
+                },
+            ));
+        }
+
+        let sections: Vec<BsplineCurve<Point3>> = (0..n_sections)
+            .map(|i| {
+                let t = t_start + (t_end - t_start) * i as f64 / (n_sections - 1) as f64;
+                let rail_pt = rail.subs(t);
+                let tangent_i = rail.derivative(t);
+                let translation = rail_pt - rail_origin;
+
+                // Compute rotation from initial tangent to current tangent.
+                let rotation = if tangent_i.magnitude().so_small() {
+                    Matrix3::from_value(1.0)
+                } else {
+                    rotation_between(tangent0, tangent_i)
+                };
+
+                let mut section = profile.clone();
+                section.transform_control_points(|pt| {
+                    let local = *pt - rail_origin;
+                    let rotated = rotation * local;
+                    *pt = rail_origin + rotated + translation;
+                });
+                section
+            })
+            .collect();
+
+        Ok(BsplineSurface::skin(sections))
+    }
+
+    /// Fallible single-profile birail using typed options.
+    ///
+    /// Returns [`Error::InsufficientSections`] if `options.n_sections < 2`.
+    /// Returns [`Error::CurveNetworkIncompatible`] with
+    /// [`CurveNetworkDiagnostic::DegenerateGeometry`] if the profile chord is
+    /// zero-length.
+    pub fn try_birail1(
+        profile: BsplineCurve<Point3>,
+        rail1: &BsplineCurve<Point3>,
+        rail2: &BsplineCurve<Point3>,
+        options: &Birail1Options,
+    ) -> Result<BsplineSurface<Point3>> {
+        let n_sections = options.n_sections;
+        if n_sections < 2 {
+            return Err(Error::InsufficientSections {
+                required: 2,
+                got: n_sections,
+            });
+        }
+
+        let (r_start, r_end) = rail1.range_tuple();
+        let (u_start, u_end) = profile.range_tuple();
+        let p_start = profile.subs(u_start);
+        let p_end = profile.subs(u_end);
+        let chord = p_end - p_start;
+        let chord_len = chord.magnitude();
+
+        let sections: Vec<BsplineCurve<Point3>> = (0..n_sections)
+            .map(|i| {
+                let t = r_start + (r_end - r_start) * i as f64 / (n_sections - 1) as f64;
+                let r1_pt = rail1.subs(t);
+                let r2_pt = rail2.subs(t);
+                let target_chord = r2_pt - r1_pt;
+                let target_len = target_chord.magnitude();
+
+                // Scale factor from profile chord to target chord.
+                let scale = if chord_len.so_small() {
+                    1.0
+                } else {
+                    target_len / chord_len
+                };
+
+                // Rotation from profile chord to target chord direction.
+                let rotation = if chord_len.so_small() || target_len.so_small() {
+                    Matrix3::from_value(1.0)
+                } else {
+                    rotation_between(chord, target_chord)
+                };
+
+                let mut section = profile.clone();
+                section.transform_control_points(|pt| {
+                    let local = *pt - p_start;
+                    let transformed = rotation * local * scale;
+                    *pt = r1_pt + transformed;
+                });
+                section
+            })
+            .collect();
+
+        Ok(BsplineSurface::skin(sections))
+    }
+
+    /// Fallible dual-profile birail using typed options.
+    ///
+    /// Returns [`Error::InsufficientSections`] if `options.n_sections < 2`.
+    /// Returns [`Error::CurveNetworkIncompatible`] with
+    /// [`CurveNetworkDiagnostic::CompatNormalizationFailed`] if profile
+    /// compatibility normalization fails.
+    pub fn try_birail2(
+        profile1: BsplineCurve<Point3>,
+        profile2: BsplineCurve<Point3>,
+        rail1: &BsplineCurve<Point3>,
+        rail2: &BsplineCurve<Point3>,
+        options: &Birail2Options,
+    ) -> Result<BsplineSurface<Point3>> {
+        let n_sections = options.n_sections;
+        if n_sections < 2 {
+            return Err(Error::InsufficientSections {
+                required: 2,
+                got: n_sections,
+            });
+        }
+
+        let (r_start, r_end) = rail1.range_tuple();
+
+        let (u1_start, u1_end) = profile1.range_tuple();
+        let p1_start = profile1.subs(u1_start);
+        let p1_end = profile1.subs(u1_end);
+        let chord1 = p1_end - p1_start;
+        let chord1_len = chord1.magnitude();
+
+        let (u2_start, u2_end) = profile2.range_tuple();
+        let p2_start = profile2.subs(u2_start);
+        let p2_end = profile2.subs(u2_end);
+        let chord2 = p2_end - p2_start;
+        let chord2_len = chord2.magnitude();
+
+        // Make profiles compatible so we can blend control points.
+        let mut compat_profiles = vec![profile1, profile2];
+        compat::make_curves_compatible(&mut compat_profiles).map_err(|e| {
+            Error::CurveNetworkIncompatible(CurveNetworkDiagnostic::CompatNormalizationFailed {
+                reason: e.to_string(),
+            })
+        })?;
+
+        let sections: Vec<BsplineCurve<Point3>> = (0..n_sections)
+            .map(|i| {
+                let v = i as f64 / (n_sections - 1) as f64;
+                let t = r_start + (r_end - r_start) * v;
+                let r1_pt = rail1.subs(t);
+                let r2_pt = rail2.subs(t);
+                let target_chord = r2_pt - r1_pt;
+                let target_len = target_chord.magnitude();
+
+                // Transform profile to span r1->r2.
+                let transform_profile =
+                    |prof: &BsplineCurve<Point3>, p_s: Point3, ch: Vector3, ch_len: f64| {
+                        let scale = if ch_len.so_small() {
+                            1.0
+                        } else {
+                            target_len / ch_len
+                        };
+                        let rotation = if ch_len.so_small() || target_len.so_small() {
+                            Matrix3::from_value(1.0)
+                        } else {
+                            rotation_between(ch, target_chord)
+                        };
+                        let mut s = prof.clone();
+                        s.transform_control_points(|pt| {
+                            let local = *pt - p_s;
+                            let transformed = rotation * local * scale;
+                            *pt = r1_pt + transformed;
+                        });
+                        s
+                    };
+
+                let s1 = transform_profile(&compat_profiles[0], p1_start, chord1, chord1_len);
+                let s2 = transform_profile(&compat_profiles[1], p2_start, chord2, chord2_len);
+
+                // Blend: (1-v) * s1 + v * s2.
+                let cp1 = s1.control_points();
+                let cp2 = s2.control_points();
+                let blended_cp: Vec<Point3> = cp1
+                    .iter()
+                    .zip(cp2.iter())
+                    .map(|(a, b)| *a + (*b - *a) * v)
+                    .collect();
+
+                BsplineCurve::new_unchecked(s1.knot_vec().clone(), blended_cp)
+            })
+            .collect();
+
+        Ok(BsplineSurface::skin(sections))
     }
 
     /// Sweeps a profile curve along multiple rail curves with affine fitting.
