@@ -296,13 +296,17 @@ where
     Line<Point3>: ToSameGeometry<C>,
 {
     let face: Face<C, S> = attach_plane_normalized(wires)?;
-    let solid: monstertruck_topology::Solid<Point3, C, S> =
-        crate::builder::revolve(&face, origin, axis, angle, division);
-    Ok(solid)
+    Ok(crate::builder::revolve(&face, origin, axis, angle, division))
 }
 
-/// Converts an [`Edge`] curve to a [`BsplineCurve<Point3>`], supporting
-/// [`Curve::Line`] and [`Curve::BsplineCurve`] variants.
+/// Extracts the curve from an [`Edge`] as a [`BsplineCurve<Point3>`].
+///
+/// Supports [`Curve::Line`] (converted to degree-1 B-spline) and
+/// [`Curve::BsplineCurve`] (used directly).
+///
+/// # Errors
+///
+/// Returns [`Error::UnsupportedCurveType`] for other curve variants.
 fn edge_curve_to_bspline(
     edge: &monstertruck_topology::Edge<Point3, crate::Curve>,
 ) -> Result<BsplineCurve<Point3>> {
@@ -314,6 +318,41 @@ fn edge_curve_to_bspline(
         crate::Curve::BsplineCurve(bsp) => Ok(bsp),
         _ => Err(Error::UnsupportedCurveType),
     }
+}
+
+/// Builds the end cap face by transforming profile wires from the guide's start
+/// to its end, accounting for both translation and tangent rotation.
+fn build_end_cap(
+    normalized: &[Wire<crate::Curve>],
+    guide: &BsplineCurve<Point3>,
+) -> Result<Face<crate::Curve, crate::Surface>> {
+    let (t_start, t_end) = guide.range_tuple();
+    let start_pt = guide.subs(t_start);
+    let end_pt = guide.subs(t_end);
+    let translation = end_pt - start_pt;
+
+    let tangent_start = guide.der(t_start).normalize();
+    let tangent_end = guide.der(t_end).normalize();
+
+    let transform = if tangent_start.cross(&tangent_end).so_small() {
+        Matrix4::from_translation(translation)
+    } else {
+        let rot_axis = tangent_start.cross(&tangent_end).normalize();
+        let cos_angle = tangent_start.dot(tangent_end).clamp(-1.0, 1.0);
+        let rot_angle = Rad(f64::acos(cos_angle));
+        let rotation = Matrix4::from_axis_angle(rot_axis, rot_angle);
+        let rot_at_origin = Matrix4::from_translation(-start_pt.to_vec())
+            * rotation.transpose()
+            * Matrix4::from_translation(start_pt.to_vec());
+        Matrix4::from_translation(translation) * rot_at_origin
+    };
+
+    let end_wires: Vec<Wire<crate::Curve>> = normalized
+        .iter()
+        .map(|w| crate::Mapped::mapped(w, transform))
+        .collect();
+
+    crate::builder::try_attach_plane(end_wires)
 }
 
 /// Constructs a [`Solid`] by sweeping a planar profile along a 3D guide curve.
@@ -337,54 +376,21 @@ pub fn sweep_from_planar_profile(
 ) -> Result<monstertruck_topology::Solid<Point3, crate::Curve, crate::Surface>> {
     let normalized = classify_and_normalize(wires)?;
 
-    // Start cap face.
+    // Start cap face (inverted to face inward at the start).
     let start_cap: Face<crate::Curve, crate::Surface> =
         crate::builder::try_attach_plane(normalized.clone())?;
 
     // Build swept side faces from each edge of the outer wire.
-    let outer_wire = &normalized[0];
-    let side_faces: Vec<monstertruck_topology::Face<Point3, crate::Curve, crate::Surface>> =
-        outer_wire
-            .edge_iter()
-            .map(|edge| {
-                let profile_bsp = edge_curve_to_bspline(edge)?;
-                crate::builder::try_sweep_rail(&profile_bsp, guide, n_sections)
-            })
-            .collect::<Result<Vec<_>>>()?;
+    let side_faces = normalized[0]
+        .edge_iter()
+        .map(|edge| {
+            let profile_bsp = edge_curve_to_bspline(edge)?;
+            crate::builder::try_sweep_rail(&profile_bsp, guide, n_sections)
+        })
+        .collect::<Result<Vec<_>>>()?;
 
-    // Build end cap: transform the normalized wires to the guide's end.
-    let (t_start, t_end) = guide.range_tuple();
-    let start_pt = guide.subs(t_start);
-    let end_pt = guide.subs(t_end);
-    let translation = end_pt - start_pt;
-
-    // Compute rotation from start tangent to end tangent.
-    let tangent_start = guide.der(t_start).normalize();
-    let tangent_end = guide.der(t_end).normalize();
-
-    let transform = if tangent_start.cross(&tangent_end).so_small() {
-        // Tangents are parallel; just translate.
-        Matrix4::from_translation(translation)
-    } else {
-        // Rotate from start tangent to end tangent, then translate.
-        let rot_axis = tangent_start.cross(&tangent_end).normalize();
-        let cos_angle = tangent_start.dot(tangent_end).clamp(-1.0, 1.0);
-        let rot_angle = Rad(f64::acos(cos_angle));
-        let rotation = Matrix4::from_axis_angle(rot_axis, rot_angle);
-        // Apply rotation around start point, then translate.
-        let rot_at_origin = Matrix4::from_translation(-start_pt.to_vec())
-            * rotation.transpose()
-            * Matrix4::from_translation(start_pt.to_vec());
-        Matrix4::from_translation(translation) * rot_at_origin
-    };
-
-    let end_wires: Vec<Wire<crate::Curve>> = normalized
-        .iter()
-        .map(|w| crate::Mapped::mapped(w, transform))
-        .collect();
-
-    let end_cap: monstertruck_topology::Face<Point3, crate::Curve, crate::Surface> =
-        crate::builder::try_attach_plane(end_wires)?;
+    // Build end cap by transforming the profile to the guide's end.
+    let end_cap = build_end_cap(&normalized, guide)?;
 
     // Assemble into a shell and solid.
     let mut shell = monstertruck_topology::Shell::new();
