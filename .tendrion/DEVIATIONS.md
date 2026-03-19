@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 34 | Approval-needed: 0 | Total: 34
+**Summary:** Auto-fixes: 35 | Approval-needed: 0 | Total: 35
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -236,5 +236,12 @@
 **Type:** auto-fix
 **Category:** dependency
 **Description:** Exempt: Task 1 and Task 2 are pure documentation updates (AYAM_PORT_PLAN.md). No runtime code, no testable behavior. TDD exempted per 'Configuration constants with no logic' rule.
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-19T15:18:44.530Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing compile errors in monstertruck-geometry lib test target (approx_fillet_surface.rs, t_nurcc_edge.rs) prevent running --lib tests. Using --test binaries instead.
 **Files changed:** none
 **Status:** applied
