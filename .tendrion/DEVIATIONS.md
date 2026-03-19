@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 42 | Approval-needed: 0 | Total: 42
+**Summary:** Auto-fixes: 43 | Approval-needed: 0 | Total: 43
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -292,4 +292,11 @@
 **Category:** bug
 **Description:** 6 pre-existing test failures in monstertruck-solid fillet tests (generic_fillet_*, test_unit_circle). Not caused by this plan's changes.
 **Files changed:** none
+**Status:** applied
+
+### [2026-03-19T23:15:07.551Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** RED tests pass immediately: this is a pure refactoring task where deprecated methods already produce identical output to try_* methods. Characterization tests written to guard behavior during refactoring.
+**Files changed:** monstertruck-geometry/tests/deprecated_delegation_test.rs
 **Status:** applied
