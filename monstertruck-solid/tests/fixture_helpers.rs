@@ -263,10 +263,7 @@ pub fn fixture_gordon_degenerate_shell() -> CompressedShell<Point3, Curve, Surfa
     let vertices = vec![p00, pm0, p10, p01, pm1, p11, pm0_b, pm1_b];
 
     let make_line_curve = |a: Point3, b: Point3| -> Curve {
-        Curve::BsplineCurve(BsplineCurve::new(
-            KnotVector::bezier_knot(1),
-            vec![a, b],
-        ))
+        Curve::BsplineCurve(BsplineCurve::new(KnotVector::bezier_knot(1), vec![a, b]))
     };
 
     // Edge layout:
@@ -374,8 +371,7 @@ pub fn fixture_gordon_degenerate_shell() -> CompressedShell<Point3, Curve, Surfa
 /// a surface pole).
 pub fn fixture_collapsed_edge_shell() -> CompressedShell<Point3, Curve, Surface> {
     // Use the degenerate surface with collapsed edge from the geometry fixtures.
-    let surface =
-        monstertruck_geometry::nurbs::test_fixtures::degenerate_surface_collapsed_edge();
+    let surface = monstertruck_geometry::nurbs::test_fixtures::degenerate_surface_collapsed_edge();
 
     let (u_knots, v_knots) = surface.knot_vecs();
     let u0 = u_knots[0];
@@ -394,10 +390,7 @@ pub fn fixture_collapsed_edge_shell() -> CompressedShell<Point3, Curve, Surface>
     let vertices = vec![p_top, p_bottom_left, p_bottom_right];
 
     let make_line_curve = |a: Point3, b: Point3| -> Curve {
-        Curve::BsplineCurve(BsplineCurve::new(
-            KnotVector::bezier_knot(1),
-            vec![a, b],
-        ))
+        Curve::BsplineCurve(BsplineCurve::new(KnotVector::bezier_knot(1), vec![a, b]))
     };
 
     let edges = vec![

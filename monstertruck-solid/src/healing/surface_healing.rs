@@ -313,28 +313,64 @@ mod tests {
         let mut shell: CompressedShell<Point3, Line<Point3>, ()> = CompressedShell {
             vertices: vec![v0, v1, v2, v3, v4, v5],
             edges: vec![
-                CompressedEdge { vertices: (0, 1), curve: Line(v0, v1) },
-                CompressedEdge { vertices: (1, 2), curve: Line(v1, v2) },
-                CompressedEdge { vertices: (2, 0), curve: Line(v2, v0) },
-                CompressedEdge { vertices: (3, 4), curve: Line(v3, v4) },
-                CompressedEdge { vertices: (4, 5), curve: Line(v4, v5) },
-                CompressedEdge { vertices: (5, 3), curve: Line(v5, v3) },
+                CompressedEdge {
+                    vertices: (0, 1),
+                    curve: Line(v0, v1),
+                },
+                CompressedEdge {
+                    vertices: (1, 2),
+                    curve: Line(v1, v2),
+                },
+                CompressedEdge {
+                    vertices: (2, 0),
+                    curve: Line(v2, v0),
+                },
+                CompressedEdge {
+                    vertices: (3, 4),
+                    curve: Line(v3, v4),
+                },
+                CompressedEdge {
+                    vertices: (4, 5),
+                    curve: Line(v4, v5),
+                },
+                CompressedEdge {
+                    vertices: (5, 3),
+                    curve: Line(v5, v3),
+                },
             ],
             faces: vec![
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 0, orientation: true },
-                        CompressedEdgeIndex { index: 1, orientation: true },
-                        CompressedEdgeIndex { index: 2, orientation: true },
+                        CompressedEdgeIndex {
+                            index: 0,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 1,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 2,
+                            orientation: true,
+                        },
                     ]],
                     orientation: true,
                     surface: (),
                 },
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 3, orientation: true },
-                        CompressedEdgeIndex { index: 4, orientation: true },
-                        CompressedEdgeIndex { index: 5, orientation: true },
+                        CompressedEdgeIndex {
+                            index: 3,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 4,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 5,
+                            orientation: true,
+                        },
                     ]],
                     orientation: true,
                     surface: (),
@@ -363,18 +399,42 @@ mod tests {
         let mut shell: CompressedShell<Point3, Line<Point3>, ()> = CompressedShell {
             vertices: vec![v0, v1, v2],
             edges: vec![
-                CompressedEdge { vertices: (0, 1), curve: Line(v0, v1) },
+                CompressedEdge {
+                    vertices: (0, 1),
+                    curve: Line(v0, v1),
+                },
                 // Degenerate edge: same vertex, zero-length curve.
-                CompressedEdge { vertices: (1, 1), curve: Line(v1, v1) },
-                CompressedEdge { vertices: (1, 2), curve: Line(v1, v2) },
-                CompressedEdge { vertices: (2, 0), curve: Line(v2, v0) },
+                CompressedEdge {
+                    vertices: (1, 1),
+                    curve: Line(v1, v1),
+                },
+                CompressedEdge {
+                    vertices: (1, 2),
+                    curve: Line(v1, v2),
+                },
+                CompressedEdge {
+                    vertices: (2, 0),
+                    curve: Line(v2, v0),
+                },
             ],
             faces: vec![CompressedFace {
                 boundaries: vec![vec![
-                    CompressedEdgeIndex { index: 0, orientation: true },
-                    CompressedEdgeIndex { index: 1, orientation: true },
-                    CompressedEdgeIndex { index: 2, orientation: true },
-                    CompressedEdgeIndex { index: 3, orientation: true },
+                    CompressedEdgeIndex {
+                        index: 0,
+                        orientation: true,
+                    },
+                    CompressedEdgeIndex {
+                        index: 1,
+                        orientation: true,
+                    },
+                    CompressedEdgeIndex {
+                        index: 2,
+                        orientation: true,
+                    },
+                    CompressedEdgeIndex {
+                        index: 3,
+                        orientation: true,
+                    },
                 ]],
                 orientation: true,
                 surface: (),
@@ -406,27 +466,60 @@ mod tests {
         let shell: CompressedShell<Point3, Line<Point3>, ()> = CompressedShell {
             vertices: vec![v0, v1, v2, v3],
             edges: vec![
-                CompressedEdge { vertices: (0, 1), curve: Line(v0, v1) },
-                CompressedEdge { vertices: (1, 2), curve: Line(v1, v2) },
-                CompressedEdge { vertices: (2, 0), curve: Line(v2, v0) },
-                CompressedEdge { vertices: (0, 3), curve: Line(v0, v3) },
-                CompressedEdge { vertices: (3, 1), curve: Line(v3, v1) },
+                CompressedEdge {
+                    vertices: (0, 1),
+                    curve: Line(v0, v1),
+                },
+                CompressedEdge {
+                    vertices: (1, 2),
+                    curve: Line(v1, v2),
+                },
+                CompressedEdge {
+                    vertices: (2, 0),
+                    curve: Line(v2, v0),
+                },
+                CompressedEdge {
+                    vertices: (0, 3),
+                    curve: Line(v0, v3),
+                },
+                CompressedEdge {
+                    vertices: (3, 1),
+                    curve: Line(v3, v1),
+                },
             ],
             faces: vec![
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 0, orientation: true },
-                        CompressedEdgeIndex { index: 1, orientation: true },
-                        CompressedEdgeIndex { index: 2, orientation: true },
+                        CompressedEdgeIndex {
+                            index: 0,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 1,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 2,
+                            orientation: true,
+                        },
                     ]],
                     orientation: true,
                     surface: (),
                 },
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 0, orientation: false },
-                        CompressedEdgeIndex { index: 3, orientation: true },
-                        CompressedEdgeIndex { index: 4, orientation: true },
+                        CompressedEdgeIndex {
+                            index: 0,
+                            orientation: false,
+                        },
+                        CompressedEdgeIndex {
+                            index: 3,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 4,
+                            orientation: true,
+                        },
                     ]],
                     orientation: true,
                     surface: (),
@@ -459,20 +552,47 @@ mod tests {
         let shell: CompressedShell<Point3, Line<Point3>, ()> = CompressedShell {
             vertices: vec![v0, v1, v2, v3],
             edges: vec![
-                CompressedEdge { vertices: (0, 1), curve: Line(v0, v1) },
-                CompressedEdge { vertices: (0, 2), curve: Line(v0, v2) },
-                CompressedEdge { vertices: (0, 3), curve: Line(v0, v3) },
-                CompressedEdge { vertices: (1, 2), curve: Line(v1, v2) },
-                CompressedEdge { vertices: (1, 3), curve: Line(v1, v3) },
-                CompressedEdge { vertices: (2, 3), curve: Line(v2, v3) },
+                CompressedEdge {
+                    vertices: (0, 1),
+                    curve: Line(v0, v1),
+                },
+                CompressedEdge {
+                    vertices: (0, 2),
+                    curve: Line(v0, v2),
+                },
+                CompressedEdge {
+                    vertices: (0, 3),
+                    curve: Line(v0, v3),
+                },
+                CompressedEdge {
+                    vertices: (1, 2),
+                    curve: Line(v1, v2),
+                },
+                CompressedEdge {
+                    vertices: (1, 3),
+                    curve: Line(v1, v3),
+                },
+                CompressedEdge {
+                    vertices: (2, 3),
+                    curve: Line(v2, v3),
+                },
             ],
             faces: vec![
                 // Face 0: 0->1->2  edges: 0, 3, 1^-1
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 0, orientation: true },
-                        CompressedEdgeIndex { index: 3, orientation: true },
-                        CompressedEdgeIndex { index: 1, orientation: false },
+                        CompressedEdgeIndex {
+                            index: 0,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 3,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 1,
+                            orientation: false,
+                        },
                     ]],
                     orientation: true,
                     surface: (),
@@ -480,9 +600,18 @@ mod tests {
                 // Face 1: 0->3->1  edges: 2, 4^-1, 0^-1
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 2, orientation: true },
-                        CompressedEdgeIndex { index: 4, orientation: false },
-                        CompressedEdgeIndex { index: 0, orientation: false },
+                        CompressedEdgeIndex {
+                            index: 2,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 4,
+                            orientation: false,
+                        },
+                        CompressedEdgeIndex {
+                            index: 0,
+                            orientation: false,
+                        },
                     ]],
                     orientation: true,
                     surface: (),
@@ -490,9 +619,18 @@ mod tests {
                 // Face 2: 1->3->2  edges: 4, 5, 3^-1
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 4, orientation: true },
-                        CompressedEdgeIndex { index: 5, orientation: true },
-                        CompressedEdgeIndex { index: 3, orientation: false },
+                        CompressedEdgeIndex {
+                            index: 4,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 5,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 3,
+                            orientation: false,
+                        },
                     ]],
                     orientation: true,
                     surface: (),
@@ -500,9 +638,18 @@ mod tests {
                 // Face 3: 0->2->3  edges: 1, 5^-1, 2^-1
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 1, orientation: true },
-                        CompressedEdgeIndex { index: 5, orientation: false },
-                        CompressedEdgeIndex { index: 2, orientation: false },
+                        CompressedEdgeIndex {
+                            index: 1,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 5,
+                            orientation: false,
+                        },
+                        CompressedEdgeIndex {
+                            index: 2,
+                            orientation: false,
+                        },
                     ]],
                     orientation: true,
                     surface: (),
@@ -568,28 +715,64 @@ mod tests {
         let shell: CompressedShell<Point3, Curve, Surface> = CompressedShell {
             vertices: vec![v0, v1, v2, v3, v4],
             edges: vec![
-                CompressedEdge { vertices: (0, 1), curve: Curve::Line(Line(v0, v1)) },
-                CompressedEdge { vertices: (1, 2), curve: Curve::Line(Line(v1, v2)) },
-                CompressedEdge { vertices: (2, 0), curve: Curve::Line(Line(v2, v0)) },
-                CompressedEdge { vertices: (3, 4), curve: Curve::Line(Line(v3, v4)) },
-                CompressedEdge { vertices: (4, 2), curve: Curve::Line(Line(v4, v2)) },
-                CompressedEdge { vertices: (2, 3), curve: Curve::Line(Line(v2, v3)) },
+                CompressedEdge {
+                    vertices: (0, 1),
+                    curve: Curve::Line(Line(v0, v1)),
+                },
+                CompressedEdge {
+                    vertices: (1, 2),
+                    curve: Curve::Line(Line(v1, v2)),
+                },
+                CompressedEdge {
+                    vertices: (2, 0),
+                    curve: Curve::Line(Line(v2, v0)),
+                },
+                CompressedEdge {
+                    vertices: (3, 4),
+                    curve: Curve::Line(Line(v3, v4)),
+                },
+                CompressedEdge {
+                    vertices: (4, 2),
+                    curve: Curve::Line(Line(v4, v2)),
+                },
+                CompressedEdge {
+                    vertices: (2, 3),
+                    curve: Curve::Line(Line(v2, v3)),
+                },
             ],
             faces: vec![
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 0, orientation: true },
-                        CompressedEdgeIndex { index: 1, orientation: true },
-                        CompressedEdgeIndex { index: 2, orientation: true },
+                        CompressedEdgeIndex {
+                            index: 0,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 1,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 2,
+                            orientation: true,
+                        },
                     ]],
                     orientation: true,
                     surface: plane,
                 },
                 CompressedFace {
                     boundaries: vec![vec![
-                        CompressedEdgeIndex { index: 3, orientation: true },
-                        CompressedEdgeIndex { index: 4, orientation: true },
-                        CompressedEdgeIndex { index: 5, orientation: true },
+                        CompressedEdgeIndex {
+                            index: 3,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 4,
+                            orientation: true,
+                        },
+                        CompressedEdgeIndex {
+                            index: 5,
+                            orientation: true,
+                        },
                     ]],
                     orientation: false,
                     surface: plane,

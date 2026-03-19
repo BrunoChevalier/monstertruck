@@ -29,7 +29,16 @@ pub fn degenerate_collapsed_control_points() -> BsplineCurve<Point3> {
 /// A cubic curve with a knot span of ~1e-12, creating a near-C0 discontinuity.
 pub fn degenerate_near_zero_knot_span() -> BsplineCurve<Point3> {
     let knot_vec = KnotVector::from(vec![
-        0.0, 0.0, 0.0, 0.0, 0.5, 0.5 + 1e-12, 1.0, 1.0, 1.0, 1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.5,
+        0.5 + 1e-12,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
     ]);
     let control_points = vec![
         Point3::new(0.0, 0.0, 0.0),
@@ -172,10 +181,7 @@ pub fn fixture_closed_rail() -> BsplineCurve<Point3> {
 /// mimicking a sans-serif 'L'. Each segment is a degree-1 (linear) B-spline.
 pub fn fixture_glyph_sharp_corners() -> Vec<BsplineCurve<Point3>> {
     let make_line = |a: Point3, b: Point3| -> BsplineCurve<Point3> {
-        BsplineCurve::new(
-            KnotVector::bezier_knot(1),
-            vec![a, b],
-        )
+        BsplineCurve::new(KnotVector::bezier_knot(1), vec![a, b])
     };
     // 'L' shape outline (counter-clockwise).
     let p0 = Point3::new(0.0, 0.0, 0.0);
@@ -199,10 +205,7 @@ pub fn fixture_glyph_sharp_corners() -> Vec<BsplineCurve<Point3>> {
 pub fn fixture_glyph_nested_contours() -> Vec<Vec<BsplineCurve<Point3>>> {
     let make_rect = |x0: f64, y0: f64, x1: f64, y1: f64| -> Vec<BsplineCurve<Point3>> {
         let make_line = |a: Point3, b: Point3| -> BsplineCurve<Point3> {
-            BsplineCurve::new(
-                KnotVector::bezier_knot(1),
-                vec![a, b],
-            )
+            BsplineCurve::new(KnotVector::bezier_knot(1), vec![a, b])
         };
         let p0 = Point3::new(x0, y0, 0.0);
         let p1 = Point3::new(x1, y0, 0.0);

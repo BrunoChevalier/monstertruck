@@ -159,8 +159,7 @@ fn heal_glyph_sweep() {
     use monstertruck_modeling::Surface;
 
     // Use the first segment of the glyph sharp-corners fixture as a profile.
-    let glyph_segments =
-        monstertruck_geometry::nurbs::test_fixtures::fixture_glyph_sharp_corners();
+    let glyph_segments = monstertruck_geometry::nurbs::test_fixtures::fixture_glyph_sharp_corners();
     let profile = glyph_segments[0].clone();
 
     // Simple rail along Z axis.
