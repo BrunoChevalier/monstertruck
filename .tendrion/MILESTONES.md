@@ -2,13 +2,16 @@
 
 ## Current Milestone
 
+No active milestone. Run `/td:new-milestone` to start one.
+
+## History
+
 ### v0.5.0
 **Started:** 2026-03-19
 **Goal:** Complete Ayam port deferred items: extend profile-to-solid pipeline with revolve/sweep, mixed glyph+custom profile combinations, profile consistency/tessellation validation, font stress corpus, large-text benchmarks, option structs for surface constructors, curve network diagnostics, and patch split/extract workflows.
-**Phases:** 13-TBD
-**Status:** In Progress
-
-## History
+**Phases:** 13-15
+**Status:** Complete
+**Completed:** 2026-03-19
 
 ### v0.4.0
 **Started:** 2026-03-18
