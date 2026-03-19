@@ -432,10 +432,43 @@ impl<V: Homogeneous<Scalar = f64> + ControlPoint<f64, Diff = V> + Tolerance> Nur
         Self::new(self.0.cut_u(u))
     }
 
-    /// Cuts the surface into two surfaces at the parameter `v`
+    /// Cuts the surface into two surfaces at the parameter `v`.
     #[inline(always)]
     pub fn cut_v(&mut self, v: f64) -> Self {
         Self::new(self.0.cut_v(v))
+    }
+
+    /// Splits the NURBS surface at parameter `u`, returning `(left, right)`.
+    ///
+    /// `left` covers `[u_start, u]` and `right` covers `[u, u_end]`.
+    /// Both halves evaluate identically to `self` at corresponding parameters.
+    #[inline(always)]
+    pub fn split_at_u(&self, u: f64) -> (NurbsSurface<V>, NurbsSurface<V>) {
+        let (left, right) = self.0.split_at_u(u);
+        (NurbsSurface::new(left), NurbsSurface::new(right))
+    }
+
+    /// Splits the NURBS surface at parameter `v`, returning `(bottom, top)`.
+    ///
+    /// `bottom` covers `[v_start, v]` and `top` covers `[v, v_end]`.
+    /// Both halves evaluate identically to `self` at corresponding parameters.
+    #[inline(always)]
+    pub fn split_at_v(&self, v: f64) -> (NurbsSurface<V>, NurbsSurface<V>) {
+        let (bottom, top) = self.0.split_at_v(v);
+        (NurbsSurface::new(bottom), NurbsSurface::new(top))
+    }
+
+    /// Extracts a rectangular sub-patch over `[u0, u1] x [v0, v1]`.
+    ///
+    /// The returned surface evaluates identically to `self` at parameters within
+    /// the specified range.
+    #[inline(always)]
+    pub fn sub_patch(
+        &self,
+        u_range: (f64, f64),
+        v_range: (f64, f64),
+    ) -> NurbsSurface<V> {
+        NurbsSurface::new(self.0.sub_patch(u_range, v_range))
     }
 
     /// Normalizes the knot vectors
