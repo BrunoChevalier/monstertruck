@@ -30,6 +30,12 @@
 //! (e.g., finite-difference step sizes in `t_mesh.rs`, STEP file format values,
 //! fillet continuity angle thresholds) may remain as local constants with a comment
 //! explaining why they are not [`TOLERANCE`].
+//!
+//! ## Domain-specific constants
+//!
+//! See [`tolerance_constants`](crate::tolerance_constants) for named constants
+//! derived from [`TOLERANCE`] that serve specific geometric operations
+//! (snapping, vertex merging, G1/G2 classification, tessellation).
 
 use crate::cgmath64::*;
 use monstertruck_math::AbsDiffEq;

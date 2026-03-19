@@ -2,6 +2,7 @@ use crate::alternative::Alternative;
 use crate::healing::RobustSplitClosedEdgesAndFaces;
 
 use super::*;
+use monstertruck_core::tolerance_constants::VERTEX_MERGE_TOLERANCE;
 use monstertruck_geometry::prelude::*;
 use monstertruck_meshing::prelude::*;
 use monstertruck_topology::{
@@ -583,7 +584,7 @@ fn heal_shell_if_needed<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     // Boolean face division creates separate edge instances along intersection
     // curves for each input shell. Welding merges these so the combined shell
     // can become closed.
-    let weld_tol = f64::max(tol, 100.0 * TOLERANCE);
+    let weld_tol = f64::max(tol, VERTEX_MERGE_TOLERANCE);
     let welded_compressed = weld_compressed_shell(shell.compress(), weld_tol);
     // Split edges that pass through intermediate welded vertices so that
     // faces from different source shells can share sub-edges.

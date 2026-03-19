@@ -30,6 +30,8 @@ pub mod id;
 pub mod newton;
 /// Setting Tolerance
 pub mod tolerance;
+/// Centralized domain-specific tolerance constants derived from [`tolerance::TOLERANCE`].
+pub mod tolerance_constants;
 
 pub use crate::cgmath_extend_traits::*;
 pub use crate::derivatives::*;

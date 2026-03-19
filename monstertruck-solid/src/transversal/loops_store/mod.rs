@@ -2,6 +2,7 @@
 
 use super::*;
 use monstertruck_core::cgmath64::*;
+use monstertruck_core::tolerance_constants::{SNAP_TOLERANCE, VERTEX_MERGE_TOLERANCE};
 use monstertruck_geometry::prelude::*;
 use monstertruck_meshing::prelude::*;
 use monstertruck_topology::{Vertex, *};
@@ -820,11 +821,9 @@ where
         + SearchParameter<D2, Point = Point3>
         + SearchNearestParameter<D2, Point = Point3>,
 {
-    // Snap tolerance floor: mesh vertex snapping needs at least 10x `TOLERANCE`.
-    let snap_tol = f64::max(snap_tol, 10.0 * TOLERANCE);
+    let snap_tol = f64::max(snap_tol, SNAP_TOLERANCE);
     let debug_missing = std::env::var("MT_BOOL_DEBUG_ENDPOINTS").is_ok();
-    // Vertex merge tolerance: 100x `TOLERANCE` for merging nearby vertices during loop construction.
-    let vertex_merge_tol = 100.0 * TOLERANCE;
+    let vertex_merge_tol = VERTEX_MERGE_TOLERANCE;
     let to_vertex_key = |face_index: usize, point: Point3| {
         let x = (point[0] / vertex_merge_tol).round() as i64;
         let y = (point[1] / vertex_merge_tol).round() as i64;
@@ -1382,7 +1381,7 @@ where
         poly_shell0,
         geom_shell1,
         poly_shell1,
-        10.0 * TOLERANCE,
+        SNAP_TOLERANCE,
     )
 }
 

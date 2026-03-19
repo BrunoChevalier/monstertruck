@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 41 | Approval-needed: 0 | Total: 41
+**Summary:** Auto-fixes: 42 | Approval-needed: 0 | Total: 42
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -285,5 +285,11 @@
 **Type:** auto-fix
 **Category:** bug
 **Description:** Pre-existing compilation error in monstertruck-modeling/tests/intersection_curve_impls.rs (truncate ambiguity) blocks full nextest run; bench-only verification used instead
+**Files changed:** none
+**Status:** applied
+### [2026-03-19T22:53:18.725Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** 6 pre-existing test failures in monstertruck-solid fillet tests (generic_fillet_*, test_unit_circle). Not caused by this plan's changes.
 **Files changed:** none
 **Status:** applied

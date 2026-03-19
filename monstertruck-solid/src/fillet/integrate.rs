@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use monstertruck_core::tolerance_constants::{G1_ANGLE_TOLERANCE, G2_CURVATURE_TOLERANCE};
 use monstertruck_geometry::prelude::*;
 use monstertruck_traits::ParametricSurface;
 
@@ -34,12 +35,6 @@ pub struct FilletResult {
     /// Non-empty only when mode is IntegrateVisual.
     pub annotations: HashMap<EdgeId, ContinuityAnnotation>,
 }
-
-/// Angle tolerance in radians for G1 tangent continuity (~1 degree).
-const G1_ANGLE_TOLERANCE: f64 = 0.0175;
-
-/// Relative tolerance for mean curvature matching (10%).
-const G2_CURVATURE_TOLERANCE: f64 = 0.10;
 
 /// Default number of sample points along an edge for continuity classification.
 const DEFAULT_SAMPLE_COUNT: usize = 8;
