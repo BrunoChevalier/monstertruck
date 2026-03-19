@@ -74,6 +74,10 @@ where
     (0..shell0.len())
         .flat_map(|i| (0..shell1.len()).map(move |j| (i, j)))
         .filter_map(|(i, j)| {
+            // Skip self-comparison: a face is trivially coincident with itself.
+            if shell0[i].id() == shell1[j].id() {
+                return None;
+            }
             let s0 = shell0[i].surface();
             let s1 = shell1[j].surface();
             is_coincident_pair(&s0, &s1, tol).map(|normals_agree| CoincidentFacePair {

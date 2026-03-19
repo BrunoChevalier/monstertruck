@@ -4,8 +4,13 @@ use crate::healing::RobustSplitClosedEdgesAndFaces;
 use super::*;
 use monstertruck_geometry::prelude::*;
 use monstertruck_meshing::prelude::*;
-use monstertruck_topology::{errors::Error as TopologyError, shell::ShellCondition, *};
-use rustc_hash::FxHashSet as HashSet;
+use monstertruck_topology::{
+    compress::CompressedShell,
+    errors::Error as TopologyError,
+    shell::ShellCondition,
+    *,
+};
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use thiserror::Error;
 
 /// Only solids consisting of faces whose surface is implemented this trait can be used for set operations.
@@ -232,6 +237,135 @@ fn altshell_to_shell<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     )
 }
 
+/// Merge geometrically coincident vertices and edges in a compressed shell.
+///
+/// Boolean face division produces separate edge instances for shell0 and
+/// shell1 along the same intersection curve. After the AND/OR faces are
+/// combined, these duplicate edges prevent the shell from being closed.
+/// This function welds vertices within `tol` and deduplicates edges that
+/// connect the same (welded) vertex pair.
+fn weld_compressed_shell<C: Clone, S: Clone>(
+    mut cshell: CompressedShell<Point3, C, S>,
+    tol: f64,
+) -> CompressedShell<Point3, C, S> {
+    let n = cshell.vertices.len();
+    if n == 0 {
+        return cshell;
+    }
+    // Build a canonical vertex mapping via greedy spatial merge.
+    let tol2 = tol * tol;
+    let mut canonical: Vec<usize> = (0..n).collect();
+    // For efficiency, sort vertex indices by x-coordinate for sweep-based merging.
+    let mut order: Vec<usize> = (0..n).collect();
+    order.sort_by(|&a, &b| {
+        cshell.vertices[a][0]
+            .partial_cmp(&cshell.vertices[b][0])
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    order.iter().enumerate().for_each(|(i, &vi)| {
+        if canonical[vi] != vi {
+            return;
+        }
+        order[i + 1..].iter().for_each(|&vj| {
+            if cshell.vertices[vj][0] - cshell.vertices[vi][0] > tol {
+                return;
+            }
+            if canonical[vj] != vj {
+                return;
+            }
+            let d2 = (cshell.vertices[vi] - cshell.vertices[vj]).magnitude2();
+            if d2 < tol2 {
+                canonical[vj] = vi;
+            }
+        });
+    });
+    // Flatten transitive chains.
+    (0..n).for_each(|i| {
+        let mut root = canonical[i];
+        while canonical[root] != root {
+            root = canonical[root];
+        }
+        canonical[i] = root;
+    });
+    // Build compacted vertex list and remapping.
+    let mut new_index: Vec<usize> = vec![usize::MAX; n];
+    let mut new_vertices = Vec::new();
+    (0..n).for_each(|i| {
+        let root = canonical[i];
+        if new_index[root] == usize::MAX {
+            new_index[root] = new_vertices.len();
+            new_vertices.push(cshell.vertices[root]);
+        }
+        new_index[i] = new_index[root];
+    });
+    // Remap edge vertex references.
+    cshell.edges.iter_mut().for_each(|edge| {
+        edge.vertices.0 = new_index[edge.vertices.0];
+        edge.vertices.1 = new_index[edge.vertices.1];
+    });
+    cshell.vertices = new_vertices;
+    // Deduplicate edges that connect the same vertex pair (regardless of direction).
+    let edge_count = cshell.edges.len();
+    let mut edge_canonical: Vec<usize> = (0..edge_count).collect();
+    let mut edge_flip: Vec<bool> = vec![false; edge_count];
+    let mut seen: HashMap<(usize, usize), (usize, bool)> = HashMap::default();
+    (0..edge_count).for_each(|i| {
+        let (a, b) = cshell.edges[i].vertices;
+        if a == b {
+            return;
+        }
+        let key = if a < b { (a, b) } else { (b, a) };
+        let flipped = a != key.0;
+        if let Some(&(canon, canon_flipped)) = seen.get(&key) {
+            edge_canonical[i] = canon;
+            edge_flip[i] = flipped != canon_flipped;
+        } else {
+            seen.insert(key, (i, flipped));
+        }
+    });
+    // Remap face boundary edge references.
+    cshell.faces.iter_mut().for_each(|face| {
+        face.boundaries.iter_mut().for_each(|wire| {
+            wire.iter_mut().for_each(|cei| {
+                let orig = cei.index;
+                let canon = edge_canonical[orig];
+                if canon != orig {
+                    cei.index = canon;
+                    if edge_flip[orig] {
+                        cei.orientation = !cei.orientation;
+                    }
+                }
+            });
+        });
+    });
+    // Compact edges: remove unused edges and remap indices.
+    let mut used: Vec<bool> = vec![false; edge_count];
+    cshell.faces.iter().for_each(|face| {
+        face.boundaries.iter().for_each(|wire| {
+            wire.iter().for_each(|cei| {
+                used[cei.index] = true;
+            });
+        });
+    });
+    let mut edge_remap: Vec<usize> = vec![0; edge_count];
+    let mut new_edges = Vec::new();
+    (0..edge_count).for_each(|i| {
+        if used[i] {
+            edge_remap[i] = new_edges.len();
+            new_edges.push(cshell.edges[i].clone());
+        }
+    });
+    cshell.faces.iter_mut().for_each(|face| {
+        face.boundaries.iter_mut().for_each(|wire| {
+            wire.iter_mut().for_each(|cei| {
+                cei.index = edge_remap[cei.index];
+            });
+        });
+    });
+    cshell.edges = new_edges;
+    cshell
+}
+
 fn heal_shell_if_needed<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     shell: Shell<Point3, C, S>,
     tol: f64,
@@ -244,37 +378,64 @@ fn heal_shell_if_needed<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     let original_quality = shell_quality(&shell);
     let debug_heal = std::env::var("MT_BOOL_DEBUG_HEAL").is_ok();
 
+    // Stage 0.5: Weld coincident vertices/edges from different source shells.
+    // Boolean face division creates separate edge instances along intersection
+    // curves for each input shell. Welding merges these so the combined shell
+    // can become closed.
+    let weld_tol = f64::max(tol, 100.0 * TOLERANCE);
+    let welded_compressed = weld_compressed_shell(shell.compress(), weld_tol);
+    let welded = Shell::extract(welded_compressed).ok();
+
+    if let Some(ref w) = welded {
+        let q = shell_quality(w);
+        if debug_heal {
+            eprintln!("debug heal stage0.5-weld quality={q:?} original={original_quality:?}");
+        }
+        if q <= original_quality && q.0 == 0 && q.2 == 0 {
+            // Already closed with no singular vertices -- best outcome.
+            return welded;
+        }
+    }
+
+    // Use the best shell so far as the base for further healing.
+    let (base_shell, base_quality) = match &welded {
+        Some(w) if shell_quality(w) <= original_quality => {
+            (w.clone(), shell_quality(w))
+        }
+        _ => (shell.clone(), original_quality),
+    };
+
     // Stage 1: Compress + robust heal + extract.
-    let mut compressed = shell.clone().compress();
+    let mut compressed = base_shell.clone().compress();
     compressed.robust_split_closed_edges_and_faces(tol);
     let healed = Shell::extract(compressed).ok();
 
     if let Some(ref h) = healed {
         let q = shell_quality(h);
         if debug_heal {
-            eprintln!("debug heal stage1 quality={q:?} original={original_quality:?}");
+            eprintln!("debug heal stage1 quality={q:?} original={base_quality:?}");
         }
-        if q <= original_quality {
+        if q <= base_quality {
             return healed;
         }
     }
 
     // Stage 2: Compress without heal + extract (in case healing made it worse).
-    let compressed_no_heal = shell.clone().compress();
+    let compressed_no_heal = base_shell.clone().compress();
     let unhealed = Shell::extract(compressed_no_heal).ok();
 
     if let Some(ref u) = unhealed {
         let q = shell_quality(u);
         if debug_heal {
-            eprintln!("debug heal stage2 quality={q:?} original={original_quality:?}");
+            eprintln!("debug heal stage2 quality={q:?} original={base_quality:?}");
         }
-        if q <= original_quality {
+        if q <= base_quality {
             return unhealed;
         }
     }
 
-    // Stage 3: Pick the best candidate among healed, unhealed, and original.
-    let candidates: Vec<Shell<Point3, C, S>> = [healed, unhealed]
+    // Stage 3: Pick the best candidate among all options.
+    let candidates: Vec<Shell<Point3, C, S>> = [healed, unhealed, welded]
         .into_iter()
         .flatten()
         .chain(std::iter::once(shell))
