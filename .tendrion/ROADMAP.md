@@ -5,6 +5,7 @@
 - **v0.2.0** -- Phases 1-4
 - **v0.3.0** -- Phases 5-8
 - **v0.4.0** -- Phases 9-12
+- **v0.5.0** -- Phases 13-15
 
 ## Phases
 
@@ -20,6 +21,9 @@
 - [x] **Phase 10: Test Infrastructure and Healing Hooks** - Build fixture corpus and add topological healing hooks for new surface constructors
 - [x] **Phase 11: Surface Constructors** - Implement multi-rail and periodic sweep variants with builder-level wrappers in truck-modeling
 - [x] **Phase 12: Font Pipeline and Final Documentation** - End-to-end text profile tests with real fonts and updated Ayam port plan
+- [ ] **Phase 13: API Polish and Surface Operations** - Typed option structs for surface constructors, curve network diagnostics, and patch split/extract
+- [ ] **Phase 14: Profile Solid Pipeline** - Revolve/sweep solid creation, mixed glyph-profile combinations, and profile validation
+- [ ] **Phase 15: Font Stress Testing and Performance** - Pathological font corpus and large-text pipeline benchmarks
 
 ## Phase Details
 
@@ -95,9 +99,41 @@
 **Requirements**: FONT-01, DOC-02
 **Plans**: Archived — see `.tendrion/milestones/v0.4.0-ROADMAP.md`
 
+### Phase 13: API Polish and Surface Operations
+**Goal**: Surface constructors accept typed option structs instead of positional parameters, invalid curve networks produce actionable diagnostics, and patch split/extract operations are available
+**Depends on**: None
+**Requirements**: API-01, API-02, SURF-03
+**Success Criteria** (what must be TRUE):
+  1. All surface constructor functions (sweep_rail, birail, gordon, skin) accept dedicated option structs for orientation/frame rules and interpolation modes instead of positional parameters
+  2. Passing an incompatible curve network to gordon or birail returns a Result::Err containing specific diagnostic information (e.g., knot mismatch location, curve count discrepancy) rather than a generic error
+  3. A NURBS surface can be split at an arbitrary parameter value and the resulting sub-patches are valid, watertight surfaces that tessellate without cracks
+  4. Extracting a rectangular sub-patch from a surface by parameter bounds produces a geometrically identical subset of the original surface
+**Plans**: TBD
+
+### Phase 14: Profile Solid Pipeline
+**Goal**: Users can create solids from planar profiles via revolve and sweep operations, combine font glyph outlines with arbitrary sketch loops, and all profile-generated solids pass consistency checks
+**Depends on**: Phase 13
+**Requirements**: PROFILE-01, PROFILE-02, PROFILE-03
+**Success Criteria** (what must be TRUE):
+  1. A closed planar profile can be revolved around an axis to produce a valid solid with correct topology (e.g., a circle revolved 360 degrees produces a torus)
+  2. A closed planar profile can be swept along a 3D guide curve to produce a valid solid whose cross-sections match the original profile
+  3. A face can be constructed from a mixture of font glyph outlines and user-defined sketch loops, with correct winding and hole detection
+  4. All profile-generated solids pass Euler-Poincare invariant checks and tessellate without cracks or missing faces
+**Plans**: TBD
+
+### Phase 15: Font Stress Testing and Performance
+**Goal**: The profile pipeline is validated against pathological font geometry and benchmarked for throughput on large text inputs
+**Depends on**: Phase 14
+**Requirements**: FONT-03, FONT-04
+**Success Criteria** (what must be TRUE):
+  1. A curated stress corpus of at least 10 pathological font fixtures (small features, deeply nested contours, near-degenerate curves, self-touching outlines) exists and all fixtures produce valid geometry without panics
+  2. Regression tests using the stress corpus run in CI and catch topology or tessellation failures
+  3. Benchmark results exist for profile pipeline throughput on strings of 100+ characters, establishing a baseline for performance regression detection
+**Plans**: TBD
+
 ## Progress
 
-**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12
+**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -113,9 +149,13 @@
 | 10. Test Infrastructure and Healing Hooks | v0.4.0 | 3/3 | ✓ Complete | 2026-03-19 |
 | 11. Surface Constructors | v0.4.0 | 2/2 | ✓ Complete | 2026-03-19 |
 | 12. Font Pipeline and Final Documentation | v0.4.0 | 2/2 | ✓ Complete | 2026-03-19 |
+| 13. API Polish and Surface Operations | v0.5.0 | 0/TBD | Not started | - |
+| 14. Profile Solid Pipeline | v0.5.0 | 0/TBD | Not started | - |
+| 15. Font Stress Testing and Performance | v0.5.0 | 0/TBD | Not started | - |
 
 ---
 
 *Roadmap created: 2026-03-08*
 *Updated: 2026-03-16 (v0.3.0 milestone added)*
 *Updated: 2026-03-18 (v0.4.0 milestone added)*
+*Updated: 2026-03-19 (v0.5.0 milestone added)*

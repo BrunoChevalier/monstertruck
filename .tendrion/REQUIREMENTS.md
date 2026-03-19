@@ -55,26 +55,43 @@
 
 ### Boolean Operations (v0.4.0)
 
-- [ ] **BOOL-01**: Fix pre-existing boolean op bugs identified in v0.3.0 phase verification — criteria 2+4 gaps caused by boolean result face handling in truck-shapeops
-- [ ] **BOOL-02**: Add topological integration and healing hooks in truck-shapeops for new surface constructors (sweep_rail, birail, gordon)
+- [x] **BOOL-01**: Fix pre-existing boolean op bugs identified in v0.3.0 phase verification — criteria 2+4 gaps caused by boolean result face handling in truck-shapeops
+- [x] **BOOL-02**: Add topological integration and healing hooks in truck-shapeops for new surface constructors (sweep_rail, birail, gordon)
 
 ### Surface Constructors (v0.4.0)
 
-- [ ] **SURF-01**: Implement multi-rail sweep and periodic sweep variants (port ay_npt_sweep, ay_npt_sweepperiodic algorithms)
-- [ ] **SURF-02**: Add builder-level wrappers for sweep_rail, birail, and gordon in truck-modeling with typed error handling
+- [x] **SURF-01**: Implement multi-rail sweep and periodic sweep variants (port ay_npt_sweep, ay_npt_sweepperiodic algorithms)
+- [x] **SURF-02**: Add builder-level wrappers for sweep_rail, birail, and gordon in truck-modeling with typed error handling
 
 ### Font/Profile Pipeline (v0.4.0)
 
-- [ ] **FONT-01**: End-to-end text profile creation tests with real-font fixtures including hole-preserving glyphs (validates Phase 5 done criteria from Ayam plan)
+- [x] **FONT-01**: End-to-end text profile creation tests with real-font fixtures including hole-preserving glyphs (validates Phase 5 done criteria from Ayam plan)
 
 ### Testing & Quality (v0.4.0)
 
-- [ ] **TEST-01**: Create fixture corpus for problematic rail/section combinations, near-degenerate NURBS cases, and representative fonts/glyph sets
-- [ ] **TEST-02**: Define numeric tolerance policy and shared constants across crates
+- [x] **TEST-01**: Create fixture corpus for problematic rail/section combinations, near-degenerate NURBS cases, and representative fonts/glyph sets
+- [x] **TEST-02**: Define numeric tolerance policy and shared constants across crates
 
 ### Documentation (v0.4.0)
 
-- [ ] **DOC-02**: Update AYAM_PORT_PLAN.md to reflect current implementation status — mark deprecated items, document remaining work, verify all checkboxes
+- [x] **DOC-02**: Update AYAM_PORT_PLAN.md to reflect current implementation status — mark deprecated items, document remaining work, verify all checkboxes
+
+### Profile & Font Pipeline (v0.5.0)
+
+- [ ] **PROFILE-01**: Solid creation by revolve/sweep for profiles — extend profile-to-solid pipeline beyond extrusion to support revolve and sweep operations on planar profiles
+- [ ] **PROFILE-02**: Mixed glyph + custom profile combinations — combine font glyph outlines with arbitrary CAD sketch loops into a single face/solid
+- [ ] **PROFILE-03**: Consistency and tessellation validation for profiles — validate that profile-generated solids mesh correctly and pass topological consistency checks
+- [ ] **FONT-03**: Stress corpus of tricky fonts — curate pathological font geometry fixtures (small features, complex nesting, degenerate contours) for regression testing
+- [ ] **FONT-04**: Large-text performance benchmarks — benchmark profile pipeline throughput for large text strings and high loop counts
+
+### API Polish (v0.5.0)
+
+- [ ] **API-01**: Dedicated option structs for orientation/frame rules and interpolation modes — replace positional parameters with typed option structs for surface constructors
+- [ ] **API-02**: Full diagnostics for invalid curve networks — extend error reporting for gordon/birail/skin constructors with detailed diagnostic information on network incompatibilities
+
+### Surface Operations (v0.5.0)
+
+- [ ] **SURF-03**: Patch split/extract workflows — complete implementation of surface split-at-parameter and sub-patch extraction operations in truck-geometry
 
 ## Out of Scope
 
@@ -83,23 +100,21 @@
 - Automatic feature recognition UI
 - Literal NURBS surface merging (IntegrateIntoHost) — research confirms this is an anti-pattern
 - relay_spheres convergence on high-curvature surfaces (unless it blocks test cases)
-- Option structs for orientation/frame rules and interpolation modes (deferred)
-- Gordon intersection-grid driven variants and invalid network diagnostics (deferred)
-- Patch split/extract workflows (deferred)
-- Solid creation by revolve/sweep — v2 font track (deferred)
-- Font track milestones M1-M4 with real-font fixtures (deferred — FONT-01 covers basic coverage)
-- Curated pathological geometry regression corpus (deferred)
-- cargo test + cargo clippy verification gates (deferred)
-- Migration guidance for manual workflow users (deferred)
-- Tessellation robustness improvements — Phase 8 of Ayam plan (explicitly deferred, no regressions identified)
+- Intersection-grid driven Gordon variants (advanced, lower ROI)
+- Problematic rail/section combination fixtures (low priority test data)
+- Near-degenerate NURBS case fixtures (low priority test data)
+- Trim tessellation robustness improvements (Phase 8 of Ayam plan — no regressions identified)
+- Migration guidance for manual workflow users (post-v0.5.0)
 
 ## Traceability
 
 - v0.2.0: CORE-01 through EVOLVE-03
 - v0.3.0: BUILD-01, TOPO-01 through TOPO-03, INTEG-01 through INTEG-02, DOC-01
 - v0.4.0: BOOL-01 through BOOL-02, SURF-01 through SURF-02, FONT-01, TEST-01 through TEST-02, DOC-02
+- v0.5.0: PROFILE-01 through PROFILE-03, FONT-03 through FONT-04, API-01 through API-02, SURF-03
 
 ---
 *Generated: 2026-03-08 via /td:new-project*
 *Updated: 2026-03-16 via /td:new-milestone (v0.3.0)*
 *Updated: 2026-03-18 via /td:new-milestone (v0.4.0)*
+*Updated: 2026-03-19 via /td:new-milestone (v0.5.0)*
