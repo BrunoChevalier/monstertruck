@@ -5,7 +5,7 @@ use super::*;
 use monstertruck_geometry::prelude::*;
 use monstertruck_meshing::prelude::*;
 use monstertruck_topology::{
-    compress::CompressedShell,
+    compress::{CompressedEdge, CompressedEdgeIndex, CompressedShell},
     errors::Error as TopologyError,
     shell::ShellCondition,
     *,
@@ -366,6 +366,210 @@ fn weld_compressed_shell<C: Clone, S: Clone>(
     cshell
 }
 
+/// Split edges at intermediate vertices that lie on the edge curve.
+///
+/// After vertex welding, some edges may pass through vertices that are now
+/// coincident with points on the edge. This happens when face division
+/// introduces split points on one face's boundary that are not propagated
+/// to the same edge on an adjacent face. Splitting these edges allows faces
+/// from different source shells to share sub-edges, producing a connected
+/// shell.
+fn split_edges_at_intermediate_vertices<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
+    mut cshell: CompressedShell<Point3, C, S>,
+    tol: f64,
+) -> CompressedShell<Point3, C, S> {
+    let nv = cshell.vertices.len();
+    let ne = cshell.edges.len();
+    if nv == 0 || ne == 0 {
+        return cshell;
+    }
+    let tol2 = tol * tol;
+    // For each edge, find intermediate vertices that lie on the curve.
+    let edge_splits: Vec<Vec<(f64, usize)>> = (0..ne)
+        .map(|ei| {
+            let (va, vb) = cshell.edges[ei].vertices;
+            if va == vb {
+                return Vec::new();
+            }
+            let pa = cshell.vertices[va];
+            let pb = cshell.vertices[vb];
+            let edge_len2 = (pb - pa).magnitude2();
+            if edge_len2 < tol2 {
+                return Vec::new();
+            }
+            let curve = &cshell.edges[ei].curve;
+            let (t0, t1) = curve.range_tuple();
+            (0..nv)
+                .filter(|&vi| vi != va && vi != vb)
+                .filter_map(|vi| {
+                    let pv = cshell.vertices[vi];
+                    let da2 = (pv - pa).magnitude2();
+                    let db2 = (pv - pb).magnitude2();
+                    if da2 > edge_len2 + tol2 || db2 > edge_len2 + tol2 {
+                        return None;
+                    }
+                    let t = curve.search_nearest_parameter(
+                        pv,
+                        Some((t0 + t1) * 0.5),
+                        100,
+                    )?;
+                    let margin = (t1 - t0) * 0.01;
+                    if t <= t0 + margin || t >= t1 - margin {
+                        return None;
+                    }
+                    let cp = curve.subs(t);
+                    if cp.distance2(pv) < tol2 {
+                        Some((t, vi))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>()
+        })
+        .map(|mut splits| {
+            splits.sort_by(|a, b| {
+                a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal)
+            });
+            splits.dedup_by_key(|s| s.1);
+            splits
+        })
+        .collect();
+    if edge_splits.iter().all(|s| s.is_empty()) {
+        return cshell;
+    }
+    // Build new edges from splits.
+    let mut new_edges: Vec<CompressedEdge<C>> = Vec::new();
+    let edge_replacement: Vec<Vec<usize>> = (0..ne)
+        .map(|ei| {
+            if edge_splits[ei].is_empty() {
+                let new_idx = new_edges.len();
+                new_edges.push(cshell.edges[ei].clone());
+                vec![new_idx]
+            } else {
+                let (va, vb) = cshell.edges[ei].vertices;
+                let splits = &edge_splits[ei];
+                let mut result = Vec::with_capacity(splits.len() + 1);
+                let mut remaining_curve = cshell.edges[ei].curve.clone();
+                let mut prev_vertex = va;
+                for &(_t, vi) in splits {
+                    let (rt0, rt1) = remaining_curve.range_tuple();
+                    if let Some(split_t) = remaining_curve.search_nearest_parameter(
+                        cshell.vertices[vi],
+                        Some((rt0 + rt1) * 0.5),
+                        100,
+                    ) {
+                        let margin = (rt1 - rt0) * 0.01;
+                        if split_t > rt0 + margin && split_t < rt1 - margin {
+                            let tail = remaining_curve.cut(split_t);
+                            let new_idx = new_edges.len();
+                            new_edges.push(CompressedEdge {
+                                vertices: (prev_vertex, vi),
+                                curve: remaining_curve,
+                            });
+                            result.push(new_idx);
+                            remaining_curve = tail;
+                            prev_vertex = vi;
+                        }
+                    }
+                }
+                let new_idx = new_edges.len();
+                new_edges.push(CompressedEdge {
+                    vertices: (prev_vertex, vb),
+                    curve: remaining_curve,
+                });
+                result.push(new_idx);
+                result
+            }
+        })
+        .collect();
+    // Remap face boundary edge references.
+    cshell.faces.iter_mut().for_each(|face| {
+        face.boundaries.iter_mut().for_each(|wire| {
+            let new_wire: Vec<CompressedEdgeIndex> = wire
+                .iter()
+                .flat_map(|cei| {
+                    let replacement = &edge_replacement[cei.index];
+                    let sub: Vec<CompressedEdgeIndex> = replacement
+                        .iter()
+                        .map(|&new_idx| CompressedEdgeIndex {
+                            index: new_idx,
+                            orientation: cei.orientation,
+                        })
+                        .collect();
+                    // When the original edge reference is inverted, the sub-edges
+                    // must appear in reverse order to maintain wire continuity.
+                    if cei.orientation {
+                        sub
+                    } else {
+                        sub.into_iter().rev().collect()
+                    }
+                })
+                .collect();
+            *wire = new_wire;
+        });
+    });
+    cshell.edges = new_edges;
+    // Deduplicate edges that now share the same vertex pair.
+    let final_edge_count = cshell.edges.len();
+    let mut edge_canonical: Vec<usize> = (0..final_edge_count).collect();
+    let mut edge_flip: Vec<bool> = vec![false; final_edge_count];
+    let mut seen: HashMap<(usize, usize), (usize, bool)> = HashMap::default();
+    (0..final_edge_count).for_each(|i| {
+        let (a, b) = cshell.edges[i].vertices;
+        if a == b {
+            return;
+        }
+        let key = if a < b { (a, b) } else { (b, a) };
+        let flipped = a != key.0;
+        if let Some(&(canon, canon_flipped)) = seen.get(&key) {
+            edge_canonical[i] = canon;
+            edge_flip[i] = flipped != canon_flipped;
+        } else {
+            seen.insert(key, (i, flipped));
+        }
+    });
+    cshell.faces.iter_mut().for_each(|face| {
+        face.boundaries.iter_mut().for_each(|wire| {
+            wire.iter_mut().for_each(|cei| {
+                let orig = cei.index;
+                let canon = edge_canonical[orig];
+                if canon != orig {
+                    cei.index = canon;
+                    if edge_flip[orig] {
+                        cei.orientation = !cei.orientation;
+                    }
+                }
+            });
+        });
+    });
+    // Compact: remove unused edges.
+    let mut used: Vec<bool> = vec![false; final_edge_count];
+    cshell.faces.iter().for_each(|face| {
+        face.boundaries.iter().for_each(|wire| {
+            wire.iter().for_each(|cei| {
+                used[cei.index] = true;
+            });
+        });
+    });
+    let mut edge_remap: Vec<usize> = vec![0; final_edge_count];
+    let mut compacted_edges = Vec::new();
+    (0..final_edge_count).for_each(|i| {
+        if used[i] {
+            edge_remap[i] = compacted_edges.len();
+            compacted_edges.push(cshell.edges[i].clone());
+        }
+    });
+    cshell.faces.iter_mut().for_each(|face| {
+        face.boundaries.iter_mut().for_each(|wire| {
+            wire.iter_mut().for_each(|cei| {
+                cei.index = edge_remap[cei.index];
+            });
+        });
+    });
+    cshell.edges = compacted_edges;
+    cshell
+}
+
 fn heal_shell_if_needed<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     shell: Shell<Point3, C, S>,
     tol: f64,
@@ -384,6 +588,9 @@ fn heal_shell_if_needed<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     // can become closed.
     let weld_tol = f64::max(tol, 100.0 * TOLERANCE);
     let welded_compressed = weld_compressed_shell(shell.compress(), weld_tol);
+    // Split edges that pass through intermediate welded vertices so that
+    // faces from different source shells can share sub-edges.
+    let welded_compressed = split_edges_at_intermediate_vertices(welded_compressed, weld_tol);
     let welded = Shell::extract(welded_compressed).ok();
 
     if let Some(ref w) = welded {
