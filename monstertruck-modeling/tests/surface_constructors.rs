@@ -25,10 +25,7 @@ fn test_error_variants_exist() {
     let e3 = Error::SurfaceConstructionFailed {
         reason: "degenerate".into(),
     };
-    assert_eq!(
-        e3.to_string(),
-        "surface construction failed: degenerate"
-    );
+    assert_eq!(e3.to_string(), "surface construction failed: degenerate");
 
     let e4 = Error::GridDimensionMismatch {
         expected_rows: 2,
@@ -197,10 +194,7 @@ fn test_try_sweep_periodic_closed_seam() {
         let u = i as f64 / 10.0;
         let p0 = surface.subs(u, 0.0);
         let p1 = surface.subs(u, 1.0);
-        assert!(
-            p0.near(&p1),
-            "seam mismatch at u={u}: {p0:?} vs {p1:?}",
-        );
+        assert!(p0.near(&p1), "seam mismatch at u={u}: {p0:?} vs {p1:?}",);
     }
 }
 

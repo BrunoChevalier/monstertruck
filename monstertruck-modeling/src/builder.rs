@@ -613,9 +613,11 @@ pub fn try_sweep_multi_rail(
             got: n_sections,
         });
     }
-    let surface = BsplineSurface::sweep_multi_rail(profile.clone(), rails, n_sections)
-        .map_err(|e| Error::SurfaceConstructionFailed {
-            reason: e.to_string(),
+    let surface =
+        BsplineSurface::sweep_multi_rail(profile.clone(), rails, n_sections).map_err(|e| {
+            Error::SurfaceConstructionFailed {
+                reason: e.to_string(),
+            }
         })?;
     Ok(face_from_bspline_surface(surface))
 }
@@ -665,9 +667,11 @@ pub fn try_sweep_periodic(
             got: n_sections,
         });
     }
-    let surface = BsplineSurface::sweep_periodic(profile.clone(), rail, n_sections)
-        .map_err(|e| Error::SurfaceConstructionFailed {
-            reason: e.to_string(),
+    let surface =
+        BsplineSurface::sweep_periodic(profile.clone(), rail, n_sections).map_err(|e| {
+            Error::SurfaceConstructionFailed {
+                reason: e.to_string(),
+            }
         })?;
     let face = face_from_bspline_surface(surface);
     Ok(Shell::from(vec![face]))

@@ -1904,57 +1904,57 @@ impl BsplineSurface<Point3> {
                 / ref_points.len() as f64;
         }
 
-        let sections: std::result::Result<Vec<BsplineCurve<Point3>>, &'static str> =
-            (0..n_sections)
-                .map(|i| {
-                    let frac = i as f64 / (n_sections - 1) as f64;
-                    let targets: Vec<Point3> = rails
-                        .iter()
-                        .map(|rail| {
-                            let (rs, re) = rail.range_tuple();
-                            rail.subs(rs + (re - rs) * frac)
-                        })
-                        .collect();
+        let sections: std::result::Result<Vec<BsplineCurve<Point3>>, &'static str> = (0
+            ..n_sections)
+            .map(|i| {
+                let frac = i as f64 / (n_sections - 1) as f64;
+                let targets: Vec<Point3> = rails
+                    .iter()
+                    .map(|rail| {
+                        let (rs, re) = rail.range_tuple();
+                        rail.subs(rs + (re - rs) * frac)
+                    })
+                    .collect();
 
-                    if use_birail {
-                        // 2-rail case: scale+rotate+translate (same as birail1).
-                        let target_chord = targets[1] - targets[0];
-                        let target_len = target_chord.magnitude();
+                if use_birail {
+                    // 2-rail case: scale+rotate+translate (same as birail1).
+                    let target_chord = targets[1] - targets[0];
+                    let target_len = target_chord.magnitude();
 
-                        let scale = if chord_len.so_small() {
-                            1.0
-                        } else {
-                            target_len / chord_len
-                        };
-
-                        let rotation = if chord_len.so_small() || target_len.so_small() {
-                            Matrix3::from_value(1.0)
-                        } else {
-                            rotation_between(chord, target_chord)
-                        };
-
-                        let origin = ref_points[0];
-                        let mut section = profile.clone();
-                        section.transform_control_points(|pt| {
-                            let local = *pt - origin;
-                            let transformed = rotation * local * scale;
-                            *pt = targets[0] + transformed;
-                        });
-                        Ok(section)
+                    let scale = if chord_len.so_small() {
+                        1.0
                     } else {
-                        // 3+ rails: least-squares affine fit.
-                        let (m, translation) = affine_fit_3x3(&ref_points, &targets)?;
+                        target_len / chord_len
+                    };
 
-                        let mut section = profile.clone();
-                        section.transform_control_points(|pt| {
-                            let centered = pt.coords - centroid_ref;
-                            let transformed = m * centered;
-                            *pt = Point3::from(transformed + translation);
-                        });
-                        Ok(section)
-                    }
-                })
-                .collect();
+                    let rotation = if chord_len.so_small() || target_len.so_small() {
+                        Matrix3::from_value(1.0)
+                    } else {
+                        rotation_between(chord, target_chord)
+                    };
+
+                    let origin = ref_points[0];
+                    let mut section = profile.clone();
+                    section.transform_control_points(|pt| {
+                        let local = *pt - origin;
+                        let transformed = rotation * local * scale;
+                        *pt = targets[0] + transformed;
+                    });
+                    Ok(section)
+                } else {
+                    // 3+ rails: least-squares affine fit.
+                    let (m, translation) = affine_fit_3x3(&ref_points, &targets)?;
+
+                    let mut section = profile.clone();
+                    section.transform_control_points(|pt| {
+                        let centered = pt.coords - centroid_ref;
+                        let transformed = m * centered;
+                        *pt = Point3::from(transformed + translation);
+                    });
+                    Ok(section)
+                }
+            })
+            .collect();
 
         Ok(BsplineSurface::skin(sections?))
     }

@@ -46,7 +46,9 @@ pub enum Error {
         reason: String,
     },
     /// Curve grid dimensions mismatch for [`gordon`](crate::builder::try_gordon) surface.
-    #[error("gordon surface requires matching grid dimensions: expected {expected_rows}x{expected_cols}, got {actual_rows}x{actual_cols}.")]
+    #[error(
+        "gordon surface requires matching grid dimensions: expected {expected_rows}x{expected_cols}, got {actual_rows}x{actual_cols}."
+    )]
     GridDimensionMismatch {
         /// Expected number of rows.
         expected_rows: usize,
