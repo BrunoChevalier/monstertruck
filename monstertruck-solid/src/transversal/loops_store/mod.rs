@@ -399,22 +399,38 @@ impl<C: Clone> Loops<Point3, C> {
 }
 
 impl<C> LoopsStore<Point3, C> {
+    /// Checks if an edge already exists between `p0` and `p1` whose interior
+    /// geometry matches the given `midpoint`. The midpoint check prevents
+    /// false-positive duplicates from boundary edge segments that share
+    /// endpoints with an intersection curve but follow a different path.
     fn has_edge_between_points(
         &self,
         loops_index: usize,
         p0: Point3,
         p1: Point3,
+        midpoint: Point3,
         snap_tol: f64,
-    ) -> bool {
+    ) -> bool
+    where
+        C: Clone + BoundedCurve<Point = Point3>,
+    {
+        let tol2 = snap_tol * snap_tol;
         self[loops_index]
             .iter()
             .flat_map(|wire| wire.iter())
             .any(|edge| {
                 let q0 = edge.front().point();
                 let q1 = edge.back().point();
-                (q0.distance2(p0) <= snap_tol * snap_tol && q1.distance2(p1) <= snap_tol * snap_tol)
-                    || (q0.distance2(p1) <= snap_tol * snap_tol
-                        && q1.distance2(p0) <= snap_tol * snap_tol)
+                let endpoints_match = (q0.distance2(p0) <= tol2 && q1.distance2(p1) <= tol2)
+                    || (q0.distance2(p1) <= tol2 && q1.distance2(p0) <= tol2);
+                if !endpoints_match {
+                    return false;
+                }
+                // Verify the interior geometry matches by comparing curve midpoints.
+                let curve = edge.curve();
+                let (t0, t1) = curve.range_tuple();
+                let edge_mid = curve.subs((t0 + t1) / 2.0);
+                edge_mid.distance2(midpoint) <= tol2
             })
     }
 
@@ -728,10 +744,12 @@ fn flush_deferred_segments<C: Clone>(
                     next_pending.push(segment);
                     return;
                 }
+                let deferred_mid = segment.polyline.0[segment.polyline.0.len() / 2];
                 if poly_loops_store.has_edge_between_points(
                     face_index,
                     segment.pv0.point(),
                     segment.pv1.point(),
+                    deferred_mid,
                     snap_tol,
                 ) {
                     if !segment.pv0_resolved {
@@ -1158,16 +1176,19 @@ where
                             }
                             let all_indices_placed =
                                 idx00.is_some() && idx01.is_some() && idx10.is_some() && idx11.is_some();
+                            let poly_midpoint = polyline.0[polyline.0.len() / 2];
                             let duplicated0 = poly_loops_store0.has_edge_between_points(
                                 face_index0,
                                 pv0.point(),
                                 pv1.point(),
+                                poly_midpoint,
                                 snap_tol,
                             );
                             let duplicated1 = poly_loops_store1.has_edge_between_points(
                                 face_index1,
                                 pv0.point(),
                                 pv1.point(),
+                                poly_midpoint,
                                 snap_tol,
                             );
                             if debug_missing
