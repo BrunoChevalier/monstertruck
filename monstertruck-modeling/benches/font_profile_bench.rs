@@ -9,7 +9,7 @@
 //! cargo bench -p monstertruck-modeling --features font
 //! ```
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, black_box, criterion_group, criterion_main, measurement::WallTime};
 use monstertruck_modeling::*;
 use std::time::Duration;
 
@@ -145,7 +145,7 @@ fn bench_full_pipeline(c: &mut Criterion) {
 
     // Glyph 'O' -> solid.
     let glyph_o = f.glyph_index('O').expect("glyph for 'O'");
-    group.bench_function("glyph_to_solid", |b| {
+    group.bench_function("glyph_to_solid", |b: &mut criterion::Bencher<'_, WallTime>| {
         b.iter(|| {
             let wires =
                 text::glyph_profile(&f, black_box(glyph_o), &opts).expect("glyph_profile");
@@ -158,7 +158,7 @@ fn bench_full_pipeline(c: &mut Criterion) {
 
     // 100-char text -> wires.
     let text_100 = make_text(100);
-    group.bench_function("text_to_wires_100", |b| {
+    group.bench_function("text_to_wires_100", |b: &mut criterion::Bencher<'_, WallTime>| {
         b.iter(|| black_box(text::text_profile(&f, black_box(text_100.as_str()), &opts)))
     });
 

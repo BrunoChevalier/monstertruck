@@ -34,5 +34,12 @@ ttf-parser = { workspace = true, optional = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+criterion = { workspace = true }
 proptest = { workspace = true }
 serde_json = { workspace = true }
+ttf-parser = { workspace = true }
+
+[[bench]]
+name = "font_profile_bench"
+harness = false
+required-features = ["font"]
