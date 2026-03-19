@@ -256,6 +256,145 @@ where
     Ok(solid)
 }
 
+/// Constructs a [`Solid`] by revolving a planar profile around an axis.
+///
+/// Takes a set of wires (possibly with holes), normalizes orientation,
+/// creates a planar face, and revolves it around the specified axis.
+///
+/// For 360-degree revolves, produces a closed solid (e.g., torus).
+/// For partial revolves, attaches planar caps at both ends.
+///
+/// # Arguments
+/// * `wires` -- closed planar profile wires (outer + holes).
+/// * `origin` -- point on the revolve axis.
+/// * `axis` -- unit vector defining the revolve axis direction.
+/// * `angle` -- revolve angle (>=2pi means full revolution).
+/// * `division` -- number of angular divisions (>=2 for full, >=1 for partial).
+///
+/// # Errors
+///
+/// Returns errors from [`attach_plane_normalized`] if the profile is invalid.
+pub fn revolve_from_planar_profile<C, S, R>(
+    wires: Vec<Wire<C>>,
+    origin: Point3,
+    axis: Vector3,
+    angle: R,
+    division: usize,
+) -> Result<monstertruck_topology::Solid<Point3, C, S>>
+where
+    C: ParametricCurve3D
+        + BoundedCurve
+        + Clone
+        + Cut
+        + Invertible
+        + Transformed<Matrix4>,
+    S: Clone + Invertible + Transformed<Matrix4>,
+    R: Into<Rad<f64>>,
+    Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4>: ToSameGeometry<C>,
+    RevolutedCurve<C>: ToSameGeometry<S>,
+    Plane: IncludeCurve<C> + ToSameGeometry<S>,
+    Line<Point3>: ToSameGeometry<C>,
+{
+    let face: Face<C, S> = attach_plane_normalized(wires)?;
+    let solid: monstertruck_topology::Solid<Point3, C, S> =
+        crate::builder::revolve(&face, origin, axis, angle, division);
+    Ok(solid)
+}
+
+/// Converts an [`Edge`] curve to a [`BsplineCurve<Point3>`], supporting
+/// [`Curve::Line`] and [`Curve::BsplineCurve`] variants.
+fn edge_curve_to_bspline(
+    edge: &monstertruck_topology::Edge<Point3, crate::Curve>,
+) -> Result<BsplineCurve<Point3>> {
+    match edge.curve() {
+        crate::Curve::Line(line) => Ok(BsplineCurve::new(
+            KnotVector::bezier_knot(1),
+            vec![line.0, line.1],
+        )),
+        crate::Curve::BsplineCurve(bsp) => Ok(bsp),
+        _ => Err(Error::UnsupportedCurveType),
+    }
+}
+
+/// Constructs a [`Solid`] by sweeping a planar profile along a 3D guide curve.
+///
+/// Takes a set of wires (possibly with holes), normalizes orientation,
+/// and sweeps each outer wire edge along the guide rail to produce swept faces,
+/// then combines them with cap faces into a solid.
+///
+/// # Arguments
+/// * `wires` -- closed planar profile wires (outer + holes).
+/// * `guide` -- 3D [`BsplineCurve`] defining the sweep path.
+/// * `n_sections` -- number of cross-sections along the guide (>=2).
+///
+/// # Errors
+///
+/// Returns errors from profile normalization or sweep construction.
+pub fn sweep_from_planar_profile(
+    wires: Vec<Wire<crate::Curve>>,
+    guide: &BsplineCurve<Point3>,
+    n_sections: usize,
+) -> Result<monstertruck_topology::Solid<Point3, crate::Curve, crate::Surface>> {
+    let normalized = classify_and_normalize(wires)?;
+
+    // Start cap face.
+    let start_cap: Face<crate::Curve, crate::Surface> =
+        crate::builder::try_attach_plane(normalized.clone())?;
+
+    // Build swept side faces from each edge of the outer wire.
+    let outer_wire = &normalized[0];
+    let side_faces: Vec<monstertruck_topology::Face<Point3, crate::Curve, crate::Surface>> =
+        outer_wire
+            .edge_iter()
+            .map(|edge| {
+                let profile_bsp = edge_curve_to_bspline(edge)?;
+                crate::builder::try_sweep_rail(&profile_bsp, guide, n_sections)
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+    // Build end cap: transform the normalized wires to the guide's end.
+    let (t_start, t_end) = guide.range_tuple();
+    let start_pt = guide.subs(t_start);
+    let end_pt = guide.subs(t_end);
+    let translation = end_pt - start_pt;
+
+    // Compute rotation from start tangent to end tangent.
+    let tangent_start = guide.der(t_start).normalize();
+    let tangent_end = guide.der(t_end).normalize();
+
+    let transform = if tangent_start.cross(&tangent_end).so_small() {
+        // Tangents are parallel; just translate.
+        Matrix4::from_translation(translation)
+    } else {
+        // Rotate from start tangent to end tangent, then translate.
+        let rot_axis = tangent_start.cross(&tangent_end).normalize();
+        let cos_angle = tangent_start.dot(tangent_end).clamp(-1.0, 1.0);
+        let rot_angle = Rad(f64::acos(cos_angle));
+        let rotation = Matrix4::from_axis_angle(rot_axis, rot_angle);
+        // Apply rotation around start point, then translate.
+        let rot_at_origin = Matrix4::from_translation(-start_pt.to_vec())
+            * rotation.transpose()
+            * Matrix4::from_translation(start_pt.to_vec());
+        Matrix4::from_translation(translation) * rot_at_origin
+    };
+
+    let end_wires: Vec<Wire<crate::Curve>> = normalized
+        .iter()
+        .map(|w| crate::Mapped::mapped(w, transform))
+        .collect();
+
+    let end_cap: monstertruck_topology::Face<Point3, crate::Curve, crate::Surface> =
+        crate::builder::try_attach_plane(end_wires)?;
+
+    // Assemble into a shell and solid.
+    let mut shell = monstertruck_topology::Shell::new();
+    shell.push(start_cap.inverse());
+    shell.extend(side_faces);
+    shell.push(end_cap);
+
+    Ok(monstertruck_topology::Solid::new_unchecked(vec![shell]))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

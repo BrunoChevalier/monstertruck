@@ -59,6 +59,9 @@ pub enum Error {
         /// Actual number of columns.
         actual_cols: usize,
     },
+    /// Unsupported curve type for sweep; only [`Line`] and [`BsplineCurve`] edges are supported.
+    #[error("unsupported curve type for sweep: only Line and BsplineCurve edges are supported.")]
+    UnsupportedCurveType,
     /// Geometry-level error during surface construction.
     #[error(transparent)]
     FromGeometry(monstertruck_geometry::errors::Error),

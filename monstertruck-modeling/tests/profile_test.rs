@@ -178,7 +178,7 @@ fn rect_wire_xz(x0: f64, z0: f64, x1: f64, z1: f64) -> Wire {
 fn revolve_simple_rect() {
     // Revolve a rectangular profile (XZ plane) 360 degrees around the Y-axis.
     let wire = rect_wire_xz(2.0, -1.0, 4.0, 1.0);
-    let solid = profile::revolve_from_planar_profile(
+    let solid = profile::revolve_from_planar_profile::<Curve, Surface, _>(
         vec![wire],
         Point3::origin(),
         Vector3::unit_y(),
@@ -193,7 +193,7 @@ fn revolve_simple_rect() {
 fn revolve_torus_topology() {
     // Revolve a small square offset from the axis to produce a torus-like solid.
     let wire = rect_wire_xz(3.0, -0.5, 4.0, 0.5);
-    let solid = profile::revolve_from_planar_profile(
+    let solid = profile::revolve_from_planar_profile::<Curve, Surface, _>(
         vec![wire],
         Point3::origin(),
         Vector3::unit_y(),
@@ -208,7 +208,7 @@ fn revolve_torus_topology() {
 fn revolve_partial_angle() {
     // Revolve a rectangular profile 90 degrees (PI/2).
     let wire = rect_wire_xz(2.0, -1.0, 4.0, 1.0);
-    let solid = profile::revolve_from_planar_profile(
+    let solid = profile::revolve_from_planar_profile::<Curve, Surface, _>(
         vec![wire],
         Point3::origin(),
         Vector3::unit_y(),
@@ -224,7 +224,7 @@ fn revolve_with_hole() {
     // Revolve a profile with an outer rectangle and inner hole around an axis.
     let outer = rect_wire_xz(2.0, -2.0, 6.0, 2.0);
     let hole = rect_wire_xz(3.0, -1.0, 5.0, 1.0);
-    let solid_with_hole = profile::revolve_from_planar_profile(
+    let solid_with_hole = profile::revolve_from_planar_profile::<Curve, Surface, _>(
         vec![outer.clone(), hole],
         Point3::origin(),
         Vector3::unit_y(),
@@ -233,16 +233,8 @@ fn revolve_with_hole() {
     )
     .unwrap();
 
-    // Compare with solid without hole -- more faces expected with hole.
-    let solid_no_hole = profile::revolve_from_planar_profile(
-        vec![outer],
-        Point3::origin(),
-        Vector3::unit_y(),
-        Rad(2.0 * std::f64::consts::PI),
-        4,
-    )
-    .unwrap();
-    assert!(solid_with_hole.boundaries()[0].len() > solid_no_hole.boundaries()[0].len());
+    // With a hole, the solid has two boundary shells (outer + inner).
+    assert!(solid_with_hole.boundaries().len() > 1);
     assert!(solid_with_hole.is_geometric_consistent());
 }
 
@@ -253,7 +245,7 @@ fn revolve_open_wire_rejected() {
     let v1 = builder::vertex(Point3::new(4.0, 0.0, 0.0));
     let v2 = builder::vertex(Point3::new(4.0, 0.0, 2.0));
     let wire: Wire = vec![builder::line(&v0, &v1), builder::line(&v1, &v2)].into();
-    let result = profile::revolve_from_planar_profile(
+    let result = profile::revolve_from_planar_profile::<Curve, Surface, _>(
         vec![wire],
         Point3::origin(),
         Vector3::unit_y(),
