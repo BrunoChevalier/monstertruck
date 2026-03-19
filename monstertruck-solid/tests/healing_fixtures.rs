@@ -24,6 +24,15 @@ use std::time::Duration;
 /// Healing tolerance used across all tests.
 const TOL: f64 = 0.05;
 
+/// Extracts a human-readable message from a `catch_unwind` panic payload.
+fn panic_message(payload: &Box<dyn std::any::Any + Send>) -> &str {
+    payload
+        .downcast_ref::<&str>()
+        .copied()
+        .or_else(|| payload.downcast_ref::<String>().map(|s| s.as_str()))
+        .unwrap_or("<non-string panic>")
+}
+
 /// Helper: run `heal_surface_shell` on a single-face open shell. Accepts
 /// `NonManifoldEdges` (expected for open shells) or `Ok`. Panics on
 /// unexpected errors (`TooManyGaps`).
@@ -248,16 +257,10 @@ fn all_fixtures_no_panic() {
                 err_count += 1;
             }
             Err(panic_payload) => {
-                let msg = panic_payload
-                    .downcast_ref::<&str>()
-                    .copied()
-                    .or_else(|| {
-                        panic_payload
-                            .downcast_ref::<String>()
-                            .map(|s| s.as_str())
-                    })
-                    .unwrap_or("<non-string panic>");
-                panic!("[all_fixtures_no_panic] {name}: PANICKED: {msg}");
+                panic!(
+                    "[all_fixtures_no_panic] {name}: PANICKED: {}",
+                    panic_message(&panic_payload)
+                );
             }
         }
     });
@@ -299,16 +302,10 @@ fn all_fixtures_within_timeout() {
                         // Ok or Err from healing -- both acceptable for timeout test.
                     }
                     Err(panic_payload) => {
-                        let msg = panic_payload
-                            .downcast_ref::<&str>()
-                            .copied()
-                            .or_else(|| {
-                                panic_payload
-                                    .downcast_ref::<String>()
-                                    .map(|s| s.as_str())
-                            })
-                            .unwrap_or("<non-string panic>");
-                        panic!("[timeout] {name}: panicked: {msg}");
+                        panic!(
+                            "[timeout] {name}: panicked: {}",
+                            panic_message(&panic_payload)
+                        );
                     }
                 }
             }
