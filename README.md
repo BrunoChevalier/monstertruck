@@ -124,12 +124,16 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 11 -- Surface Constructors)
+### Recent Changes (Phase 12 -- v0.4.0 Milestone Completion)
 
-- **Multi-rail sweep** -- `BsplineSurface::sweep_multi_rail` in `monstertruck-geometry` sweeps a profile along 2+ rails with affine fitting. The 2-rail case uses birail-style scale+rotate+translate; 3+ rails use SVD-based least-squares affine fitting via a new `affine_fit_3x3` helper that handles rank-deficient (coplanar) reference points.
+- **End-to-end font pipeline tests** -- 11 integration tests in `monstertruck-modeling/tests/font_pipeline.rs` exercise the full font outline to B-rep solid pipeline using a bundled DejaVuSans.ttf fixture. Tests cover glyph hole preservation (O, B, 8), wire topology validation (closure, edge count), solid extrusion with geometric consistency checks, multi-character `text_profile` layout (spacing, horizontal advance), Y-flip option, and space-character handling.
+- **Ayam port plan finalized** -- `AYAM_PORT_PLAN.md` updated with 11 items checked off, deferred items annotated with rationale and version targets (v0.5.0+), and a new status summary section documenting all completed work and architecture notes.
+
+### Earlier Changes (Phase 11 -- Surface Constructors)
+
+- **Multi-rail sweep** -- `BsplineSurface::sweep_multi_rail` in `monstertruck-geometry` sweeps a profile along 2+ rails with affine fitting.
 - **Periodic sweep** -- `BsplineSurface::sweep_periodic` sweeps a profile along a rail with tangent-aligned framing, duplicating the first section as the last to guarantee C0 seam continuity.
-- **Typed builder wrappers** -- 5 builder functions in `monstertruck-modeling::builder` (`try_sweep_rail`, `try_birail`, `try_gordon`, `try_sweep_multi_rail`, `try_sweep_periodic`) wrap geometry constructors with `Result` error handling and topology assembly. `try_sweep_periodic` returns `Result<Shell>` for closed-surface topology; the others return `Result<Face>`.
-- **Error variants** -- `monstertruck-modeling::errors` gained `InsufficientRails`, `InsufficientSections`, `SurfaceConstructionFailed`, and `GridDimensionMismatch` variants.
+- **Typed builder wrappers** -- 5 builder functions in `monstertruck-modeling::builder` (`try_sweep_rail`, `try_birail`, `try_gordon`, `try_sweep_multi_rail`, `try_sweep_periodic`) wrap geometry constructors with `Result` error handling and topology assembly.
 - **Integration tests** -- 6 geometry-level tests and 13 modeling-level integration tests covering all wrappers, error paths, seam continuity, vertex positions, and Euler-Poincare consistency.
 
 ### Earlier Changes (Phase 10 -- NURBS Fixture Corpus & Surface Healing)

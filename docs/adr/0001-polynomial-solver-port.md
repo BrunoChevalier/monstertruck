@@ -54,3 +54,7 @@ No changes to the polynomial solver module. Phase 10 introduced a NURBS fixture 
 ## Status Update (Phase 11)
 
 No changes to the polynomial solver module. Phase 11 added multi-rail sweep and periodic sweep surface constructors in `monstertruck-geometry`, plus typed builder wrappers in `monstertruck-modeling`. The SVD-based affine fitting used by `sweep_multi_rail` is implemented independently of the polynomial solvers; the math layer was unaffected.
+
+## Status Update (Phase 12 -- v0.4.0 Final)
+
+No changes to the polynomial solver module. Phase 12 added end-to-end font pipeline integration tests and finalized the Ayam port plan. The math layer was unaffected. This ADR remains Accepted with no anticipated changes for v0.4.0.

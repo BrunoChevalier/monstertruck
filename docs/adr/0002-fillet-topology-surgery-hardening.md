@@ -53,3 +53,7 @@ No changes to fillet topology surgery. Phase 10 added a NURBS fixture corpus wit
 ## Status Update (Phase 11)
 
 No changes to fillet topology surgery. Phase 11 added `sweep_multi_rail` and `sweep_periodic` surface constructors in `monstertruck-geometry` and typed builder wrappers in `monstertruck-modeling`. The new builders use Euler-Poincare topology checks consistent with the validation framework established in Phase 8, but the fillet surgery code itself was unaffected.
+
+## Status Update (Phase 12 -- v0.4.0 Final)
+
+No changes to fillet topology surgery. Phase 12 added end-to-end font pipeline integration tests and finalized the Ayam port plan. The fillet surgery code was unaffected. This ADR remains Accepted with no anticipated changes for v0.4.0.

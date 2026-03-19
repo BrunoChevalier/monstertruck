@@ -46,3 +46,7 @@ No changes to fillet integration mode logic. Phase 10 introduced surface healing
 ## Status Update (Phase 11)
 
 No changes to fillet integration mode logic. Phase 11 added multi-rail sweep and periodic sweep constructors in `monstertruck-geometry` and typed builder wrappers in `monstertruck-modeling`. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 12 -- v0.4.0 Final)
+
+No changes to fillet integration mode logic. Phase 12 added end-to-end font pipeline integration tests and finalized the Ayam port plan. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted with no anticipated changes for v0.4.0.
