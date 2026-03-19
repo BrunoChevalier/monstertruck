@@ -171,6 +171,9 @@ pub mod surface_options;
 /// Diagnostic types for curve network compatibility errors.
 pub mod surface_diagnostics;
 
+/// Curve-curve intersection via subdivision and Newton-Raphson refinement.
+pub mod curve_intersect;
+
 mod bspline_curve;
 mod bspline_surface;
 mod knot_vector;
