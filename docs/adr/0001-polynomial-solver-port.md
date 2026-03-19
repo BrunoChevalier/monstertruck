@@ -70,3 +70,7 @@ No changes to the polynomial solver module. Phase 14 added profile revolve/sweep
 ## Status Update (Phase 15 -- Font Stress Testing & Performance)
 
 No changes to the polynomial solver module. Phase 15 added a font stress corpus with pathological geometry fixtures and Criterion performance benchmarks for the profile pipeline. The math layer was unaffected.
+
+## Status Update (Phase 16 -- Tolerance Centralization & API Hardening)
+
+No changes to the polynomial solver module. Phase 16 centralized tolerance constants in `monstertruck-core::tolerance_constants`, added `#[non_exhaustive]` to surface option structs, and deduplicated deprecated surface constructors. The math layer was unaffected.

@@ -124,7 +124,13 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 15 -- Font Stress Testing & Performance)
+### Recent Changes (Phase 16 -- Tolerance Centralization & API Hardening)
+
+- **Centralized tolerance constants** -- New `monstertruck-core::tolerance_constants` module consolidates 6 numeric tolerance constants (`SNAP_TOLERANCE`, `VERTEX_MERGE_TOLERANCE`, `TESSELLATION_TOLERANCE`, `PERIODIC_CLOSURE_RATIO`, `G1_ANGLE_TOLERANCE`, `G2_CURVATURE_TOLERANCE`) previously scattered as magic numbers across `monstertruck-solid`. All call sites now import from the central module.
+- **`#[non_exhaustive]` option structs** -- All 5 surface constructor option structs (`GordonOptions`, `SkinOptions`, `SweepRailOptions`, `Birail1Options`, `Birail2Options`) in `monstertruck-geometry` are now marked `#[non_exhaustive]`, allowing future field additions without breaking downstream crate builds.
+- **Deprecated constructor deduplication** -- The 5 deprecated surface constructors (`gordon`, `skin`, `sweep_rail`, `birail1`, `birail2`) now delegate to their `try_*` counterparts, removing ~225 lines of duplicated logic.
+
+### Earlier Changes (Phase 15 -- Font Stress Testing & Performance)
 
 - **Font stress corpus** -- 11 pathological font geometry fixtures and 16 regression tests covering degenerate glyph outlines, with a failure mode catalog documenting expected behavior for each case.
 - **Performance benchmarks** -- Criterion benchmark suite measuring profile pipeline throughput at 1/10/100/1000 characters, with a baseline template for tracking regressions.

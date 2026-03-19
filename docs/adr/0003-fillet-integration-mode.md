@@ -62,3 +62,7 @@ No changes to fillet integration mode logic. Phase 14 added profile revolve/swee
 ## Status Update (Phase 15 -- Font Stress Testing & Performance)
 
 No changes to fillet integration mode logic. Phase 15 added a font stress corpus with pathological geometry fixtures and Criterion performance benchmarks for the profile pipeline. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 16 -- Tolerance Centralization & API Hardening)
+
+No changes to fillet integration mode logic. Phase 16 centralized tolerance constants in `monstertruck-core::tolerance_constants` and refactored import paths in `monstertruck-solid` modules. The `G1_ANGLE_TOLERANCE` and `G2_CURVATURE_TOLERANCE` constants used by continuity classification are now sourced from the central module. The fillet integration mode and continuity annotations from this ADR are functionally unaffected.

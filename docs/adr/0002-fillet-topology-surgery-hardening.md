@@ -69,3 +69,7 @@ No changes to fillet topology surgery. Phase 14 added profile revolve/sweep, mix
 ## Status Update (Phase 15 -- Font Stress Testing & Performance)
 
 No changes to fillet topology surgery. Phase 15 added a font stress corpus with pathological geometry fixtures and Criterion performance benchmarks for the profile pipeline. The fillet surgery code was unaffected.
+
+## Status Update (Phase 16 -- Tolerance Centralization & API Hardening)
+
+Phase 16 centralized tolerance constants (including `SNAP_TOLERANCE` and `VERTEX_MERGE_TOLERANCE`) in `monstertruck-core::tolerance_constants`. The fillet integration module (`monstertruck-solid::fillet::integrate`) and transversal modules now import these constants from the central location instead of defining them locally. The fillet topology surgery logic itself is unchanged; only the import paths for tolerance values were updated.
