@@ -520,8 +520,9 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
     {
         let zero = S::zero();
         let one = S::one();
+        // Column-major: column 3 holds the translation vector.
         Matrix4::new(
-            one, zero, zero, v[0], zero, one, zero, v[1], zero, zero, one, v[2], zero, zero, zero,
+            one, zero, zero, zero, zero, one, zero, zero, zero, zero, one, zero, v[0], v[1], v[2],
             one,
         )
     }
