@@ -66,3 +66,7 @@ No changes to the polynomial solver module. Phase 13 added typed option structs,
 ## Status Update (Phase 14 -- Profile Solid Pipeline)
 
 No changes to the polynomial solver module. Phase 14 added profile revolve/sweep functions, mixed profile face construction, and solid validation in `monstertruck-modeling`. The math layer was unaffected.
+
+## Status Update (Phase 15 -- Font Stress Testing & Performance)
+
+No changes to the polynomial solver module. Phase 15 added a font stress corpus with pathological geometry fixtures and Criterion performance benchmarks for the profile pipeline. The math layer was unaffected.

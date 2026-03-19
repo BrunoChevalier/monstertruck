@@ -124,7 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 14 -- Profile Solid Pipeline)
+### Recent Changes (Phase 15 -- Font Stress Testing & Performance)
+
+- **Font stress corpus** -- 11 pathological font geometry fixtures and 16 regression tests covering degenerate glyph outlines, with a failure mode catalog documenting expected behavior for each case.
+- **Performance benchmarks** -- Criterion benchmark suite measuring profile pipeline throughput at 1/10/100/1000 characters, with a baseline template for tracking regressions.
+
+### Earlier Changes (Phase 14 -- Profile Solid Pipeline)
 
 - **Profile revolve & sweep** -- New `revolve_from_planar_profile` and `sweep_from_planar_profile` functions in `monstertruck-modeling` construct solids directly from planar profile wires.
 - **Mixed profiles** -- `mixed_profile_face` combines font glyph wires with custom sketch loops into a single face for extrusion and sweep workflows.

@@ -58,3 +58,7 @@ No changes to fillet integration mode logic. Phase 13 added typed option structs
 ## Status Update (Phase 14 -- Profile Solid Pipeline)
 
 No changes to fillet integration mode logic. Phase 14 added profile revolve/sweep functions, mixed profile face construction, and solid validation in `monstertruck-modeling`. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 15 -- Font Stress Testing & Performance)
+
+No changes to fillet integration mode logic. Phase 15 added a font stress corpus with pathological geometry fixtures and Criterion performance benchmarks for the profile pipeline. The fillet integration mode and continuity annotations from this ADR are unaffected.
