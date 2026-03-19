@@ -37,4 +37,4 @@ Phase 8 added debug-only topology validation (`fillet::validate` module) that ru
 
 ## Status Update (Phase 9)
 
-No changes to fillet integration mode logic. Phase 9 established a tolerance policy in `monstertruck-core` and hardened the boolean pipeline (face classification, shell healing). The fillet integration mode and continuity annotations from this ADR are unaffected.
+No changes to fillet integration mode logic. Phase 9 established a tolerance policy in `monstertruck-core` and hardened the boolean pipeline (face classification, shell healing, shell welding, coincident face detection). Meshing tolerance constants were also aligned with `monstertruck-core`. The fillet integration mode and continuity annotations from this ADR are unaffected.

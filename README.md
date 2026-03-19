@@ -132,6 +132,9 @@ The `monstertruck-meshing` crate includes boundary-aware vertex stitching during
 - **Diagnostic logging** -- Coincident-face detection (`MT_BOOL_DEBUG_COINCIDENT`), healing diagnostics (`MT_BOOL_DEBUG_HEAL`), and dropped-boundary logging (`MT_BOOL_DEBUG_COMPONENTS`) are available as opt-in environment variables.
 - **Tolerance documentation in boolean pipeline** -- Doc comments in `integrate/mod.rs` and `loops_store/mod.rs` explain tolerance multipliers (operation tolerance floor, triangulation tolerance, snap tolerance 10x, vertex merge 100x).
 - **Topology validation tests** -- New tests for AND, OR, difference, and chained boolean operations with closed-shell and singular-vertex assertions.
+- **Explicit tolerance imports in meshing** -- `monstertruck-meshing` now imports tolerance constants from `monstertruck-core` instead of using local magic numbers, aligning tessellation with the project-wide tolerance policy.
+- **Boolean shell welding fix** -- `weld_compressed_shell` corrected to handle degenerate weld cases; coincident face detection no longer self-compares faces, eliminating false positives.
+- **Matrix4 translation fix** -- `Matrix4::from_translation` in `monstertruck-math` corrected column placement of translation components.
 
 ### Earlier Changes (Phase 8)
 

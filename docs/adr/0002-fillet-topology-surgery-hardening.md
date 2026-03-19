@@ -44,4 +44,4 @@ These checks are integrated into fillet operations (`ops.rs`, `edge_select.rs`) 
 
 ## Status Update (Phase 9)
 
-Phase 9 replaced the hardcoded `1.0e-6` in `edge_select.rs` with the canonical `TOLERANCE` constant from `monstertruck-core`, aligning fillet edge selection with the project-wide tolerance policy established in this phase. The topology surgery hardening from this ADR remains unchanged.
+Phase 9 replaced the hardcoded `1.0e-6` in `edge_select.rs` with the canonical `TOLERANCE` constant from `monstertruck-core`, aligning fillet edge selection with the project-wide tolerance policy established in this phase. Gap-fix work also hardened the boolean pipeline: `weld_compressed_shell` was corrected and coincident face detection no longer self-compares, improving stability of boolean-produced solids that feed into fillet operations. The topology surgery hardening from this ADR remains unchanged.
