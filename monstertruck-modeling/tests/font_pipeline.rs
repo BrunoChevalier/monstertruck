@@ -360,11 +360,9 @@ fn mixed_glyph_custom_solid_extrusion() {
 
     let outer = large_rect_wire();
     let merged = profile::merge_profiles(vec![vec![outer], glyph_holes]);
-    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
-        merged,
-        Vector3::new(0.0, 0.0, 1.0),
-    )
-    .expect("solid_from_planar_profile mixed");
+    let solid =
+        profile::solid_from_planar_profile::<Curve, Surface>(merged, Vector3::new(0.0, 0.0, 1.0))
+            .expect("solid_from_planar_profile mixed");
     assert!(
         solid.is_geometric_consistent(),
         "Mixed glyph+custom solid must be geometrically consistent"
@@ -435,11 +433,9 @@ fn validate_mixed_glyph_custom_extruded() {
     let glyph_holes: Vec<Wire> = glyph_wires.into_iter().skip(1).collect();
     let outer = large_rect_wire();
     let merged = profile::merge_profiles(vec![vec![outer], glyph_holes]);
-    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
-        merged,
-        Vector3::new(0.0, 0.0, 1.0),
-    )
-    .expect("solid_from_planar_profile mixed");
+    let solid =
+        profile::solid_from_planar_profile::<Curve, Surface>(merged, Vector3::new(0.0, 0.0, 1.0))
+            .expect("solid_from_planar_profile mixed");
     let result = profile::validate_solid(&solid);
     assert!(
         result.is_ok(),

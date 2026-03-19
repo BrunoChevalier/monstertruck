@@ -9,7 +9,16 @@ pub enum FrameRule {
 }
 
 /// Options for single-rail sweep surface construction.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_geometry::nurbs::surface_options::SweepRailOptions;
+/// let mut opts = SweepRailOptions::default();
+/// opts.n_sections = 5;
+/// ```
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct SweepRailOptions {
     /// Number of sections to sample along the rail.
     pub n_sections: usize,
@@ -27,7 +36,16 @@ impl Default for SweepRailOptions {
 }
 
 /// Options for single-profile birail surface construction.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_geometry::nurbs::surface_options::Birail1Options;
+/// let mut opts = Birail1Options::default();
+/// opts.n_sections = 5;
+/// ```
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Birail1Options {
     /// Number of sections to sample along the rails.
     pub n_sections: usize,
@@ -40,7 +58,16 @@ impl Default for Birail1Options {
 }
 
 /// Options for dual-profile birail surface construction.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_geometry::nurbs::surface_options::Birail2Options;
+/// let mut opts = Birail2Options::default();
+/// opts.n_sections = 5;
+/// ```
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Birail2Options {
     /// Number of sections to sample along the rails.
     pub n_sections: usize,
@@ -56,12 +83,28 @@ impl Default for Birail2Options {
 ///
 /// Currently a marker struct. Future versions may add tolerance fields
 /// for controlling intersection point matching.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_geometry::nurbs::surface_options::GordonOptions;
+/// let opts = GordonOptions::default();
+/// ```
 #[derive(Debug, Clone, Default)]
+#[non_exhaustive]
 pub struct GordonOptions {}
 
 /// Options for skin surface construction.
 ///
 /// Currently a marker struct. Future versions may add fields to control
 /// v-direction degree or parameterization strategy.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_geometry::nurbs::surface_options::SkinOptions;
+/// let opts = SkinOptions::default();
+/// ```
 #[derive(Debug, Clone, Default)]
+#[non_exhaustive]
 pub struct SkinOptions {}

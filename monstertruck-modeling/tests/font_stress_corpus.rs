@@ -26,9 +26,15 @@ fn default_opts() -> text::TextOptions {
 #[test]
 fn font_stress_self_intersecting_cubic() {
     let wires = stress_corpus::self_intersecting::self_intersecting_cubic();
-    assert!(!wires.is_empty(), "self_intersecting_cubic must return at least one wire");
+    assert!(
+        !wires.is_empty(),
+        "self_intersecting_cubic must return at least one wire"
+    );
     for w in &wires {
-        assert!(w.is_closed(), "self_intersecting_cubic wires must be closed");
+        assert!(
+            w.is_closed(),
+            "self_intersecting_cubic wires must be closed"
+        );
     }
     // Attempt pipeline normalization -- may succeed or document known limitation.
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
@@ -49,7 +55,10 @@ fn font_stress_self_intersecting_cubic() {
 #[test]
 fn font_stress_bow_tie_contour() {
     let wires = stress_corpus::self_intersecting::bow_tie_contour();
-    assert!(!wires.is_empty(), "bow_tie_contour must return at least one wire");
+    assert!(
+        !wires.is_empty(),
+        "bow_tie_contour must return at least one wire"
+    );
     for w in &wires {
         assert!(w.is_closed(), "bow_tie_contour wires must be closed");
     }
@@ -101,7 +110,10 @@ fn font_stress_overlapping_contours() {
 #[test]
 fn font_stress_near_zero_area_sliver() {
     let wires = stress_corpus::near_zero_area::near_zero_area_sliver();
-    assert!(!wires.is_empty(), "near_zero_area_sliver must return at least one wire");
+    assert!(
+        !wires.is_empty(),
+        "near_zero_area_sliver must return at least one wire"
+    );
     for w in &wires {
         assert!(w.is_closed(), "near_zero_area_sliver wires must be closed");
     }
@@ -123,7 +135,10 @@ fn font_stress_near_zero_area_sliver() {
 #[test]
 fn font_stress_collapsed_quad_bezier() {
     let wires = stress_corpus::near_zero_area::collapsed_quad_bezier();
-    assert!(!wires.is_empty(), "collapsed_quad_bezier must return at least one wire");
+    assert!(
+        !wires.is_empty(),
+        "collapsed_quad_bezier must return at least one wire"
+    );
     for w in &wires {
         assert!(w.is_closed(), "collapsed_quad_bezier wires must be closed");
     }
@@ -145,7 +160,10 @@ fn font_stress_collapsed_quad_bezier() {
 #[test]
 fn font_stress_micro_feature_loop() {
     let wires = stress_corpus::near_zero_area::micro_feature_loop();
-    assert!(!wires.is_empty(), "micro_feature_loop must return at least one wire");
+    assert!(
+        !wires.is_empty(),
+        "micro_feature_loop must return at least one wire"
+    );
     for w in &wires {
         assert!(w.is_closed(), "micro_feature_loop wires must be closed");
     }
@@ -229,9 +247,15 @@ fn font_stress_high_loop_count() {
 #[test]
 fn font_stress_coincident_control_points() {
     let wires = stress_corpus::degenerate::coincident_control_points();
-    assert!(!wires.is_empty(), "coincident_control_points must return at least one wire");
+    assert!(
+        !wires.is_empty(),
+        "coincident_control_points must return at least one wire"
+    );
     for w in &wires {
-        assert!(w.is_closed(), "coincident_control_points wires must be closed");
+        assert!(
+            w.is_closed(),
+            "coincident_control_points wires must be closed"
+        );
     }
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
@@ -286,9 +310,15 @@ fn font_stress_reverse_wound_hole() {
 #[test]
 fn font_stress_single_point_degeneracy() {
     let wires = stress_corpus::degenerate::single_point_degeneracy();
-    assert!(!wires.is_empty(), "single_point_degeneracy must return at least one wire");
+    assert!(
+        !wires.is_empty(),
+        "single_point_degeneracy must return at least one wire"
+    );
     for w in &wires {
-        assert!(w.is_closed(), "single_point_degeneracy wires must be closed");
+        assert!(
+            w.is_closed(),
+            "single_point_degeneracy wires must be closed"
+        );
     }
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {

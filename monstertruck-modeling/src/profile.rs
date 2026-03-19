@@ -322,12 +322,7 @@ pub fn revolve_from_planar_profile<C, S, R>(
     division: usize,
 ) -> Result<monstertruck_topology::Solid<Point3, C, S>>
 where
-    C: ParametricCurve3D
-        + BoundedCurve
-        + Clone
-        + Cut
-        + Invertible
-        + Transformed<Matrix4>,
+    C: ParametricCurve3D + BoundedCurve + Clone + Cut + Invertible + Transformed<Matrix4>,
     S: Clone + Invertible + Transformed<Matrix4>,
     R: Into<Rad<f64>>,
     Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4>: ToSameGeometry<C>,
@@ -336,7 +331,9 @@ where
     Line<Point3>: ToSameGeometry<C>,
 {
     let face: Face<C, S> = attach_plane_normalized(wires)?;
-    Ok(crate::builder::revolve(&face, origin, axis, angle, division))
+    Ok(crate::builder::revolve(
+        &face, origin, axis, angle, division,
+    ))
 }
 
 /// Extracts the curve from an [`Edge`] as a [`BsplineCurve<Point3>`].
@@ -506,8 +503,7 @@ where
         let euler = v as isize - e as isize + f as isize;
 
         let condition = shell.shell_condition();
-        let oriented =
-            condition == ShellCondition::Oriented || condition == ShellCondition::Closed;
+        let oriented = condition == ShellCondition::Oriented || condition == ShellCondition::Closed;
         let closed = condition == ShellCondition::Closed;
 
         if !oriented {

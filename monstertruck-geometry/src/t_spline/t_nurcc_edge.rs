@@ -1060,14 +1060,9 @@ mod tests {
         dest.write().incoming_edge = Some(Arc::clone(&edge));
 
         // Split the edge
-        let middle = TnurccEdge::split_edge(
-            Arc::clone(&edge),
-            24,
-            Point3::new(0.0, 1.0, 0.0),
-            56,
-            0.25,
-        )
-        .expect("Splitting is designed to succeed");
+        let middle =
+            TnurccEdge::split_edge(Arc::clone(&edge), 24, Point3::new(0.0, 1.0, 0.0), 56, 0.25)
+                .expect("Splitting is designed to succeed");
 
         // Get the new edge, other_left and other_right should be the same
         let other_left = edge.read().connection(TnurccConnection::LeftAcw);
@@ -1190,13 +1185,8 @@ mod tests {
             .expect("Connection should be topologically consistent");
 
         // Split the edge (parameters are the same from the previous test, but will not be checked)
-        let _middle = TnurccEdge::split_edge(
-            Arc::clone(&edge),
-            24,
-            Point3::new(0.0, 1.0, 0.0),
-            56,
-            0.25,
-        );
+        let _middle =
+            TnurccEdge::split_edge(Arc::clone(&edge), 24, Point3::new(0.0, 1.0, 0.0), 56, 0.25);
 
         // Get the new edge
         let new_edge = edge.read().connection(TnurccConnection::LeftAcw);

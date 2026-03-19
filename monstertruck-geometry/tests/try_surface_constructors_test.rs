@@ -1,5 +1,7 @@
 use monstertruck_geometry::errors::Error;
-use monstertruck_geometry::nurbs::surface_options::{Birail1Options, Birail2Options, SweepRailOptions};
+use monstertruck_geometry::nurbs::surface_options::{
+    Birail1Options, Birail2Options, SweepRailOptions,
+};
 use monstertruck_geometry::prelude::*;
 
 fn straight_rail() -> BsplineCurve<Point3> {
@@ -22,7 +24,8 @@ fn straight_profile() -> BsplineCurve<Point3> {
 fn try_sweep_rail_success_default_options() {
     let profile = straight_profile();
     let rail = straight_rail();
-    let opts = SweepRailOptions { n_sections: 3, ..Default::default() };
+    let mut opts = SweepRailOptions::default();
+    opts.n_sections = 3;
     let result = BsplineSurface::try_sweep_rail(profile, &rail, &opts);
     assert!(result.is_ok());
     let surface = result.unwrap();
@@ -34,11 +37,15 @@ fn try_sweep_rail_success_default_options() {
 fn try_sweep_rail_insufficient_sections() {
     let profile = straight_profile();
     let rail = straight_rail();
-    let opts = SweepRailOptions { n_sections: 1, ..Default::default() };
+    let mut opts = SweepRailOptions::default();
+    opts.n_sections = 1;
     let result = BsplineSurface::try_sweep_rail(profile, &rail, &opts);
     assert!(matches!(
         result,
-        Err(Error::InsufficientSections { required: 2, got: 1 })
+        Err(Error::InsufficientSections {
+            required: 2,
+            got: 1
+        })
     ));
 }
 
@@ -58,7 +65,8 @@ fn try_birail1_success() {
         KnotVector::bezier_knot(1),
         vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
     );
-    let opts = Birail1Options { n_sections: 3 };
+    let mut opts = Birail1Options::default();
+    opts.n_sections = 3;
     let result = BsplineSurface::try_birail1(profile, &rail1, &rail2, &opts);
     assert!(result.is_ok());
 }
@@ -68,11 +76,15 @@ fn try_birail1_insufficient_sections() {
     let rail1 = straight_rail();
     let rail2 = straight_rail();
     let profile = straight_profile();
-    let opts = Birail1Options { n_sections: 0 };
+    let mut opts = Birail1Options::default();
+    opts.n_sections = 0;
     let result = BsplineSurface::try_birail1(profile, &rail1, &rail2, &opts);
     assert!(matches!(
         result,
-        Err(Error::InsufficientSections { required: 2, got: 0 })
+        Err(Error::InsufficientSections {
+            required: 2,
+            got: 0
+        })
     ));
 }
 
@@ -91,7 +103,8 @@ fn try_birail1_endpoint_mismatch() {
         KnotVector::bezier_knot(1),
         vec![Point3::new(5.0, 5.0, 5.0), Point3::new(6.0, 5.0, 5.0)],
     );
-    let opts = Birail1Options { n_sections: 3 };
+    let mut opts = Birail1Options::default();
+    opts.n_sections = 3;
     let result = BsplineSurface::try_birail1(profile, &rail1, &rail2, &opts);
     assert!(result.is_err(), "expected EndpointMismatch error");
     match result.unwrap_err() {
@@ -117,7 +130,8 @@ fn try_birail1_degenerate_chord() {
         KnotVector::bezier_knot(1),
         vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 0.0)],
     );
-    let opts = Birail1Options { n_sections: 3 };
+    let mut opts = Birail1Options::default();
+    opts.n_sections = 3;
     let result = BsplineSurface::try_birail1(profile, &rail1, &rail2, &opts);
     assert!(result.is_err(), "expected DegenerateGeometry error");
     match result.unwrap_err() {
@@ -148,7 +162,8 @@ fn try_birail2_success() {
         KnotVector::bezier_knot(1),
         vec![Point3::new(0.0, 0.0, 4.0), Point3::new(2.0, 0.0, 4.0)],
     );
-    let opts = Birail2Options { n_sections: 3 };
+    let mut opts = Birail2Options::default();
+    opts.n_sections = 3;
     let result = BsplineSurface::try_birail2(profile1, profile2, &rail1, &rail2, &opts);
     assert!(result.is_ok());
 }
@@ -159,11 +174,15 @@ fn try_birail2_insufficient_sections() {
     let rail2 = straight_rail();
     let profile1 = straight_profile();
     let profile2 = straight_profile();
-    let opts = Birail2Options { n_sections: 1 };
+    let mut opts = Birail2Options::default();
+    opts.n_sections = 1;
     let result = BsplineSurface::try_birail2(profile1, profile2, &rail1, &rail2, &opts);
     assert!(matches!(
         result,
-        Err(Error::InsufficientSections { required: 2, got: 1 })
+        Err(Error::InsufficientSections {
+            required: 2,
+            got: 1
+        })
     ));
 }
 

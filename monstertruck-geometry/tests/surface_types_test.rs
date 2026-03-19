@@ -43,10 +43,7 @@ fn curve_network_diagnostic_display_insufficient_curves() {
         required: 2,
         got: 0,
     };
-    assert_eq!(
-        d.to_string(),
-        "insufficient curves: need at least 2, got 0"
-    );
+    assert_eq!(d.to_string(), "insufficient curves: need at least 2, got 0");
 }
 
 #[test]

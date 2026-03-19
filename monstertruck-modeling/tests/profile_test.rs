@@ -324,10 +324,7 @@ fn validate_extruded_with_hole() {
     )
     .unwrap();
     let result = profile::validate_solid(&solid);
-    assert!(
-        result.is_ok(),
-        "extruded tube should validate: {result:?}"
-    );
+    assert!(result.is_ok(), "extruded tube should validate: {result:?}");
 }
 
 #[test]
@@ -342,10 +339,7 @@ fn validate_revolved_solid() {
     )
     .unwrap();
     let result = profile::validate_solid(&solid);
-    assert!(
-        result.is_ok(),
-        "revolved solid should validate: {result:?}"
-    );
+    assert!(result.is_ok(), "revolved solid should validate: {result:?}");
 }
 
 #[test]
@@ -357,10 +351,7 @@ fn validate_swept_solid() {
     );
     let solid = profile::sweep_from_planar_profile(vec![wire], &guide, 4).unwrap();
     let result = profile::validate_solid(&solid);
-    assert!(
-        result.is_ok(),
-        "swept solid should validate: {result:?}"
-    );
+    assert!(result.is_ok(), "swept solid should validate: {result:?}");
 }
 
 #[test]
@@ -471,7 +462,10 @@ fn all_profile_ops_euler_poincare() {
     )
     .unwrap();
     let report = profile::validate_solid(&extruded).unwrap();
-    assert_eq!(report.euler_characteristic, 2, "extruded box euler must be 2");
+    assert_eq!(
+        report.euler_characteristic, 2,
+        "extruded box euler must be 2"
+    );
 
     // Revolve (torus, genus-1 => euler = 0).
     let wire = rect_wire_xz(3.0, -0.5, 4.0, 0.5);
@@ -526,7 +520,10 @@ fn validation_report_tube_metrics() {
     )
     .unwrap();
     let report = profile::validate_solid(&solid).unwrap();
-    assert_eq!(report.faces, 10, "tube has 10 faces (2 caps + 4 outer + 4 inner)");
+    assert_eq!(
+        report.faces, 10,
+        "tube has 10 faces (2 caps + 4 outer + 4 inner)"
+    );
     assert!(report.is_geometric_consistent);
 }
 

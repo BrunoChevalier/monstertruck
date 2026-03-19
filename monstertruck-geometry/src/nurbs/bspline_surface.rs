@@ -1392,11 +1392,7 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// let patch = surface.sub_patch((0.25, 0.75), (0.3, 0.8));
     /// assert_near2!(patch.subs(0.5, 0.5), surface.subs(0.5, 0.5));
     /// ```
-    pub fn sub_patch(
-        &self,
-        u_range: (f64, f64),
-        v_range: (f64, f64),
-    ) -> BsplineSurface<P> {
+    pub fn sub_patch(&self, u_range: (f64, f64), v_range: (f64, f64)) -> BsplineSurface<P> {
         let (u0, u1) = u_range;
         let (v0, v1) = v_range;
         // Cut in u: keep the part [u0, u_end], then cut off [u1, u_end].

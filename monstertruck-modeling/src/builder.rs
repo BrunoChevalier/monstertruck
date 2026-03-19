@@ -1438,10 +1438,8 @@ mod option_builder_tests {
     fn sweep_rail_with_options_insufficient_sections() {
         let profile = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
         let rail = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0));
-        let opts = SweepRailOptions {
-            n_sections: 1,
-            ..SweepRailOptions::default()
-        };
+        let mut opts = SweepRailOptions::default();
+        opts.n_sections = 1;
         let result = builder::try_sweep_rail_with_options(&profile, &rail, &opts);
         let err = result.unwrap_err();
         assert!(

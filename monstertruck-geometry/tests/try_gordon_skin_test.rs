@@ -52,8 +52,7 @@ fn try_skin_three_curves() {
 
 #[test]
 fn try_skin_empty_returns_error() {
-    let result =
-        BsplineSurface::<Vector2>::try_skin(vec![], &SkinOptions::default());
+    let result = BsplineSurface::<Vector2>::try_skin(vec![], &SkinOptions::default());
     assert!(matches!(
         result,
         Err(Error::CurveNetworkIncompatible(
@@ -112,16 +111,8 @@ fn try_gordon_grid_dimension_mismatch() {
         vec![Vector2::new(0.0, 0.0), Vector2::new(0.0, 1.0)],
     );
     // Points grid has wrong dimensions: 1 u_curve but 2 rows.
-    let points = vec![
-        vec![Vector2::new(0.0, 0.0)],
-        vec![Vector2::new(0.0, 1.0)],
-    ];
-    let result = BsplineSurface::try_gordon(
-        vec![u0],
-        vec![v0],
-        &points,
-        &GordonOptions::default(),
-    );
+    let points = vec![vec![Vector2::new(0.0, 0.0)], vec![Vector2::new(0.0, 1.0)]];
+    let result = BsplineSurface::try_gordon(vec![u0], vec![v0], &points, &GordonOptions::default());
     assert!(matches!(
         result,
         Err(Error::CurveNetworkIncompatible(
@@ -137,12 +128,7 @@ fn try_gordon_empty_u_curves() {
         vec![Vector2::new(0.0, 0.0), Vector2::new(0.0, 1.0)],
     );
     let points: Vec<Vec<Vector2>> = vec![];
-    let result = BsplineSurface::try_gordon(
-        vec![],
-        vec![v0],
-        &points,
-        &GordonOptions::default(),
-    );
+    let result = BsplineSurface::try_gordon(vec![], vec![v0], &points, &GordonOptions::default());
     assert!(matches!(
         result,
         Err(Error::CurveNetworkIncompatible(

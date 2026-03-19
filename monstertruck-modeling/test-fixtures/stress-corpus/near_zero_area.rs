@@ -47,12 +47,7 @@ pub fn near_zero_area_sliver() -> Vec<Wire> {
 /// fitting).
 pub fn collapsed_quad_bezier() -> Vec<Wire> {
     let eps = 1e-10;
-    let corners = [
-        (0.0, 0.0),
-        (1.0, 0.0),
-        (1.0, 1.0),
-        (0.0, 1.0),
-    ];
+    let corners = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)];
 
     let vertices: Vec<Vertex> = corners
         .iter()
@@ -65,11 +60,7 @@ pub fn collapsed_quad_bezier() -> Vec<Wire> {
             let (x0, y0) = corners[i];
             let (x1, y1) = corners[j];
             // Control point is the midpoint plus a tiny offset.
-            let mid = Point3::new(
-                (x0 + x1) / 2.0 + eps,
-                (y0 + y1) / 2.0 + eps,
-                0.0,
-            );
+            let mid = Point3::new((x0 + x1) / 2.0 + eps, (y0 + y1) / 2.0 + eps, 0.0);
             builder::bezier(&vertices[i], &vertices[j], vec![mid])
         })
         .collect();

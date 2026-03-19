@@ -463,11 +463,7 @@ impl<V: Homogeneous<Scalar = f64> + ControlPoint<f64, Diff = V> + Tolerance> Nur
     /// The returned surface evaluates identically to `self` at parameters within
     /// the specified range.
     #[inline(always)]
-    pub fn sub_patch(
-        &self,
-        u_range: (f64, f64),
-        v_range: (f64, f64),
-    ) -> NurbsSurface<V> {
+    pub fn sub_patch(&self, u_range: (f64, f64), v_range: (f64, f64)) -> NurbsSurface<V> {
         NurbsSurface::new(self.0.sub_patch(u_range, v_range))
     }
 

@@ -145,40 +145,39 @@ fn bench_full_pipeline(c: &mut Criterion) {
 
     // Glyph 'O' -> solid.
     let glyph_o = f.glyph_index('O').expect("glyph for 'O'");
-    group.bench_function("glyph_to_solid", |b: &mut criterion::Bencher<'_, WallTime>| {
-        b.iter(|| {
-            let wires =
-                text::glyph_profile(&f, black_box(glyph_o), &opts).expect("glyph_profile");
-            black_box(profile::solid_from_planar_profile::<Curve, Surface>(
-                wires,
-                Vector3::new(0.0, 0.0, 1.0),
-            ))
-        })
-    });
+    group.bench_function(
+        "glyph_to_solid",
+        |b: &mut criterion::Bencher<'_, WallTime>| {
+            b.iter(|| {
+                let wires =
+                    text::glyph_profile(&f, black_box(glyph_o), &opts).expect("glyph_profile");
+                black_box(profile::solid_from_planar_profile::<Curve, Surface>(
+                    wires,
+                    Vector3::new(0.0, 0.0, 1.0),
+                ))
+            })
+        },
+    );
 
     // 100-char text -> wires.
     let text_100 = make_text(100);
-    group.bench_function("text_to_wires_100", |b: &mut criterion::Bencher<'_, WallTime>| {
-        b.iter(|| black_box(text::text_profile(&f, black_box(text_100.as_str()), &opts)))
-    });
+    group.bench_function(
+        "text_to_wires_100",
+        |b: &mut criterion::Bencher<'_, WallTime>| {
+            b.iter(|| black_box(text::text_profile(&f, black_box(text_100.as_str()), &opts)))
+        },
+    );
 
     group.finish();
 }
 
-criterion_group!(
+criterion_group!(glyph_benches, bench_glyph_profile);
+criterion_group!(text_benches, bench_text_profile);
+criterion_group!(stress_benches, bench_stress_corpus);
+criterion_group!(pipeline_benches, bench_full_pipeline);
+criterion_main!(
     glyph_benches,
-    bench_glyph_profile
-);
-criterion_group!(
     text_benches,
-    bench_text_profile
-);
-criterion_group!(
     stress_benches,
-    bench_stress_corpus
+    pipeline_benches
 );
-criterion_group!(
-    pipeline_benches,
-    bench_full_pipeline
-);
-criterion_main!(glyph_benches, text_benches, stress_benches, pipeline_benches);
