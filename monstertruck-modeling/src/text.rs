@@ -70,11 +70,11 @@ impl ContourCollector {
 impl ttf_parser::OutlineBuilder for ContourCollector {
     fn move_to(&mut self, x: f32, y: f32) {
         // Start a new contour.
-        if let Some((sx, sy)) = self.current_start.take() {
-            if !self.current_segments.is_empty() {
-                let segs = std::mem::take(&mut self.current_segments);
-                self.contours.push((sx, sy, segs));
-            }
+        if let Some((sx, sy)) = self.current_start.take()
+            && !self.current_segments.is_empty()
+        {
+            let segs = std::mem::take(&mut self.current_segments);
+            self.contours.push((sx, sy, segs));
         }
         self.current_start = Some((x as f64, y as f64));
     }
