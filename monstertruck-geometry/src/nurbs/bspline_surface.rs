@@ -1938,6 +1938,9 @@ impl BsplineSurface<Point3> {
     ///
     /// Returns [`Error::InsufficientSections`] if `options.n_sections < 2`.
     /// Returns [`Error::CurveNetworkIncompatible`] with
+    /// [`CurveNetworkDiagnostic::EndpointMismatch`] if the profile start does
+    /// not coincide with rail1 start (within tolerance).
+    /// Returns [`Error::CurveNetworkIncompatible`] with
     /// [`CurveNetworkDiagnostic::DegenerateGeometry`] if the profile chord is
     /// zero-length.
     pub fn try_birail1(
@@ -1958,8 +1961,32 @@ impl BsplineSurface<Point3> {
         let (u_start, u_end) = profile.range_tuple();
         let p_start = profile.subs(u_start);
         let p_end = profile.subs(u_end);
+
+        // B1: Validate profile start coincides with rail1 start.
+        let rail1_start = rail1.subs(r_start);
+        let endpoint_dist = (p_start - rail1_start).magnitude();
+        if !endpoint_dist.so_small() {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::EndpointMismatch {
+                    curve_index: 0,
+                    expected: [rail1_start[0], rail1_start[1], rail1_start[2]],
+                    actual: [p_start[0], p_start[1], p_start[2]],
+                    distance: endpoint_dist,
+                },
+            ));
+        }
+
         let chord = p_end - p_start;
         let chord_len = chord.magnitude();
+
+        // B2: Validate profile chord is non-degenerate.
+        if chord_len.so_small() {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::DegenerateGeometry {
+                    description: "profile chord is zero-length".into(),
+                },
+            ));
+        }
 
         let sections: Vec<BsplineCurve<Point3>> = (0..n_sections)
             .map(|i| {
@@ -1970,14 +1997,10 @@ impl BsplineSurface<Point3> {
                 let target_len = target_chord.magnitude();
 
                 // Scale factor from profile chord to target chord.
-                let scale = if chord_len.so_small() {
-                    1.0
-                } else {
-                    target_len / chord_len
-                };
+                let scale = target_len / chord_len;
 
                 // Rotation from profile chord to target chord direction.
-                let rotation = if chord_len.so_small() || target_len.so_small() {
+                let rotation = if target_len.so_small() {
                     Matrix3::from_value(1.0)
                 } else {
                     rotation_between(chord, target_chord)
