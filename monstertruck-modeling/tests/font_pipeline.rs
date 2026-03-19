@@ -229,6 +229,166 @@ fn text_profile_space_skipped() {
     );
 }
 
+// ---------------------------------------------------------------------------
+// Helpers for mixed glyph + custom profile tests
+// ---------------------------------------------------------------------------
+
+/// Builds a rectangular wire in the XY plane using the same pattern as
+/// `profile_test.rs`.
+fn rect_wire(x0: f64, y0: f64, x1: f64, y1: f64) -> Wire {
+    let v0 = builder::vertex(Point3::new(x0, y0, 0.0));
+    let v1 = builder::vertex(Point3::new(x1, y0, 0.0));
+    let v2 = builder::vertex(Point3::new(x1, y1, 0.0));
+    let v3 = builder::vertex(Point3::new(x0, y1, 0.0));
+    vec![
+        builder::line(&v0, &v1),
+        builder::line(&v1, &v2),
+        builder::line(&v2, &v3),
+        builder::line(&v3, &v0),
+    ]
+    .into()
+}
+
+/// Large rectangle wire sized to contain font glyphs at `scale = 1.0`
+/// (font-unit coordinates, typically 0..~2000 range).
+fn large_rect_wire() -> Wire {
+    rect_wire(-500.0, -1500.0, 2500.0, 2500.0)
+}
+
+/// Options that disable the per-em normalization so glyph coordinates stay in
+/// raw font units (typically 0..~2048).
+fn font_unit_opts() -> text::TextOptions {
+    text::TextOptions {
+        scale: Some(1.0),
+        ..text::TextOptions::default()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Mixed glyph + custom profile integration tests
+// ---------------------------------------------------------------------------
+
+/// A custom large outer rectangle with glyph 'O' hole contours merged in.
+/// The face boundary count should equal the total wire count.
+#[test]
+fn mixed_glyph_custom_outer_with_glyph_holes() {
+    let f = face();
+    let glyph_id = f.glyph_index('O').expect("glyph for 'O'");
+    let opts = font_unit_opts();
+    let glyph_wires = text::glyph_profile(&f, glyph_id, &opts).expect("glyph_profile");
+
+    // Take only the hole contours from the glyph (skip the outer).
+    // For 'O', wires[0] is typically the outer, wires[1..] are holes.
+    let glyph_holes: Vec<Wire> = glyph_wires.into_iter().skip(1).collect();
+    assert!(
+        !glyph_holes.is_empty(),
+        "'O' must have at least one hole contour"
+    );
+
+    let outer = large_rect_wire();
+    let custom_set = vec![outer];
+    let merged = profile::merge_profiles(vec![custom_set, glyph_holes.clone()]);
+    let expected_count = 1 + glyph_holes.len();
+    assert_eq!(merged.len(), expected_count);
+
+    let face: Face =
+        profile::attach_plane_normalized(merged).expect("attach_plane_normalized mixed");
+    assert_eq!(
+        face.boundaries().len(),
+        expected_count,
+        "Face boundary count must match merged wire count"
+    );
+}
+
+/// A custom outer rectangle with glyph 'l' (single contour, no holes) merged.
+/// The glyph wire should be classified as a hole inside the larger rectangle.
+#[test]
+fn mixed_glyph_custom_face_construction() {
+    let f = face();
+    let glyph_id = f.glyph_index('l').expect("glyph for 'l'");
+    let opts = font_unit_opts();
+    let glyph_wires = text::glyph_profile(&f, glyph_id, &opts).expect("glyph_profile for 'l'");
+    assert_eq!(glyph_wires.len(), 1);
+
+    let outer = large_rect_wire();
+    let merged = profile::merge_profiles(vec![vec![outer], glyph_wires]);
+    let face: Face = profile::attach_plane_normalized(merged).expect("attach_plane_normalized");
+    assert_eq!(
+        face.boundaries().len(),
+        2,
+        "Expected 2 boundaries: outer rectangle + glyph 'l' hole"
+    );
+}
+
+/// A large custom outer rectangle with multiple glyph outlines ('I' and 'l')
+/// positioned via `text_profile("Il")`. All glyph wires should be classified
+/// as holes inside the outer rectangle. Expect 3 boundaries (1 outer + 2 holes).
+#[test]
+fn mixed_multiple_glyphs_as_holes() {
+    let f = face();
+    let opts = font_unit_opts();
+    let glyph_wires = text::text_profile(&f, "Il", &opts).expect("text_profile for 'Il'");
+    // 'I' and 'l' each have 1 contour.
+    assert_eq!(
+        glyph_wires.len(),
+        2,
+        "Expected 2 wires for 'Il', got {}",
+        glyph_wires.len()
+    );
+
+    let outer = large_rect_wire();
+    let merged = profile::merge_profiles(vec![vec![outer], glyph_wires]);
+    let face: Face = profile::attach_plane_normalized(merged).expect("attach_plane_normalized");
+    assert_eq!(
+        face.boundaries().len(),
+        3,
+        "Expected 3 boundaries: 1 outer + 2 glyph holes"
+    );
+}
+
+/// Combine a custom outer rectangle with glyph 'O' holes, create a face,
+/// then extrude to a solid. The solid must be geometrically consistent.
+#[test]
+fn mixed_glyph_custom_solid_extrusion() {
+    let f = face();
+    let glyph_id = f.glyph_index('O').expect("glyph for 'O'");
+    let opts = font_unit_opts();
+    let glyph_wires = text::glyph_profile(&f, glyph_id, &opts).expect("glyph_profile for 'O'");
+
+    // Take only the hole contours.
+    let glyph_holes: Vec<Wire> = glyph_wires.into_iter().skip(1).collect();
+
+    let outer = large_rect_wire();
+    let merged = profile::merge_profiles(vec![vec![outer], glyph_holes]);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        merged,
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .expect("solid_from_planar_profile mixed");
+    assert!(
+        solid.is_geometric_consistent(),
+        "Mixed glyph+custom solid must be geometrically consistent"
+    );
+}
+
+/// `merge_profiles` with two non-empty sets returns the combined count.
+#[test]
+fn merge_profiles_basic() {
+    let w1 = rect_wire(0.0, 0.0, 1.0, 1.0);
+    let w2 = rect_wire(2.0, 0.0, 3.0, 1.0);
+    let merged = profile::merge_profiles(vec![vec![w1], vec![w2]]);
+    assert_eq!(merged.len(), 2);
+}
+
+/// `merge_profiles` with a non-empty set and an empty set returns the first
+/// set's count.
+#[test]
+fn merge_profiles_empty_second() {
+    let w1 = rect_wire(0.0, 0.0, 1.0, 1.0);
+    let merged = profile::merge_profiles(vec![vec![w1], vec![]]);
+    assert_eq!(merged.len(), 1);
+}
+
 /// Y-flip option inverts Y coordinates.
 #[test]
 fn glyph_profile_y_flip() {
