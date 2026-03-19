@@ -978,3 +978,48 @@ impl<S: na::Scalar + Copy> Matrix4<S> {
         Matrix4(rot.to_homogeneous())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::traits::Transform;
+
+    /// Verify that `from_translation` produces an affine translation matrix that
+    /// correctly translates points. Previously the translation vector was placed
+    /// in the wrong matrix position, creating a projective transform instead of
+    /// an affine translation.
+    #[test]
+    fn should_not_create_projective_transform_from_translation_regression_missing_polygon_boolean_tests(
+    ) {
+        let v = Vector3::<f64>::new(1.0, 2.0, 3.0);
+        let m = Matrix4::from_translation(v);
+
+        // Translating the origin must produce the translation vector.
+        let origin = Point3::origin();
+        let translated = m.transform_point(origin);
+        assert!(
+            (translated[0] - 1.0).abs() < 1e-12
+                && (translated[1] - 2.0).abs() < 1e-12
+                && (translated[2] - 3.0).abs() < 1e-12,
+            "origin translated by (1,2,3) should be (1,2,3), got {translated:?}",
+        );
+
+        // Translating a non-origin point must add the translation vector.
+        let p = Point3::new(10.0, 20.0, 30.0);
+        let tp = m.transform_point(p);
+        assert!(
+            (tp[0] - 11.0).abs() < 1e-12
+                && (tp[1] - 22.0).abs() < 1e-12
+                && (tp[2] - 33.0).abs() < 1e-12,
+            "(10,20,30) translated by (1,2,3) should be (11,22,33), got {tp:?}",
+        );
+
+        // The homogeneous w-component must always be 1 (affine, not projective).
+        let h = m.0 * Point3::new(5.0, 7.0, 11.0).to_homogeneous();
+        assert!(
+            (h[3] - 1.0).abs() < 1e-12,
+            "w-component must be 1 for affine translation, got {}",
+            h[3],
+        );
+    }
+}
