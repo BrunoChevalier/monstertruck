@@ -140,7 +140,16 @@ fn test_try_gordon_dimension_mismatch() {
 
 #[test]
 fn test_try_sweep_multi_rail_three_rails() {
-    let profile = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    // Profile is a quadratic Bezier arc spanning the three rail start points.
+    let profile = BsplineCurve::new(
+        KnotVector::bezier_knot(2),
+        vec![
+            Point3::new(-1.0, 0.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+        ],
+    );
+    // Three non-collinear rails (triangle configuration in XY, sweeping along Z).
     let rail0 = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0));
     let rail1 = line_bspline(Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 1.0, 5.0));
     let rail2 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0));

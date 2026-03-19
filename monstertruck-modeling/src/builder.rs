@@ -558,6 +558,121 @@ pub fn try_gordon(
     Ok(face_from_bspline_surface(surface))
 }
 
+/// Sweeps a profile along multiple rail curves using least-squares affine
+/// fitting, returning a [`Face`] with typed error handling.
+///
+/// For 2 rails the behavior matches [`try_birail`]; for 3+ rails a
+/// least-squares affine transform is computed at each section.
+///
+/// # Errors
+///
+/// - [`Error::InsufficientRails`] if `rails.len() < 2`.
+/// - [`Error::InsufficientSections`] if `n_sections < 2`.
+/// - [`Error::SurfaceConstructionFailed`] if the geometry-level algorithm fails.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+///
+/// let profile = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let rail0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0)],
+/// );
+/// let rail1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 1.0, 5.0)],
+/// );
+/// let rail2 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0)],
+/// );
+/// let face: Face = builder::try_sweep_multi_rail(
+///     &profile, &[rail0, rail1, rail2], 5,
+/// ).unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_sweep_multi_rail(
+    profile: &BsplineCurve<Point3>,
+    rails: &[BsplineCurve<Point3>],
+    n_sections: usize,
+) -> Result<Face<Curve, Surface>> {
+    if rails.len() < 2 {
+        return Err(Error::InsufficientRails {
+            required: 2,
+            got: rails.len(),
+        });
+    }
+    if n_sections < 2 {
+        return Err(Error::InsufficientSections {
+            required: 2,
+            got: n_sections,
+        });
+    }
+    let surface = BsplineSurface::sweep_multi_rail(profile.clone(), rails, n_sections)
+        .map_err(|e| Error::SurfaceConstructionFailed {
+            reason: e.to_string(),
+        })?;
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Sweeps a profile along a closed rail to produce a periodic (tube-like)
+/// surface, returning a [`Shell`] with typed error handling.
+///
+/// The resulting shell contains a single face whose v=0 and v=1 boundaries
+/// evaluate to the same geometric positions (C0 seam continuity). The
+/// topological closure (sewing the seam) is left to the caller.
+///
+/// # Errors
+///
+/// - [`Error::InsufficientSections`] if `n_sections < 3`.
+/// - [`Error::SurfaceConstructionFailed`] if the geometry-level algorithm fails.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+///
+/// let rail = BsplineCurve::new(
+///     KnotVector::from(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]),
+///     vec![
+///         Point3::new(1.0, 0.0, 0.0),
+///         Point3::new(0.0, 1.0, 0.0),
+///         Point3::new(-1.0, 0.0, 0.0),
+///         Point3::new(0.0, -1.0, 0.0),
+///         Point3::new(1.0, 0.0, 0.0),
+///     ],
+/// );
+/// let profile = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(1.0, 0.0, -0.2), Point3::new(1.0, 0.0, 0.2)],
+/// );
+/// let shell: Shell = builder::try_sweep_periodic(&profile, &rail, 8).unwrap();
+/// assert_eq!(shell.len(), 1);
+/// ```
+pub fn try_sweep_periodic(
+    profile: &BsplineCurve<Point3>,
+    rail: &BsplineCurve<Point3>,
+    n_sections: usize,
+) -> Result<Shell<Curve, Surface>> {
+    if n_sections < 3 {
+        return Err(Error::InsufficientSections {
+            required: 3,
+            got: n_sections,
+        });
+    }
+    let surface = BsplineSurface::sweep_periodic(profile.clone(), rail, n_sections)
+        .map_err(|e| Error::SurfaceConstructionFailed {
+            reason: e.to_string(),
+        })?;
+    let face = face_from_bspline_surface(surface);
+    Ok(Shell::from(vec![face]))
+}
+
 /// Try attatiching a plane whose boundary is `wire`.
 /// # Examples
 /// ```
