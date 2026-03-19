@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 37 | Approval-needed: 0 | Total: 37
+**Summary:** Auto-fixes: 39 | Approval-needed: 0 | Total: 39
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -258,4 +258,18 @@
 **Category:** design
 **Description:** Old try_sweep_rail/try_birail/try_gordon not converted to delegates because delegation changes error variant types from modeling-level (InsufficientSections, GridDimensionMismatch) to FromGeometry wrappers, breaking existing tests which AGENTS.md forbids modifying
 **Files changed:** monstertruck-modeling/src/builder.rs
+**Status:** applied
+
+### [2026-03-19T16:44:13.383Z] [AUTO-FIX] Category: design
+**Type:** auto-fix
+**Category:** design
+**Description:** sweep_from_planar_profile uses Solid::new_unchecked instead of debug_new because independently-created sweep rail faces do not share topological edges, making the shell appear disconnected to connectivity checks. The solid is geometrically consistent.
+**Files changed:** monstertruck-modeling/src/profile.rs
+**Status:** applied
+
+### [2026-03-19T17:04:34.187Z] [AUTO-FIX] Category: design
+**Type:** auto-fix
+**Category:** design
+**Description:** Swept solids have Oriented (not Closed) shell topology due to non-shared edges between caps and side faces. validate_solid accepts Oriented shells instead of requiring Closed. Negative test uses non-closed shell (face removed) to trigger closed-specific Euler-Poincare failure.
+**Files changed:** monstertruck-modeling/src/profile.rs, monstertruck-modeling/tests/profile_test.rs
 **Status:** applied
