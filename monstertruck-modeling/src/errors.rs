@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 /// Modeling errors.
-#[derive(Debug, PartialEq, Eq, Error)]
+#[derive(Debug, PartialEq, Error)]
 pub enum Error {
     /// Wrapper of topological error.
     #[error(transparent)]
@@ -59,6 +59,15 @@ pub enum Error {
         /// Actual number of columns.
         actual_cols: usize,
     },
+    /// Geometry-level error during surface construction.
+    #[error(transparent)]
+    FromGeometry(monstertruck_geometry::errors::Error),
+}
+
+impl From<monstertruck_geometry::errors::Error> for Error {
+    fn from(e: monstertruck_geometry::errors::Error) -> Self {
+        Error::FromGeometry(e)
+    }
 }
 
 #[test]
@@ -118,7 +127,49 @@ fn print_messages() {
     .unwrap();
     writeln!(
         &mut std::io::stderr(),
+        "{}\n",
+        Error::FromGeometry(monstertruck_geometry::errors::Error::CurveNetworkIncompatible(
+            monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic::InsufficientCurves {
+                required: 2,
+                got: 0,
+            }
+        ))
+    )
+    .unwrap();
+    writeln!(
+        &mut std::io::stderr(),
         "*******************************************************"
     )
     .unwrap();
+}
+
+#[test]
+fn from_geometry_error_variant() {
+    use monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic;
+
+    // Construct a geometry-level error.
+    let geom_err = monstertruck_geometry::errors::Error::CurveNetworkIncompatible(
+        CurveNetworkDiagnostic::GridDimensionMismatch {
+            expected_rows: 3,
+            expected_cols: 2,
+            actual_rows: 1,
+            actual_cols: 1,
+        },
+    );
+
+    // Convert to modeling error via From.
+    let modeling_err: Error = Error::from(geom_err);
+
+    // Verify it is the FromGeometry variant.
+    assert!(
+        matches!(modeling_err, Error::FromGeometry(_)),
+        "expected FromGeometry variant, got: {modeling_err:?}"
+    );
+
+    // Verify the display message contains diagnostic details.
+    let msg = modeling_err.to_string();
+    assert!(
+        msg.contains("3x2"),
+        "error message should contain grid dimensions: {msg}"
+    );
 }
