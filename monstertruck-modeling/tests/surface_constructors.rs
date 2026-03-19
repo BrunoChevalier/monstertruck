@@ -137,3 +137,74 @@ fn test_try_gordon_dimension_mismatch() {
     let result = builder::try_gordon(vec![u0, u1], vec![v0], &points);
     assert!(matches!(result, Err(Error::GridDimensionMismatch { .. })));
 }
+
+#[test]
+fn test_try_sweep_multi_rail_three_rails() {
+    let profile = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    let rail0 = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0));
+    let rail1 = line_bspline(Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 1.0, 5.0));
+    let rail2 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0));
+    let face = builder::try_sweep_multi_rail(&profile, &[rail0, rail1, rail2], 5).unwrap();
+    let boundaries = face.boundaries();
+    assert_eq!(boundaries.len(), 1);
+    assert_eq!(boundaries[0].len(), 4);
+}
+
+#[test]
+fn test_try_sweep_multi_rail_insufficient_rails() {
+    let profile = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    let rail0 = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0));
+    let result = builder::try_sweep_multi_rail(&profile, &[rail0], 5);
+    assert_eq!(
+        result.unwrap_err(),
+        Error::InsufficientRails {
+            required: 2,
+            got: 1,
+        },
+    );
+}
+
+#[test]
+fn test_try_sweep_periodic_closed_seam() {
+    // Circular-ish rail.
+    let rail = BsplineCurve::new(
+        KnotVector::from(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]),
+        vec![
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(-1.0, 0.0, 0.0),
+            Point3::new(0.0, -1.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+        ],
+    );
+    let profile = line_bspline(Point3::new(1.0, 0.0, -0.2), Point3::new(1.0, 0.0, 0.2));
+    let shell = builder::try_sweep_periodic(&profile, &rail, 8).unwrap();
+    assert_eq!(shell.len(), 1);
+
+    // Verify C0 seam continuity: subs(u, 0) == subs(u, 1).
+    let face = &shell[0];
+    let surface = face.surface();
+    for i in 0..=10 {
+        let u = i as f64 / 10.0;
+        let p0 = surface.subs(u, 0.0);
+        let p1 = surface.subs(u, 1.0);
+        assert!(
+            p0.near(&p1),
+            "seam mismatch at u={u}: {p0:?} vs {p1:?}",
+        );
+    }
+}
+
+#[test]
+fn test_try_sweep_periodic_insufficient_sections() {
+    let profile = line_bspline(Point3::new(1.0, 0.0, -0.2), Point3::new(1.0, 0.0, 0.2));
+    let rail = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0));
+    let result = builder::try_sweep_periodic(&profile, &rail, 2);
+    assert_eq!(
+        result.unwrap_err(),
+        Error::InsufficientSections {
+            required: 3,
+            got: 2,
+        },
+    );
+}
