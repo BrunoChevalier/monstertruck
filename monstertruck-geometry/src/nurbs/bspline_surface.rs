@@ -1575,44 +1575,9 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// assert_near2!(surface.subs(1.0, 1.0), Vector2::new(1.0, 2.0));
     /// ```
     #[deprecated(since = "0.5.0", note = "use try_skin with SkinOptions")]
-    pub fn skin(mut curves: Vec<BsplineCurve<P>>) -> BsplineSurface<P> {
-        assert!(
-            !curves.is_empty(),
-            "skin requires at least one section curve"
-        );
-        if curves.len() == 1 {
-            // Degenerate: single curve → constant surface in v.
-            let c = &mut curves[0];
-            c.knot_normalize();
-            let knot_vector_u = c.knot_vec().clone();
-            let knot_vector_v = KnotVector::from(vec![0.0, 0.0, 1.0, 1.0]);
-            let control_points: Vec<Vec<_>> =
-                c.control_points().iter().map(|p| vec![*p, *p]).collect();
-            return BsplineSurface::new_unchecked((knot_vector_u, knot_vector_v), control_points);
-        }
-        if curves.len() == 2 {
-            return Self::homotopy(curves.swap_remove(0), curves.swap_remove(0));
-        }
-
-        // Make all section curves compatible.
-        compat::make_curves_compatible(&mut curves)
-            .expect("skin: compatibility normalization failed on non-empty curve set");
-
-        let n = curves.len();
-        let m = curves[0].control_points().len();
-
-        // Build the v-direction knot vector (degree 1, clamped, uniform).
-        let mut v_knots = Vec::with_capacity(n + 2);
-        v_knots.push(0.0);
-        (0..n).for_each(|i| v_knots.push(i as f64 / (n - 1) as f64));
-        v_knots.push(1.0);
-        let knot_vector_v = KnotVector::from(v_knots);
-
-        let knot_vector_u = curves[0].knot_vec().clone();
-        let control_points: Vec<Vec<P>> = (0..m)
-            .map(|j| curves.iter().map(|c| *c.control_point(j)).collect())
-            .collect();
-        BsplineSurface::new_unchecked((knot_vector_u, knot_vector_v), control_points)
+    pub fn skin(curves: Vec<BsplineCurve<P>>) -> BsplineSurface<P> {
+        Self::try_skin(curves, &SkinOptions::default())
+            .expect("skin: construction failed (use try_skin for error handling)")
     }
 
     /// Fallible skin surface construction using typed options.
@@ -1715,44 +1680,16 @@ impl BsplineSurface<Point3> {
     /// assert_near2!(surface.subs(1.0, 1.0), Point3::new(1.0, 0.0, 5.0));
     /// ```
     #[deprecated(since = "0.5.0", note = "use try_sweep_rail with SweepRailOptions")]
-    #[allow(deprecated)]
+    #[allow(clippy::field_reassign_with_default)]
     pub fn sweep_rail(
         profile: BsplineCurve<Point3>,
         rail: &BsplineCurve<Point3>,
         n_sections: usize,
     ) -> BsplineSurface<Point3> {
-        assert!(n_sections >= 2, "sweep_rail requires at least 2 sections");
-
-        let (t_start, t_end) = rail.range_tuple();
-        let rail_origin = rail.subs(t_start);
-        let tangent0 = rail.derivative(t_start);
-        let t0_len = tangent0.magnitude();
-
-        let sections: Vec<BsplineCurve<Point3>> = (0..n_sections)
-            .map(|i| {
-                let t = t_start + (t_end - t_start) * i as f64 / (n_sections - 1) as f64;
-                let rail_pt = rail.subs(t);
-                let tangent_i = rail.derivative(t);
-                let translation = rail_pt - rail_origin;
-
-                // Compute rotation from initial tangent to current tangent.
-                let rotation = if t0_len.so_small() || tangent_i.magnitude().so_small() {
-                    Matrix3::from_value(1.0)
-                } else {
-                    rotation_between(tangent0, tangent_i)
-                };
-
-                let mut section = profile.clone();
-                section.transform_control_points(|pt| {
-                    let local = *pt - rail_origin;
-                    let rotated = rotation * local;
-                    *pt = rail_origin + rotated + translation;
-                });
-                section
-            })
-            .collect();
-
-        BsplineSurface::skin(sections)
+        let mut opts = SweepRailOptions::default();
+        opts.n_sections = n_sections;
+        Self::try_sweep_rail(profile, rail, &opts)
+            .expect("sweep_rail: construction failed (use try_sweep_rail for error handling)")
     }
 
     /// Creates a surface by sweeping a single profile along two rail curves (birail1).
@@ -1797,55 +1734,17 @@ impl BsplineSurface<Point3> {
     /// assert_near2!(surface.subs(1.0, 1.0), Point3::new(1.0, 0.0, 5.0));
     /// ```
     #[deprecated(since = "0.5.0", note = "use try_birail1 with Birail1Options")]
-    #[allow(deprecated)]
+    #[allow(clippy::field_reassign_with_default)]
     pub fn birail1(
         profile: BsplineCurve<Point3>,
         rail1: &BsplineCurve<Point3>,
         rail2: &BsplineCurve<Point3>,
         n_sections: usize,
     ) -> BsplineSurface<Point3> {
-        assert!(n_sections >= 2, "birail1 requires at least 2 sections");
-
-        let (r_start, r_end) = rail1.range_tuple();
-        let (u_start, u_end) = profile.range_tuple();
-        let p_start = profile.subs(u_start);
-        let p_end = profile.subs(u_end);
-        let chord = p_end - p_start;
-        let chord_len = chord.magnitude();
-
-        let sections: Vec<BsplineCurve<Point3>> = (0..n_sections)
-            .map(|i| {
-                let t = r_start + (r_end - r_start) * i as f64 / (n_sections - 1) as f64;
-                let r1_pt = rail1.subs(t);
-                let r2_pt = rail2.subs(t);
-                let target_chord = r2_pt - r1_pt;
-                let target_len = target_chord.magnitude();
-
-                // Scale factor from profile chord to target chord.
-                let scale = if chord_len.so_small() {
-                    1.0
-                } else {
-                    target_len / chord_len
-                };
-
-                // Rotation from profile chord to target chord direction.
-                let rotation = if chord_len.so_small() || target_len.so_small() {
-                    Matrix3::from_value(1.0)
-                } else {
-                    rotation_between(chord, target_chord)
-                };
-
-                let mut section = profile.clone();
-                section.transform_control_points(|pt| {
-                    let local = *pt - p_start;
-                    let transformed = rotation * local * scale;
-                    *pt = r1_pt + transformed;
-                });
-                section
-            })
-            .collect();
-
-        BsplineSurface::skin(sections)
+        let mut opts = Birail1Options::default();
+        opts.n_sections = n_sections;
+        Self::try_birail1(profile, rail1, rail2, &opts)
+            .expect("birail1: construction failed (use try_birail1 for error handling)")
     }
 
     /// Creates a surface by blending two profiles along two rail curves (birail2).
@@ -1893,7 +1792,7 @@ impl BsplineSurface<Point3> {
     /// assert_near2!(surface.subs(1.0, 1.0), Point3::new(2.0, 0.0, 4.0));
     /// ```
     #[deprecated(since = "0.5.0", note = "use try_birail2 with Birail2Options")]
-    #[allow(deprecated)]
+    #[allow(clippy::field_reassign_with_default)]
     pub fn birail2(
         profile1: BsplineCurve<Point3>,
         profile2: BsplineCurve<Point3>,
@@ -1901,75 +1800,10 @@ impl BsplineSurface<Point3> {
         rail2: &BsplineCurve<Point3>,
         n_sections: usize,
     ) -> BsplineSurface<Point3> {
-        assert!(n_sections >= 2, "birail2 requires at least 2 sections");
-
-        let (r_start, r_end) = rail1.range_tuple();
-
-        let (u1_start, u1_end) = profile1.range_tuple();
-        let p1_start = profile1.subs(u1_start);
-        let p1_end = profile1.subs(u1_end);
-        let chord1 = p1_end - p1_start;
-        let chord1_len = chord1.magnitude();
-
-        let (u2_start, u2_end) = profile2.range_tuple();
-        let p2_start = profile2.subs(u2_start);
-        let p2_end = profile2.subs(u2_end);
-        let chord2 = p2_end - p2_start;
-        let chord2_len = chord2.magnitude();
-
-        // Make profiles compatible so we can blend control points.
-        let mut compat_profiles = vec![profile1, profile2];
-        compat::make_curves_compatible(&mut compat_profiles)
-            .expect("birail2: profile compatibility normalization failed");
-
-        let sections: Vec<BsplineCurve<Point3>> = (0..n_sections)
-            .map(|i| {
-                let v = i as f64 / (n_sections - 1) as f64;
-                let t = r_start + (r_end - r_start) * v;
-                let r1_pt = rail1.subs(t);
-                let r2_pt = rail2.subs(t);
-                let target_chord = r2_pt - r1_pt;
-                let target_len = target_chord.magnitude();
-
-                // Transform profile1 to span r1->r2.
-                let transform_profile =
-                    |prof: &BsplineCurve<Point3>, p_s: Point3, ch: Vector3, ch_len: f64| {
-                        let scale = if ch_len.so_small() {
-                            1.0
-                        } else {
-                            target_len / ch_len
-                        };
-                        let rotation = if ch_len.so_small() || target_len.so_small() {
-                            Matrix3::from_value(1.0)
-                        } else {
-                            rotation_between(ch, target_chord)
-                        };
-                        let mut s = prof.clone();
-                        s.transform_control_points(|pt| {
-                            let local = *pt - p_s;
-                            let transformed = rotation * local * scale;
-                            *pt = r1_pt + transformed;
-                        });
-                        s
-                    };
-
-                let s1 = transform_profile(&compat_profiles[0], p1_start, chord1, chord1_len);
-                let s2 = transform_profile(&compat_profiles[1], p2_start, chord2, chord2_len);
-
-                // Blend: (1-v) * s1 + v * s2.
-                let cp1 = s1.control_points();
-                let cp2 = s2.control_points();
-                let blended_cp: Vec<Point3> = cp1
-                    .iter()
-                    .zip(cp2.iter())
-                    .map(|(a, b)| *a + (*b - *a) * v)
-                    .collect();
-
-                BsplineCurve::new_unchecked(s1.knot_vec().clone(), blended_cp)
-            })
-            .collect();
-
-        BsplineSurface::skin(sections)
+        let mut opts = Birail2Options::default();
+        opts.n_sections = n_sections;
+        Self::try_birail2(profile1, profile2, rail1, rail2, &opts)
+            .expect("birail2: construction failed (use try_birail2 for error handling)")
     }
 
     /// Fallible single-rail sweep using typed options.
@@ -2605,72 +2439,13 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// assert_near2!(gordon.subs(1.0, 1.0), Vector2::new(1.0, 1.0));
     /// ```
     #[deprecated(since = "0.5.0", note = "use try_gordon with GordonOptions")]
-    #[allow(deprecated)]
     pub fn gordon(
         u_curves: Vec<BsplineCurve<P>>,
         v_curves: Vec<BsplineCurve<P>>,
         points: &[Vec<P>],
     ) -> BsplineSurface<P> {
-        let n = u_curves.len();
-        let m = v_curves.len();
-        assert!(!u_curves.is_empty(), "gordon requires at least one u-curve");
-        assert!(!v_curves.is_empty(), "gordon requires at least one v-curve");
-        assert_eq!(points.len(), n, "points rows must match u_curves count");
-        assert!(
-            points.iter().all(|row| row.len() == m),
-            "each points row must have v_curves.len() columns",
-        );
-
-        // S_u: skin the u-curves (v parameterizes across sections).
-        let s_u = BsplineSurface::skin(u_curves);
-
-        // S_v: skin the v-curves (u parameterizes across sections),
-        // then swap axes so u/v orientation matches S_u.
-        let mut s_v = BsplineSurface::skin(v_curves);
-        s_v.swap_axes();
-
-        // T: tensor product surface interpolating the grid points.
-        // Build as degree-1 in both u and v, using the grid points directly.
-        let n_u = n;
-        let n_v = m;
-        let mut u_knots = Vec::with_capacity(n_u + 2);
-        u_knots.push(0.0);
-        (0..n_u).for_each(|i| u_knots.push(i as f64 / (n_u - 1).max(1) as f64));
-        u_knots.push(1.0);
-
-        let mut v_knots = Vec::with_capacity(n_v + 2);
-        v_knots.push(0.0);
-        (0..n_v).for_each(|j| v_knots.push(j as f64 / (n_v - 1).max(1) as f64));
-        v_knots.push(1.0);
-
-        let knot_u = KnotVector::from(u_knots);
-        let knot_v = KnotVector::from(v_knots);
-        // Control points: rows indexed by u-column (matching skin layout).
-        let t_cp: Vec<Vec<P>> = (0..n_v)
-            .map(|j| (0..n_u).map(|i| points[i][j]).collect())
-            .collect();
-        let tensor = BsplineSurface::new_unchecked((knot_u, knot_v), t_cp);
-
-        // Make all three surfaces compatible.
-        let mut surfaces = vec![s_u, s_v, tensor];
-        compat::make_surfaces_compatible(&mut surfaces)
-            .expect("gordon: surface compatibility normalization failed");
-
-        // G = S_u + S_v - T (boolean sum).
-        let cp_u = surfaces[0].control_points();
-        let cp_v = surfaces[1].control_points();
-        let cp_t = surfaces[2].control_points();
-        let rows = cp_u.len();
-        let cols = cp_u[0].len();
-        let result_cp: Vec<Vec<P>> = (0..rows)
-            .map(|i| {
-                (0..cols)
-                    .map(|j| cp_u[i][j] + (cp_v[i][j] - cp_t[i][j]))
-                    .collect()
-            })
-            .collect();
-
-        BsplineSurface::new_unchecked(surfaces[0].knot_vecs().clone(), result_cp)
+        Self::try_gordon(u_curves, v_curves, points, &GordonOptions::default())
+            .expect("gordon: construction failed (use try_gordon for error handling)")
     }
 
     /// Fallible Gordon surface construction using typed options.
