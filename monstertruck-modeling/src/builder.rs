@@ -1393,8 +1393,7 @@ mod option_builder_tests {
         let rail2 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0));
         let profile = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
         let opts = Birail1Options::default();
-        let face =
-            builder::try_birail_with_options(&profile, &rail1, &rail2, &opts).unwrap();
+        let face = builder::try_birail_with_options(&profile, &rail1, &rail2, &opts).unwrap();
         assert_eq!(face.boundaries()[0].len(), 4);
     }
 
@@ -1405,11 +1404,75 @@ mod option_builder_tests {
         let profile1 = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
         let profile2 = line_bspline(Point3::new(-1.0, 0.0, 5.0), Point3::new(1.0, 0.0, 5.0));
         let opts = Birail2Options::default();
-        let face = builder::try_birail2_with_options(
-            &profile1, &profile2, &rail1, &rail2, &opts,
-        )
-        .unwrap();
+        let face =
+            builder::try_birail2_with_options(&profile1, &profile2, &rail1, &rail2, &opts).unwrap();
         assert_eq!(face.boundaries()[0].len(), 4);
+    }
+
+    #[test]
+    fn gordon_with_options_grid_dimension_mismatch() {
+        let u0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+        let u1 = line_bspline(Point3::new(0.0, 0.0, 1.0), Point3::new(1.0, 0.0, 1.0));
+        let v0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 1.0));
+        // 2 u-curves but points grid has 3 rows -- mismatch.
+        let points = vec![
+            vec![Point3::new(0.0, 0.0, 0.0)],
+            vec![Point3::new(0.0, 0.0, 0.5)],
+            vec![Point3::new(0.0, 0.0, 1.0)],
+        ];
+        let opts = GordonOptions::default();
+        let result = builder::try_gordon_with_options(vec![u0, u1], vec![v0], &points, &opts);
+        let err = result.unwrap_err();
+        let msg = err.to_string();
+        // Error should propagate from geometry through FromGeometry.
+        assert!(
+            matches!(err, errors::Error::FromGeometry(_)),
+            "expected FromGeometry variant, got: {err:?}"
+        );
+        // The diagnostic should contain the dimension numbers.
+        assert!(msg.contains("2x1"), "expected '2x1' in: {msg}");
+        assert!(msg.contains("3x1"), "expected '3x1' in: {msg}");
+    }
+
+    #[test]
+    fn sweep_rail_with_options_insufficient_sections() {
+        let profile = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+        let rail = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0));
+        let opts = SweepRailOptions {
+            n_sections: 1,
+            ..SweepRailOptions::default()
+        };
+        let result = builder::try_sweep_rail_with_options(&profile, &rail, &opts);
+        let err = result.unwrap_err();
+        assert!(
+            matches!(err, errors::Error::FromGeometry(_)),
+            "expected FromGeometry variant, got: {err:?}"
+        );
+        let msg = err.to_string();
+        assert!(
+            msg.contains("at least 2") || msg.contains("sections"),
+            "expected sections info in: {msg}"
+        );
+    }
+
+    #[test]
+    fn birail_with_options_endpoint_mismatch() {
+        // Profile start does NOT match rail1 start.
+        let profile = line_bspline(Point3::new(5.0, 5.0, 5.0), Point3::new(6.0, 5.0, 5.0));
+        let rail1 = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0));
+        let rail2 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0));
+        let opts = Birail1Options::default();
+        let result = builder::try_birail_with_options(&profile, &rail1, &rail2, &opts);
+        let err = result.unwrap_err();
+        assert!(
+            matches!(err, errors::Error::FromGeometry(_)),
+            "expected FromGeometry variant, got: {err:?}"
+        );
+        let msg = err.to_string();
+        assert!(
+            msg.contains("endpoint mismatch"),
+            "expected 'endpoint mismatch' in: {msg}"
+        );
     }
 
     #[test]
@@ -1424,8 +1487,7 @@ mod option_builder_tests {
         ];
         let opts = GordonOptions::default();
         let face =
-            builder::try_gordon_with_options(vec![u0, u1], vec![v0, v1], &points, &opts)
-                .unwrap();
+            builder::try_gordon_with_options(vec![u0, u1], vec![v0, v1], &points, &opts).unwrap();
         assert_eq!(face.boundaries()[0].len(), 4);
     }
 }
