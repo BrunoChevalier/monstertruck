@@ -368,6 +368,196 @@ where
     Ok(shell)
 }
 
+use crate::geometry::{Curve, Surface};
+
+/// Builds a [`Face`] from a [`BsplineSurface`] by extracting its 4 boundary
+/// curves and constructing proper topology (vertices, edges, wire).
+///
+/// The boundary wire is oriented: bottom → right → top⁻¹ → left⁻¹,
+/// where bottom/top are iso-v curves and left/right are iso-u curves.
+fn face_from_bspline_surface(surface: BsplineSurface<Point3>) -> Face<Curve, Surface> {
+    let ((u0, u1), (v0, v1)) = surface.range_tuple();
+
+    // Corner points.
+    let p00 = surface.subs(u0, v0);
+    let p10 = surface.subs(u1, v0);
+    let p01 = surface.subs(u0, v1);
+    let p11 = surface.subs(u1, v1);
+
+    // Vertices.
+    let v00 = vertex(p00);
+    let v10 = vertex(p10);
+    let v11 = vertex(p11);
+    let v01 = vertex(p01);
+
+    // Boundary curves from the control-point grid.
+    let n_rows = surface.control_points().len();
+    let n_cols = surface.control_points()[0].len();
+    // row_curve(col_idx): fixed v-column, u varies.
+    let bottom = surface.row_curve(0); // v = v_min, u varies.
+    let top = surface.row_curve(n_cols - 1); // v = v_max, u varies.
+    // column_curve(row_idx): fixed u-row, v varies.
+    let left = surface.column_curve(0); // u = u_min, v varies.
+    let right = surface.column_curve(n_rows - 1); // u = u_max, v varies.
+
+    // Edges: bottom(v00→v10), right(v10→v11), top(v01→v11), left(v00→v01).
+    let e_bottom = Edge::new(&v00, &v10, Curve::BsplineCurve(bottom));
+    let e_right = Edge::new(&v10, &v11, Curve::BsplineCurve(right));
+    let e_top = Edge::new(&v01, &v11, Curve::BsplineCurve(top));
+    let e_left = Edge::new(&v00, &v01, Curve::BsplineCurve(left));
+
+    // Wire: bottom → right → top⁻¹ → left⁻¹.
+    let wire = wire![e_bottom, e_right, e_top.inverse(), e_left.inverse()];
+    Face::new(vec![wire], Surface::BsplineSurface(surface))
+}
+
+/// Sweeps a profile curve along a single rail with tangent-aligned framing,
+/// returning a [`Face`] with typed error handling.
+///
+/// # Errors
+///
+/// Returns [`Error::InsufficientSections`] if `n_sections < 2`.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+///
+/// let profile = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let rail = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0)],
+/// );
+/// let face: Face = builder::try_sweep_rail(&profile, &rail, 3).unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_sweep_rail(
+    profile: &BsplineCurve<Point3>,
+    rail: &BsplineCurve<Point3>,
+    n_sections: usize,
+) -> Result<Face<Curve, Surface>> {
+    if n_sections < 2 {
+        return Err(Error::InsufficientSections {
+            required: 2,
+            got: n_sections,
+        });
+    }
+    let surface = BsplineSurface::sweep_rail(profile.clone(), rail, n_sections);
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Sweeps a profile along two rail curves (birail), returning a [`Face`]
+/// with typed error handling.
+///
+/// At each section the profile is affinely transformed so its start aligns
+/// with `rail1` and its end with `rail2`.
+///
+/// # Errors
+///
+/// Returns [`Error::InsufficientSections`] if `n_sections < 2`.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+///
+/// let rail1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0)],
+/// );
+/// let rail2 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0)],
+/// );
+/// let profile = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let face: Face = builder::try_birail(&profile, &rail1, &rail2, 3).unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_birail(
+    profile: &BsplineCurve<Point3>,
+    rail1: &BsplineCurve<Point3>,
+    rail2: &BsplineCurve<Point3>,
+    n_sections: usize,
+) -> Result<Face<Curve, Surface>> {
+    if n_sections < 2 {
+        return Err(Error::InsufficientSections {
+            required: 2,
+            got: n_sections,
+        });
+    }
+    let surface = BsplineSurface::birail1(profile.clone(), rail1, rail2, n_sections);
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Constructs a Gordon surface from a u/v curve network and intersection
+/// points, returning a [`Face`] with typed error handling.
+///
+/// # Errors
+///
+/// Returns [`Error::GridDimensionMismatch`] if the dimensions of `points`
+/// do not match `u_curves.len()` rows and `v_curves.len()` columns.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+///
+/// let u0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let u1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 1.0), Point3::new(1.0, 0.0, 1.0)],
+/// );
+/// let v0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 1.0)],
+/// );
+/// let v1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 1.0)],
+/// );
+/// let points = vec![
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+///     vec![Point3::new(0.0, 0.0, 1.0), Point3::new(1.0, 0.0, 1.0)],
+/// ];
+/// let face: Face = builder::try_gordon(vec![u0, u1], vec![v0, v1], &points).unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_gordon(
+    u_curves: Vec<BsplineCurve<Point3>>,
+    v_curves: Vec<BsplineCurve<Point3>>,
+    points: &[Vec<Point3>],
+) -> Result<Face<Curve, Surface>> {
+    let n_u = u_curves.len();
+    let n_v = v_curves.len();
+    if points.len() != n_u {
+        return Err(Error::GridDimensionMismatch {
+            expected_rows: n_u,
+            expected_cols: n_v,
+            actual_rows: points.len(),
+            actual_cols: points.first().map_or(0, |r| r.len()),
+        });
+    }
+    if let Some(row) = points.iter().find(|r| r.len() != n_v) {
+        return Err(Error::GridDimensionMismatch {
+            expected_rows: n_u,
+            expected_cols: n_v,
+            actual_rows: points.len(),
+            actual_cols: row.len(),
+        });
+    }
+    let surface = BsplineSurface::gordon(u_curves, v_curves, points);
+    Ok(face_from_bspline_surface(surface))
+}
+
 /// Try attatiching a plane whose boundary is `wire`.
 /// # Examples
 /// ```
