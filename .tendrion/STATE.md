@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 9 of 12 (Boolean Repair and Tolerance Foundation)
-**Plan:** 3 of 5
+**Plan:** 4 of 5
 **Progress:**
 
 
@@ -35,6 +35,7 @@
 None
 
 ## Session
+**Chain:** active
 **Last Command:** /td:plan-phase
 **Next Action:** Run /td:execute to begin execution
 **Resume File:** None
