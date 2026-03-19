@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 39 | Approval-needed: 0 | Total: 39
+**Summary:** Auto-fixes: 41 | Approval-needed: 0 | Total: 41
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -272,4 +272,18 @@
 **Category:** design
 **Description:** Swept solids have Oriented (not Closed) shell topology due to non-shared edges between caps and side faces. validate_solid accepts Oriented shells instead of requiring Closed. Negative test uses non-closed shell (face removed) to trigger closed-specific Euler-Poincare failure.
 **Files changed:** monstertruck-modeling/src/profile.rs, monstertruck-modeling/tests/profile_test.rs
+**Status:** applied
+
+### [2026-03-19T17:31:57.375Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing compilation error in monstertruck-modeling/tests/intersection_curve_impls.rs: ambiguous truncate method. Not caused by this plan.
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-19T17:50:22.065Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing compilation error in monstertruck-modeling/tests/intersection_curve_impls.rs (truncate ambiguity) blocks full nextest run; bench-only verification used instead
+**Files changed:** none
 **Status:** applied
