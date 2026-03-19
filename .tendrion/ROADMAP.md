@@ -25,7 +25,7 @@
 - [x] **Phase 13: API Polish and Surface Operations** - Typed option structs for surface constructors, curve network diagnostics, and patch split/extract
 - [x] **Phase 14: Profile Solid Pipeline** - Revolve/sweep solid creation, mixed glyph-profile combinations, and profile validation
 - [x] **Phase 15: Font Stress Testing and Performance** - Pathological font corpus and large-text pipeline benchmarks
-- [ ] **Phase 16: Tolerance Foundation and API Safety** - Centralize tolerance constants, add non_exhaustive to option structs, refactor deprecated delegations
+- [x] **Phase 16: Tolerance Foundation and API Safety** - Centralize tolerance constants, add non_exhaustive to option structs, refactor deprecated delegations
 - [ ] **Phase 17: Curve Intersection Engine** - Implement shared curve-curve intersection module for Gordon grid computation and trim intersection
 - [ ] **Phase 18: Gordon Surface Variants** - Auto-intersect and verified-grid Gordon constructors using the curve intersection engine
 - [ ] **Phase 19: Trim Tessellation Robustness** - Fallback boundary projection and tolerance-derived tessellation constants
@@ -188,7 +188,7 @@
 | 13. API Polish and Surface Operations | v0.5.0 | 3/3 | ✓ Complete | 2026-03-19 |
 | 14. Profile Solid Pipeline | v0.5.0 | 3/3 | ✓ Complete | 2026-03-19 |
 | 15. Font Stress Testing and Performance | v0.5.0 | 2/2 | ✓ Complete | 2026-03-19 |
-| 16. Tolerance Foundation and API Safety | v0.5.1 | 0/TBD | Not started | - |
+| 16. Tolerance Foundation and API Safety | v0.5.1 | 3/3 | ✓ Complete | 2026-03-19 |
 | 17. Curve Intersection Engine | v0.5.1 | 0/TBD | Not started | - |
 | 18. Gordon Surface Variants | v0.5.1 | 0/TBD | Not started | - |
 | 19. Trim Tessellation Robustness | v0.5.1 | 0/TBD | Not started | - |
