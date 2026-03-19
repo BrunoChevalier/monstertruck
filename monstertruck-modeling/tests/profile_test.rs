@@ -157,6 +157,157 @@ fn solid_diagonal_extrusion() {
     assert!(solid.is_geometric_consistent());
 }
 
+// -- Phase 14: revolve from planar profile --
+
+/// Helper: builds a CCW rectangular wire in the XZ plane at y=0.
+fn rect_wire_xz(x0: f64, z0: f64, x1: f64, z1: f64) -> Wire {
+    let v0 = builder::vertex(Point3::new(x0, 0.0, z0));
+    let v1 = builder::vertex(Point3::new(x1, 0.0, z0));
+    let v2 = builder::vertex(Point3::new(x1, 0.0, z1));
+    let v3 = builder::vertex(Point3::new(x0, 0.0, z1));
+    vec![
+        builder::line(&v0, &v1),
+        builder::line(&v1, &v2),
+        builder::line(&v2, &v3),
+        builder::line(&v3, &v0),
+    ]
+    .into()
+}
+
+#[test]
+fn revolve_simple_rect() {
+    // Revolve a rectangular profile (XZ plane) 360 degrees around the Y-axis.
+    let wire = rect_wire_xz(2.0, -1.0, 4.0, 1.0);
+    let solid = profile::revolve_from_planar_profile(
+        vec![wire],
+        Point3::origin(),
+        Vector3::unit_y(),
+        Rad(2.0 * std::f64::consts::PI),
+        4,
+    )
+    .unwrap();
+    assert!(solid.is_geometric_consistent());
+}
+
+#[test]
+fn revolve_torus_topology() {
+    // Revolve a small square offset from the axis to produce a torus-like solid.
+    let wire = rect_wire_xz(3.0, -0.5, 4.0, 0.5);
+    let solid = profile::revolve_from_planar_profile(
+        vec![wire],
+        Point3::origin(),
+        Vector3::unit_y(),
+        Rad(2.0 * std::f64::consts::PI),
+        4,
+    )
+    .unwrap();
+    assert!(solid.is_geometric_consistent());
+}
+
+#[test]
+fn revolve_partial_angle() {
+    // Revolve a rectangular profile 90 degrees (PI/2).
+    let wire = rect_wire_xz(2.0, -1.0, 4.0, 1.0);
+    let solid = profile::revolve_from_planar_profile(
+        vec![wire],
+        Point3::origin(),
+        Vector3::unit_y(),
+        Rad(std::f64::consts::FRAC_PI_2),
+        2,
+    )
+    .unwrap();
+    assert!(solid.is_geometric_consistent());
+}
+
+#[test]
+fn revolve_with_hole() {
+    // Revolve a profile with an outer rectangle and inner hole around an axis.
+    let outer = rect_wire_xz(2.0, -2.0, 6.0, 2.0);
+    let hole = rect_wire_xz(3.0, -1.0, 5.0, 1.0);
+    let solid_with_hole = profile::revolve_from_planar_profile(
+        vec![outer.clone(), hole],
+        Point3::origin(),
+        Vector3::unit_y(),
+        Rad(2.0 * std::f64::consts::PI),
+        4,
+    )
+    .unwrap();
+
+    // Compare with solid without hole -- more faces expected with hole.
+    let solid_no_hole = profile::revolve_from_planar_profile(
+        vec![outer],
+        Point3::origin(),
+        Vector3::unit_y(),
+        Rad(2.0 * std::f64::consts::PI),
+        4,
+    )
+    .unwrap();
+    assert!(solid_with_hole.boundaries()[0].len() > solid_no_hole.boundaries()[0].len());
+    assert!(solid_with_hole.is_geometric_consistent());
+}
+
+#[test]
+fn revolve_open_wire_rejected() {
+    // Passing an open wire should return an error.
+    let v0 = builder::vertex(Point3::new(2.0, 0.0, 0.0));
+    let v1 = builder::vertex(Point3::new(4.0, 0.0, 0.0));
+    let v2 = builder::vertex(Point3::new(4.0, 0.0, 2.0));
+    let wire: Wire = vec![builder::line(&v0, &v1), builder::line(&v1, &v2)].into();
+    let result = profile::revolve_from_planar_profile(
+        vec![wire],
+        Point3::origin(),
+        Vector3::unit_y(),
+        Rad(2.0 * std::f64::consts::PI),
+        4,
+    );
+    assert!(result.is_err());
+}
+
+// -- Phase 14: sweep from planar profile --
+
+#[test]
+fn sweep_rect_along_line() {
+    // Sweep a rectangular profile along a straight-line guide.
+    let wire = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let guide = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0)],
+    );
+    let solid = profile::sweep_from_planar_profile(vec![wire], &guide, 4).unwrap();
+    assert!(solid.is_geometric_consistent());
+}
+
+#[test]
+fn sweep_rect_along_curve() {
+    // Sweep a rectangular profile along a curved guide (quarter arc approximation).
+    let wire = rect_wire(-0.5, -0.5, 0.5, 0.5);
+    let guide = BsplineCurve::new(
+        KnotVector::bezier_knot(2),
+        vec![
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, 5.0),
+            Point3::new(5.0, 0.0, 5.0),
+        ],
+    );
+    let solid = profile::sweep_from_planar_profile(vec![wire], &guide, 6).unwrap();
+    assert!(solid.is_geometric_consistent());
+}
+
+#[test]
+fn sweep_open_wire_rejected() {
+    // Passing an open wire for sweep should return an error.
+    let v0 = builder::vertex(Point3::new(0.0, 0.0, 0.0));
+    let v1 = builder::vertex(Point3::new(1.0, 0.0, 0.0));
+    let v2 = builder::vertex(Point3::new(1.0, 1.0, 0.0));
+    let wire: Wire = vec![builder::line(&v0, &v1), builder::line(&v1, &v2)].into();
+    let guide = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0)],
+    );
+    let result = profile::sweep_from_planar_profile(vec![wire], &guide, 4);
+    assert!(result.is_err());
+}
+
 // -- Non-XY planes --
 
 #[test]
