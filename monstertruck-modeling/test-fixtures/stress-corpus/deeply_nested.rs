@@ -44,16 +44,16 @@ pub fn deeply_nested_holes() -> Vec<Wire> {
 /// **Real-world analog:** Perforated or dotted patterns in decorative
 /// fonts, or bitmap-style fonts with many small features.
 pub fn high_loop_count() -> Vec<Wire> {
-    let mut wires = vec![make_rectangle(0.0, 0.0, 20.0, 25.0)];
+    let outer = std::iter::once(make_rectangle(0.0, 0.0, 20.0, 25.0));
 
     // 4x5 grid of small rectangles inside the outer one.
-    for row in 0..5 {
-        for col in 0..4 {
+    let inner = (0..5).flat_map(|row| {
+        (0..4).map(move |col| {
             let x0 = 1.0 + col as f64 * 5.0;
             let y0 = 1.0 + row as f64 * 5.0;
-            wires.push(make_rectangle(x0, y0, x0 + 3.0, y0 + 3.0));
-        }
-    }
+            make_rectangle(x0, y0, x0 + 3.0, y0 + 3.0)
+        })
+    });
 
-    wires
+    outer.chain(inner).collect()
 }

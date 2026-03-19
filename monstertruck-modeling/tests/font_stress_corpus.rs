@@ -34,7 +34,7 @@ fn font_stress_self_intersecting_cubic() {
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
             assert!(
-                face.boundaries().len() >= 1,
+                !face.boundaries().is_empty(),
                 "Expected at least 1 boundary"
             );
         }
@@ -56,7 +56,7 @@ fn font_stress_bow_tie_contour() {
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
             assert!(
-                face.boundaries().len() >= 1,
+                !face.boundaries().is_empty(),
                 "Expected at least 1 boundary"
             );
         }
@@ -82,7 +82,7 @@ fn font_stress_overlapping_contours() {
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
             assert!(
-                face.boundaries().len() >= 1,
+                !face.boundaries().is_empty(),
                 "Expected at least 1 boundary"
             );
         }
@@ -108,7 +108,7 @@ fn font_stress_near_zero_area_sliver() {
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
             assert!(
-                face.boundaries().len() >= 1,
+                !face.boundaries().is_empty(),
                 "Expected at least 1 boundary"
             );
         }
@@ -130,7 +130,7 @@ fn font_stress_collapsed_quad_bezier() {
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
             assert!(
-                face.boundaries().len() >= 1,
+                !face.boundaries().is_empty(),
                 "Expected at least 1 boundary"
             );
         }
@@ -152,7 +152,7 @@ fn font_stress_micro_feature_loop() {
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
             assert!(
-                face.boundaries().len() >= 1,
+                !face.boundaries().is_empty(),
                 "Expected at least 1 boundary"
             );
         }
@@ -236,7 +236,7 @@ fn font_stress_coincident_control_points() {
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
             assert!(
-                face.boundaries().len() >= 1,
+                !face.boundaries().is_empty(),
                 "Expected at least 1 boundary"
             );
         }
@@ -293,7 +293,7 @@ fn font_stress_single_point_degeneracy() {
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
             assert!(
-                face.boundaries().len() >= 1,
+                !face.boundaries().is_empty(),
                 "Expected at least 1 boundary"
             );
         }
@@ -371,7 +371,7 @@ fn font_stress_glyph_ampersand() {
     match profile::attach_plane_normalized::<Curve, Surface>(wires) {
         Ok(face) => {
             assert!(
-                face.boundaries().len() >= 1,
+                !face.boundaries().is_empty(),
                 "Expected >= 1 boundary for '&'"
             );
         }
