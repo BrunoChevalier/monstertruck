@@ -7,7 +7,8 @@
 //! - **Fillet/chamfer** ([`fillet`]): Round or bevel edges of a shell.
 //! - **Shell/offset** ([`shell_ops`]): Hollow out a solid or offset shell surfaces.
 //! - **Draft/taper** ([`draft`]): Apply mold-release draft angles to selected faces.
-//! - **Shape healing** ([`extract_healed`]): Repair topology for imported shapes.
+//! - **Shape healing** ([`extract_healed`], [`heal_surface_shell`]): Repair topology
+//!   for imported shapes and surfaces from sweep/birail/gordon constructors.
 
 #![cfg_attr(not(debug_assertions), deny(warnings))]
 #![deny(clippy::all, rust_2018_idioms)]
@@ -23,7 +24,10 @@
 )]
 
 mod healing;
-pub use healing::{RobustSplitClosedEdgesAndFaces, SplitClosedEdgesAndFaces, extract_healed};
+pub use healing::{
+    RobustSplitClosedEdgesAndFaces, SplitClosedEdgesAndFaces, SurfaceHealingError, extract_healed,
+    heal_surface_shell,
+};
 pub mod shell_ops;
 pub use shell_ops::{OffsetCurve, OffsetSurface, offset_shell, shell_solid};
 pub mod draft;
