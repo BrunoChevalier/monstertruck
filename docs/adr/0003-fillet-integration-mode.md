@@ -42,3 +42,7 @@ No changes to fillet integration mode logic. Phase 9 established a tolerance pol
 ## Status Update (Phase 10)
 
 No changes to fillet integration mode logic. Phase 10 introduced surface healing hooks and a NURBS fixture corpus for testing degenerate surfaces through sweep/birail/gordon constructors. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 11)
+
+No changes to fillet integration mode logic. Phase 11 added multi-rail sweep and periodic sweep constructors in `monstertruck-geometry` and typed builder wrappers in `monstertruck-modeling`. The fillet integration mode and continuity annotations from this ADR are unaffected.

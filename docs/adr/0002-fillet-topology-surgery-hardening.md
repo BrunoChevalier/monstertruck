@@ -49,3 +49,7 @@ Phase 9 replaced the hardcoded `1.0e-6` in `edge_select.rs` with the canonical `
 ## Status Update (Phase 10)
 
 No changes to fillet topology surgery. Phase 10 added a NURBS fixture corpus with degenerate surface cases and surface healing hooks (`heal_surface_shell`) for sweep/birail/gordon constructors in `monstertruck-solid::healing`. The healing pipeline complements this ADR's pre-cut edge conversion by ensuring surfaces are well-formed before they enter topology operations. Integration tests validate that healed surfaces produce valid closed shells.
+
+## Status Update (Phase 11)
+
+No changes to fillet topology surgery. Phase 11 added `sweep_multi_rail` and `sweep_periodic` surface constructors in `monstertruck-geometry` and typed builder wrappers in `monstertruck-modeling`. The new builders use Euler-Poincare topology checks consistent with the validation framework established in Phase 8, but the fillet surgery code itself was unaffected.

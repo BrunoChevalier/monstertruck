@@ -124,7 +124,15 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 10 -- NURBS Fixture Corpus & Surface Healing)
+### Recent Changes (Phase 11 -- Surface Constructors)
+
+- **Multi-rail sweep** -- `BsplineSurface::sweep_multi_rail` in `monstertruck-geometry` sweeps a profile along 2+ rails with affine fitting. The 2-rail case uses birail-style scale+rotate+translate; 3+ rails use SVD-based least-squares affine fitting via a new `affine_fit_3x3` helper that handles rank-deficient (coplanar) reference points.
+- **Periodic sweep** -- `BsplineSurface::sweep_periodic` sweeps a profile along a rail with tangent-aligned framing, duplicating the first section as the last to guarantee C0 seam continuity.
+- **Typed builder wrappers** -- 5 builder functions in `monstertruck-modeling::builder` (`try_sweep_rail`, `try_birail`, `try_gordon`, `try_sweep_multi_rail`, `try_sweep_periodic`) wrap geometry constructors with `Result` error handling and topology assembly. `try_sweep_periodic` returns `Result<Shell>` for closed-surface topology; the others return `Result<Face>`.
+- **Error variants** -- `monstertruck-modeling::errors` gained `InsufficientRails`, `InsufficientSections`, `SurfaceConstructionFailed`, and `GridDimensionMismatch` variants.
+- **Integration tests** -- 6 geometry-level tests and 13 modeling-level integration tests covering all wrappers, error paths, seam continuity, vertex positions, and Euler-Poincare consistency.
+
+### Earlier Changes (Phase 10 -- NURBS Fixture Corpus & Surface Healing)
 
 - **NURBS fixture corpus** -- 10 reusable NURBS fixtures (`monstertruck-geometry/src/nurbs/test_fixtures.rs`) covering degenerate surfaces (collapsed edges, zero-area patches, self-intersecting control nets, near-singular parameterizations) and topology builders (`monstertruck-solid/tests/fixture_helpers.rs`) for constructing shells from fixture surfaces.
 - **Surface healing hooks** -- New `heal_surface_shell` in `monstertruck-solid::healing::surface_healing` detects and repairs degenerate NURBS surfaces produced by `sweep_rail`, `birail`, and `gordon` constructors, applying knot-insertion and control-point perturbation before downstream topology assembly.

@@ -50,3 +50,7 @@ No changes to the polynomial solver module. Phase 9 focused on boolean operation
 ## Status Update (Phase 10)
 
 No changes to the polynomial solver module. Phase 10 introduced a NURBS fixture corpus and surface healing hooks in `monstertruck-solid`; the math layer was unaffected.
+
+## Status Update (Phase 11)
+
+No changes to the polynomial solver module. Phase 11 added multi-rail sweep and periodic sweep surface constructors in `monstertruck-geometry`, plus typed builder wrappers in `monstertruck-modeling`. The SVD-based affine fitting used by `sweep_multi_rail` is implemented independently of the polynomial solvers; the math layer was unaffected.
