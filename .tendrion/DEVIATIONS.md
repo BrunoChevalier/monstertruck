@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 28 | Approval-needed: 0 | Total: 28
+**Summary:** Auto-fixes: 29 | Approval-needed: 0 | Total: 29
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -195,4 +195,11 @@
 **Category:** bug
 **Description:** 7 pre-existing test failures in fillet and feature_integration modules unrelated to healing changes
 **Files changed:** monstertruck-solid/src/fillet/geometry.rs, monstertruck-solid/src/fillet/tests.rs
+**Status:** applied
+
+### [2026-03-19T13:21:15.461Z] [AUTO-FIX] Category: design
+**Type:** auto-fix
+**Category:** design
+**Description:** Used SVD-based pseudoinverse instead of direct matrix inverse for affine_fit_3x3 to handle coplanar reference points (rank 2 covariance). Direct inverse fails when reference points lie in a plane; pseudoinverse gracefully handles rank-deficient cases while still detecting truly degenerate (rank < 2) configurations.
+**Files changed:** monstertruck-geometry/src/nurbs/bspline_surface.rs
 **Status:** applied
