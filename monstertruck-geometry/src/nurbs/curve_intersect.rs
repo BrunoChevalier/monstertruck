@@ -39,15 +39,15 @@ struct SubdivisionContext<'a> {
     results: Vec<CurveIntersection>,
 }
 
-/// Finds all intersection points between two B-spline curves.
+/// Finds all intersection points between two [`BsplineCurve<Point3>`] values.
 ///
 /// Uses a subdivision approach: recursively splits curves via bounding-box
 /// overlap tests, then refines candidate pairs with Newton-Raphson iteration.
 /// Returns intersection parameters accurate within [`SNAP_TOLERANCE`].
 ///
 /// # Arguments
-/// * `curve0` - First B-spline curve.
-/// * `curve1` - Second B-spline curve.
+/// * `curve0` -- first B-spline curve.
+/// * `curve1` -- second B-spline curve.
 ///
 /// # Returns
 /// A vector of [`CurveIntersection`] values, one per intersection point,
@@ -64,12 +64,11 @@ pub fn find_intersections(
         results: Vec::new(),
     };
     subdivide_and_collect(&mut ctx, a0, a1, b0, b1, 0);
-    deduplicate_intersections(&mut ctx.results);
-    ctx.results.sort_by(|a, b| a.t0.partial_cmp(&b.t0).unwrap_or(std::cmp::Ordering::Equal));
+    finalize_results(&mut ctx.results);
     ctx.results
 }
 
-/// Finds self-intersection points of a single B-spline curve.
+/// Finds self-intersection points of a single [`BsplineCurve<Point3>`].
 ///
 /// Subdivides the curve into non-overlapping sub-arcs and tests each
 /// pair for intersections, excluding adjacent/identical segments.
@@ -92,14 +91,11 @@ pub fn find_self_intersections(
     let n_arcs = n_interior.max(4);
     let dt = range / n_arcs as f64;
 
-    // Build sub-arc boundaries.
     let boundaries: Vec<f64> = (0..=n_arcs)
         .map(|i| t_start + dt * i as f64)
         .collect();
 
     let mut results = Vec::new();
-
-    // Test all non-adjacent pairs of sub-arcs.
     (0..n_arcs).for_each(|i| {
         ((i + 2)..n_arcs).for_each(|j| {
             let sub_arc0 = extract_subarc(curve, boundaries[i], boundaries[i + 1]);
@@ -108,9 +104,14 @@ pub fn find_self_intersections(
         });
     });
 
-    deduplicate_intersections(&mut results);
-    results.sort_by(|a, b| a.t0.partial_cmp(&b.t0).unwrap_or(std::cmp::Ordering::Equal));
+    finalize_results(&mut results);
     results
+}
+
+/// Deduplicates and sorts results by `t0`.
+fn finalize_results(results: &mut Vec<CurveIntersection>) {
+    deduplicate_intersections(results);
+    results.sort_by(|a, b| a.t0.partial_cmp(&b.t0).unwrap_or(std::cmp::Ordering::Equal));
 }
 
 /// Recursively subdivides curves and collects intersection candidates.
@@ -134,16 +135,12 @@ fn subdivide_and_collect(
         return;
     }
 
-    // Compute bounding boxes over the sub-ranges by cutting sub-arcs.
-    let sub0 = extract_subarc(ctx.curve0, t0_start, t0_end);
-    let sub1 = extract_subarc(ctx.curve1, t1_start, t1_end);
-
-    let bb0: BoundingBox<Point3> = sub0.roughly_bounding_box();
-    let bb1: BoundingBox<Point3> = sub1.roughly_bounding_box();
-
-    // Check bounding box overlap.
-    let intersection = bb0 ^ bb1;
-    if intersection.is_empty() {
+    // Test bounding-box overlap of the sub-arcs.
+    let bb0: BoundingBox<Point3> =
+        extract_subarc(ctx.curve0, t0_start, t0_end).roughly_bounding_box();
+    let bb1: BoundingBox<Point3> =
+        extract_subarc(ctx.curve1, t1_start, t1_end).roughly_bounding_box();
+    if (bb0 ^ bb1).is_empty() {
         return;
     }
 
@@ -151,9 +148,7 @@ fn subdivide_and_collect(
     if dt0 < SNAP_TOLERANCE && dt1 < SNAP_TOLERANCE {
         let t0_mid = (t0_start + t0_end) * 0.5;
         let t1_mid = (t1_start + t1_end) * 0.5;
-        if let Some(hit) = newton_refine(ctx.curve0, ctx.curve1, t0_mid, t1_mid)
-            .or_else(|| direct_check(ctx.curve0, ctx.curve1, t0_mid, t1_mid))
-        {
+        if let Some(hit) = try_refine(ctx.curve0, ctx.curve1, t0_mid, t1_mid) {
             ctx.results.push(hit);
         }
         return;
@@ -164,14 +159,12 @@ fn subdivide_and_collect(
         let t0_mid = (t0_start + t0_end) * 0.5;
         let t1_mid = (t1_start + t1_end) * 0.5;
 
-        // Check for parallel/overlapping case.
+        // Skip parallel/overlapping segments (not point intersections).
         if is_parallel_overlap(ctx.curve0, ctx.curve1, t0_mid, t1_mid) {
             return;
         }
 
-        if let Some(hit) = newton_refine(ctx.curve0, ctx.curve1, t0_mid, t1_mid)
-            .or_else(|| direct_check(ctx.curve0, ctx.curve1, t0_mid, t1_mid))
-        {
+        if let Some(hit) = try_refine(ctx.curve0, ctx.curve1, t0_mid, t1_mid) {
             ctx.results.push(hit);
             return;
         }
@@ -189,7 +182,18 @@ fn subdivide_and_collect(
     }
 }
 
-/// Extracts a sub-arc of a curve between parameter values `t_start` and `t_end`.
+/// Attempts Newton refinement, falling back to direct distance check.
+fn try_refine(
+    curve0: &BsplineCurve<Point3>,
+    curve1: &BsplineCurve<Point3>,
+    t0: f64,
+    t1: f64,
+) -> Option<CurveIntersection> {
+    newton_refine(curve0, curve1, t0, t1)
+        .or_else(|| direct_check(curve0, curve1, t0, t1))
+}
+
+/// Extracts a sub-arc of a curve between parameters `t_start` and `t_end`.
 fn extract_subarc(
     curve: &BsplineCurve<Point3>,
     t_start: f64,
@@ -201,15 +205,10 @@ fn extract_subarc(
     if (t_end - t_start).abs() < f64::EPSILON * 10.0 {
         // Degenerate sub-arc: return a single-point curve.
         let pt = curve.evaluate(t_start);
-        return BsplineCurve::new(
-            KnotVector::from(vec![t_start, t_end]),
-            vec![pt],
-        );
+        return BsplineCurve::new(KnotVector::from(vec![t_start, t_end]), vec![pt]);
     }
     let mut c = curve.clone();
-    // cut at t_end first, keeping [range_start, t_end].
     let _ = c.cut(t_end);
-    // Then cut at t_start, getting [t_start, t_end] as the returned part.
     c.cut(t_start)
 }
 
@@ -226,8 +225,7 @@ fn is_parallel_overlap(
 ) -> bool {
     let p0 = curve0.evaluate(t0);
     let p1 = curve1.evaluate(t1);
-    let dist = p0.distance(p1);
-    if dist > SNAP_TOLERANCE * 100.0 {
+    if p0.distance(p1) > SNAP_TOLERANCE * 100.0 {
         return false;
     }
 
@@ -244,29 +242,23 @@ fn is_parallel_overlap(
         return false;
     }
 
-    // Tangents are parallel. Check second derivatives to distinguish
-    // true overlap from tangential contact.
-    // For overlap, the second derivatives projected onto the normal plane
-    // should match. For tangential contact, they differ.
+    // Tangents are parallel. Compare second derivatives projected onto the
+    // plane perpendicular to the tangent to distinguish overlap from
+    // tangential contact.
     let d2_0 = curve0.derivative_2(t0);
     let d2_1 = curve1.derivative_2(t1);
-
-    // Compute the component of d2 perpendicular to the tangent direction.
     let tangent_dir = d0 / len0;
     let d2_0_perp = d2_0 - tangent_dir * d2_0.dot(tangent_dir);
     let d2_1_perp = d2_1 - tangent_dir * d2_1.dot(tangent_dir);
-
-    // For true overlap, perpendicular curvatures match.
     let d2_diff = (d2_0_perp - d2_1_perp).magnitude();
     let d2_scale = d2_0_perp.magnitude().max(d2_1_perp.magnitude());
 
-    // If both perpendicular curvatures are near zero (both straight lines),
-    // this is a genuine overlap.
+    // Both straight lines: genuine overlap.
     if d2_scale < SNAP_TOLERANCE {
         return true;
     }
 
-    // If the curvatures differ significantly, it is a tangential touch.
+    // Curvatures differ significantly: tangential touch, not overlap.
     d2_diff / d2_scale < 0.1
 }
 
@@ -287,22 +279,15 @@ fn newton_refine(
         let p0 = curve0.evaluate(t0);
         let p1 = curve1.evaluate(t1);
         let diff = p0 - p1;
-        let dist = diff.magnitude();
 
-        if dist < SNAP_TOLERANCE {
-            return Some(CurveIntersection {
-                t0,
-                t1,
-                point: p0,
-            });
+        if diff.magnitude() < SNAP_TOLERANCE {
+            return Some(CurveIntersection { t0, t1, point: p0 });
         }
 
         let d0 = curve0.derivative(t0);
         let d1 = curve1.derivative(t1);
 
-        // J = [d0 | -d1] is a 3x2 matrix.
-        // J^T * diff = [d0 . diff, -d1 . diff].
-        // J^T * J = [[d0.d0, -d0.d1], [-d0.d1, d1.d1]].
+        // Pseudo-inverse of 3x2 Jacobian J = [d0 | -d1].
         let a = d0.dot(d0);
         let b = -d0.dot(d1);
         let c = d1.dot(d1);
@@ -315,15 +300,10 @@ fn newton_refine(
 
         let rhs0 = d0.dot(diff);
         let rhs1 = -d1.dot(diff);
-
         let inv_det = 1.0 / det;
-        let dt0 = inv_det * (c * rhs0 - b * rhs1);
-        let dt1 = inv_det * (-b * rhs0 + a * rhs1);
 
-        t0 -= dt0;
-        t1 -= dt1;
-
-        // Clamp to valid ranges.
+        t0 -= inv_det * (c * rhs0 - b * rhs1);
+        t1 -= inv_det * (-b * rhs0 + a * rhs1);
         t0 = t0.clamp(r0_start, r0_end);
         t1 = t1.clamp(r1_start, r1_end);
     }
@@ -332,11 +312,7 @@ fn newton_refine(
     let p0 = curve0.evaluate(t0);
     let p1 = curve1.evaluate(t1);
     if p0.distance(p1) < SNAP_TOLERANCE {
-        Some(CurveIntersection {
-            t0,
-            t1,
-            point: p0,
-        })
+        Some(CurveIntersection { t0, t1, point: p0 })
     } else {
         None
     }
@@ -344,7 +320,7 @@ fn newton_refine(
 
 /// Direct distance check for when Newton-Raphson fails (e.g. tangent cases).
 ///
-/// Simply evaluates both curves at the given parameters and accepts the
+/// Evaluates both curves at the given parameters and accepts the
 /// intersection if the points are close enough.
 fn direct_check(
     curve0: &BsplineCurve<Point3>,
@@ -358,11 +334,7 @@ fn direct_check(
         Some(CurveIntersection {
             t0,
             t1,
-            point: Point3::new(
-                (p0[0] + p1[0]) * 0.5,
-                (p0[1] + p1[1]) * 0.5,
-                (p0[2] + p1[2]) * 0.5,
-            ),
+            point: p0.mid(p1),
         })
     } else {
         None
