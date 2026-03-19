@@ -200,8 +200,8 @@ mod test_geom_impl {
             // Check by the circular angle theorem.
             let (t0, t1) = curve.range_tuple();
             let p3 = curve.subs((1.0 - t) * t0 + t * t1);
-            let angle2 = (p2 - p1).angle(p2 - p0);
-            let angle3 = (p3 - p1).angle(p3 - p0);
+            let angle2 = (p2 - p1).angle(&(p2 - p0));
+            let angle3 = (p3 - p1).angle(&(p3 - p0));
             prop_assert_near!(angle2, angle3);
         }
 
@@ -236,8 +236,8 @@ mod test_geom_impl {
 
             // Any point on the curve lies in the circle arc from `p0` to `p1`.
             // Check by the circular angle theorem.
-            let angle0 = (pt2 - pt1).angle(pt2 - pt0);
-            prop_assert_near!(angle0 * 2.0, Rad(2.0 * PI) - angle);
+            let angle0 = (pt2 - pt1).angle(&(pt2 - pt0));
+            prop_assert_near!(angle0 * 2.0, (Rad(2.0 * PI) - angle).0);
         }
 
         #[test]
