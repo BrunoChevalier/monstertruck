@@ -179,3 +179,18 @@
 ### Doc gate: spawning writer to fix 1 issue(s)
 **Time:** 2026-03-19T17:57:16.455Z
 
+### Codex parse_failed for all 3 plans (16-1, 16-2, 16-3) planning round 1. Falling back to Claude self-review.
+**Time:** 2026-03-19T22:37:06.628Z
+
+### Clean-state epilogue: committed 0 provenanced + 3 unprovenanced file(s) with [REVIEW-NEEDED]
+**Time:** 2026-03-19T22:46:14.934Z
+
+### Phase: 16 | Started: 2026-03-19T22:46:00Z | Mode: auto
+**Time:** 2026-03-19T22:46:41.525Z
+
+### Wave 1 audit: 12 unowned files, 0 conflicts. Proceeding -- unowned files are additional test/downstream sites modified by executors beyond declared files_modified. No inter-plan conflicts exist.
+**Time:** 2026-03-19T22:56:05.274Z
+
+### Doc gate: spawning writer to fix 1 issue(s)
+**Time:** 2026-03-19T23:27:16.531Z
+
