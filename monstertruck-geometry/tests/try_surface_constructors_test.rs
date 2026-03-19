@@ -76,6 +76,58 @@ fn try_birail1_insufficient_sections() {
     ));
 }
 
+#[test]
+fn try_birail1_endpoint_mismatch() {
+    // Profile starts at (5, 5, 5) but rail1 starts at (-1, 0, 0) -- large gap.
+    let rail1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0)],
+    );
+    let rail2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0)],
+    );
+    let profile = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(5.0, 5.0, 5.0), Point3::new(6.0, 5.0, 5.0)],
+    );
+    let opts = Birail1Options { n_sections: 3 };
+    let result = BsplineSurface::try_birail1(profile, &rail1, &rail2, &opts);
+    assert!(result.is_err(), "expected EndpointMismatch error");
+    match result.unwrap_err() {
+        Error::CurveNetworkIncompatible(
+            monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic::EndpointMismatch { .. },
+        ) => {}
+        other => panic!("expected EndpointMismatch, got: {other:?}"),
+    }
+}
+
+#[test]
+fn try_birail1_degenerate_chord() {
+    // Profile with zero-length chord (start == end).
+    let rail1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0)],
+    );
+    let rail2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0)],
+    );
+    let profile = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 0.0)],
+    );
+    let opts = Birail1Options { n_sections: 3 };
+    let result = BsplineSurface::try_birail1(profile, &rail1, &rail2, &opts);
+    assert!(result.is_err(), "expected DegenerateGeometry error");
+    match result.unwrap_err() {
+        Error::CurveNetworkIncompatible(
+            monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic::DegenerateGeometry { .. },
+        ) => {}
+        other => panic!("expected DegenerateGeometry, got: {other:?}"),
+    }
+}
+
 // --- try_birail2 ---
 
 #[test]
