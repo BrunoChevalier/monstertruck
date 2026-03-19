@@ -588,6 +588,104 @@ fn test_sweep_multi_rail_degenerate_collinear_rails() {
     );
 }
 
+// ---- Split and sub_patch tests ----
+
+#[test]
+fn test_split_at_u_preserves_evaluation() {
+    let surface = endpoint_test_surface();
+    let (left, right) = surface.split_at_u(0.5);
+    // left covers [0, 0.5].
+    for i in 0..=10 {
+        for j in 0..=10 {
+            let u = 0.5 * i as f64 / 10.0;
+            let v = j as f64 / 10.0;
+            assert_near2!(left.subs(u, v), surface.subs(u, v));
+        }
+    }
+    // right covers [0.5, 1].
+    for i in 0..=10 {
+        for j in 0..=10 {
+            let u = 0.5 + 0.5 * i as f64 / 10.0;
+            let v = j as f64 / 10.0;
+            assert_near2!(right.subs(u, v), surface.subs(u, v));
+        }
+    }
+}
+
+#[test]
+fn test_split_at_v_preserves_evaluation() {
+    let surface = endpoint_test_surface();
+    let (bottom, top) = surface.split_at_v(0.5);
+    // bottom covers v in [0, 0.5].
+    for i in 0..=10 {
+        for j in 0..=10 {
+            let u = i as f64 / 10.0;
+            let v = 0.5 * j as f64 / 10.0;
+            assert_near2!(bottom.subs(u, v), surface.subs(u, v));
+        }
+    }
+    // top covers v in [0.5, 1].
+    for i in 0..=10 {
+        for j in 0..=10 {
+            let u = i as f64 / 10.0;
+            let v = 0.5 + 0.5 * j as f64 / 10.0;
+            assert_near2!(top.subs(u, v), surface.subs(u, v));
+        }
+    }
+}
+
+#[test]
+fn test_sub_patch_preserves_evaluation() {
+    let surface = endpoint_test_surface();
+    let patch = surface.sub_patch((0.25, 0.75), (0.3, 0.8));
+    // The patch covers u in [0.25, 0.75], v in [0.3, 0.8].
+    for i in 0..=10 {
+        for j in 0..=10 {
+            let u = 0.25 + 0.5 * i as f64 / 10.0;
+            let v = 0.3 + 0.5 * j as f64 / 10.0;
+            assert_near2!(patch.subs(u, v), surface.subs(u, v));
+        }
+    }
+}
+
+#[test]
+fn test_split_at_boundary_u() {
+    let surface = endpoint_test_surface();
+    // Splitting at u_start.
+    let (left, right) = surface.split_at_u(0.0);
+    assert_eq!(left.control_points().len(), 1);
+    for i in 0..=10 {
+        for j in 0..=10 {
+            let u = i as f64 / 10.0;
+            let v = j as f64 / 10.0;
+            assert_near2!(right.subs(u, v), surface.subs(u, v));
+        }
+    }
+    // Splitting at u_end.
+    let (left2, right2) = surface.split_at_u(1.0);
+    assert_eq!(right2.control_points().len(), 1);
+    for i in 0..=10 {
+        for j in 0..=10 {
+            let u = i as f64 / 10.0;
+            let v = j as f64 / 10.0;
+            assert_near2!(left2.subs(u, v), surface.subs(u, v));
+        }
+    }
+}
+
+#[test]
+fn test_sub_patch_full_domain() {
+    let surface = endpoint_test_surface();
+    let patch = surface.sub_patch((0.0, 1.0), (0.0, 1.0));
+    for i in 0..=10 {
+        for j in 0..=10 {
+            let u = i as f64 / 10.0;
+            let v = j as f64 / 10.0;
+            assert_near2!(patch.subs(u, v), surface.subs(u, v));
+        }
+    }
+}
+
 // ---- Periodic sweep tests ----
 
 #[test]
