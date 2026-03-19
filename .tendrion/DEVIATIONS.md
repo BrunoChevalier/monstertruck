@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 36 | Approval-needed: 0 | Total: 36
+**Summary:** Auto-fixes: 37 | Approval-needed: 0 | Total: 37
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -251,4 +251,11 @@
 **Category:** bug
 **Description:** Pre-existing compile errors in t_spline/t_mesh.rs, approx_fillet_surface.rs, t_spline_validation.rs prevent full --lib test run; not caused by this change
 **Files changed:** none
+**Status:** applied
+
+### [2026-03-19T16:07:19.956Z] [AUTO-FIX] Category: design
+**Type:** auto-fix
+**Category:** design
+**Description:** Old try_sweep_rail/try_birail/try_gordon not converted to delegates because delegation changes error variant types from modeling-level (InsufficientSections, GridDimensionMismatch) to FromGeometry wrappers, breaking existing tests which AGENTS.md forbids modifying
+**Files changed:** monstertruck-modeling/src/builder.rs
 **Status:** applied
