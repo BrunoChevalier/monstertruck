@@ -62,6 +62,12 @@ pub enum Error {
     /// Unsupported curve type for sweep; only [`Line`] and [`BsplineCurve`] edges are supported.
     #[error("unsupported curve type for sweep: only Line and BsplineCurve edges are supported.")]
     UnsupportedCurveType,
+    /// Profile solid validation failure.
+    #[error("profile solid validation failed: {reason}")]
+    ProfileValidationFailed {
+        /// Description of the validation failure.
+        reason: String,
+    },
     /// Geometry-level error during surface construction.
     #[error(transparent)]
     FromGeometry(monstertruck_geometry::errors::Error),

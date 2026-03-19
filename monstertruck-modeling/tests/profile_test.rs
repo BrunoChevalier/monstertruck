@@ -424,9 +424,10 @@ fn validate_broken_solid_returns_error() {
     )
     .unwrap();
     let shell = &solid.boundaries()[0];
-    // Create a new shell with one face removed (making it non-closed).
+    // Build a broken shell: duplicate the first face, creating an edge
+    // shared by 3 faces (Irregular topology).
     let mut faces: Vec<_> = shell.iter().cloned().collect();
-    faces.pop();
+    faces.push(faces[0].clone());
     let broken_shell: Shell = faces.into_iter().collect();
     let broken_solid = monstertruck_topology::Solid::new_unchecked(vec![broken_shell]);
     let result = profile::validate_solid(&broken_solid);

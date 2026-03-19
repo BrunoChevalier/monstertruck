@@ -6,6 +6,8 @@ use itertools::Itertools;
 use monstertruck_core::cgmath64::*;
 use monstertruck_core::hash::HashGen;
 use monstertruck_geometry::prelude::*;
+use monstertruck_topology::shell::ShellCondition;
+use std::collections::HashSet;
 
 type Wire<C> = monstertruck_topology::Wire<Point3, C>;
 type Face<C, S> = monstertruck_topology::Face<Point3, C, S>;
@@ -437,6 +439,120 @@ pub fn sweep_from_planar_profile(
     shell.push(end_cap);
 
     Ok(monstertruck_topology::Solid::new_unchecked(vec![shell]))
+}
+
+/// Report from solid topology validation.
+#[derive(Debug, Clone)]
+pub struct ValidationReport {
+    /// Number of unique vertices.
+    pub vertices: usize,
+    /// Number of unique edges.
+    pub edges: usize,
+    /// Number of faces.
+    pub faces: usize,
+    /// Euler characteristic (V - E + F).
+    pub euler_characteristic: isize,
+    /// Whether the shell is oriented (faces have compatible normals).
+    pub is_oriented: bool,
+    /// Whether the shell is closed (watertight).
+    pub is_closed: bool,
+    /// Whether all edges are geometrically consistent with their vertices.
+    pub is_geometric_consistent: bool,
+}
+
+/// Validates that a profile-generated solid passes topological and geometric
+/// consistency checks.
+///
+/// Performs the following checks on each shell boundary:
+/// 1. **Euler-Poincare**: For closed shells, V - E + F must equal 2.
+/// 2. **Orientation**: Shell must be oriented or closed (faces have compatible normals).
+/// 3. **Geometric consistency**: All edge endpoints must match their curve endpoints.
+///
+/// Returns a [`ValidationReport`] with detailed metrics on success, or an
+/// error describing the first violation found.
+pub fn validate_solid<C, S>(
+    solid: &monstertruck_topology::Solid<Point3, C, S>,
+) -> Result<ValidationReport>
+where
+    C: ParametricCurve3D + BoundedCurve + Clone,
+    S: IncludeCurve<C> + Clone + Invertible,
+{
+    let mut report = ValidationReport {
+        vertices: 0,
+        edges: 0,
+        faces: 0,
+        euler_characteristic: 0,
+        is_oriented: true,
+        is_closed: true,
+        is_geometric_consistent: true,
+    };
+
+    for (i, shell) in solid.boundaries().iter().enumerate() {
+        let faces = shell.len();
+
+        // Count unique vertices by ID.
+        let mut vertex_ids = HashSet::new();
+        let mut edge_ids = HashSet::new();
+        shell.edge_iter().for_each(|edge| {
+            vertex_ids.insert(edge.front().id());
+            vertex_ids.insert(edge.back().id());
+            edge_ids.insert(edge.id());
+        });
+
+        let v = vertex_ids.len();
+        let e = edge_ids.len();
+        let f = faces;
+        let euler = v as isize - e as isize + f as isize;
+
+        // Check shell condition.
+        let condition = shell.shell_condition();
+        let oriented = condition == ShellCondition::Oriented
+            || condition == ShellCondition::Closed;
+        let closed = condition == ShellCondition::Closed;
+
+        if !oriented {
+            return Err(Error::ProfileValidationFailed {
+                reason: format!(
+                    "shell {i} orientation check failed: condition is {condition:?} \
+                     (V={v}, E={e}, F={f})"
+                ),
+            });
+        }
+
+        // Euler-Poincare: for closed shells, V - E + F = 2(1 - g) for genus g.
+        // Must be even and at most 2.
+        if closed && (euler > 2 || euler % 2 != 0) {
+            return Err(Error::ProfileValidationFailed {
+                reason: format!(
+                    "shell {i} euler-poincare check failed: V - E + F = {euler} \
+                     (expected even value <= 2, V={v}, E={e}, F={f})"
+                ),
+            });
+        }
+
+        // Check geometric consistency.
+        let geo_consistent = shell.is_geometric_consistent();
+        if !geo_consistent {
+            return Err(Error::ProfileValidationFailed {
+                reason: format!(
+                    "shell {i} geometric consistency check failed (V={v}, E={e}, F={f})"
+                ),
+            });
+        }
+
+        // Use the first shell's metrics for the report.
+        if i == 0 {
+            report.vertices = v;
+            report.edges = e;
+            report.faces = f;
+            report.euler_characteristic = euler;
+            report.is_oriented = oriented;
+            report.is_closed = closed;
+            report.is_geometric_consistent = geo_consistent;
+        }
+    }
+
+    Ok(report)
 }
 
 #[cfg(test)]
