@@ -6,6 +6,7 @@ use crate::filters::{NormalFilters, StructuringFilter};
 use array_macro::array;
 use handles::FixedVertexHandle;
 use itertools::Itertools;
+use monstertruck_core::tolerance::TOLERANCE;
 use rustc_hash::FxHashMap as HashMap;
 
 #[cfg(not(target_arch = "wasm32"))]

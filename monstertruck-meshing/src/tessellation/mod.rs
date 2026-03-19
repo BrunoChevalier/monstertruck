@@ -1,4 +1,5 @@
 use crate::*;
+use monstertruck_core::tolerance::TOLERANCE;
 use monstertruck_topology::{compress::*, *};
 use spade::{iterators::*, *};
 

@@ -166,6 +166,7 @@ fn replace_near_positions(positions: &mut [Point3], canonical: &[Point3], tolera
 #[cfg(test)]
 mod tests {
     use super::*;
+    use monstertruck_core::tolerance::TOLERANCE;
 
     /// Verifies that `replace_near_positions` updates positions within tolerance.
     #[test]

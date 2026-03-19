@@ -1,5 +1,6 @@
 use super::*;
 use array_macro::array;
+use monstertruck_core::tolerance::TOLERANCE2;
 
 /// Find collisions between two polygon meshes and extract interference lines.
 ///
