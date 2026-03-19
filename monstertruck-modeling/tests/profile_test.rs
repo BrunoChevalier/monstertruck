@@ -300,6 +300,164 @@ fn sweep_open_wire_rejected() {
     assert!(result.is_err());
 }
 
+// -- Phase 14-3: validate_solid tests --
+
+#[test]
+fn validate_extruded_box() {
+    let outer = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![outer],
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .unwrap();
+    let result = profile::validate_solid(&solid);
+    assert!(result.is_ok(), "extruded box should validate: {result:?}");
+}
+
+#[test]
+fn validate_extruded_with_hole() {
+    let outer = rect_wire(-2.0, -2.0, 2.0, 2.0);
+    let hole = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![outer, hole],
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .unwrap();
+    let result = profile::validate_solid(&solid);
+    assert!(
+        result.is_ok(),
+        "extruded tube should validate: {result:?}"
+    );
+}
+
+#[test]
+fn validate_revolved_solid() {
+    let wire = rect_wire_xz(3.0, -0.5, 4.0, 0.5);
+    let solid = profile::revolve_from_planar_profile::<Curve, Surface, _>(
+        vec![wire],
+        Point3::origin(),
+        Vector3::unit_y(),
+        Rad(2.0 * std::f64::consts::PI),
+        4,
+    )
+    .unwrap();
+    let result = profile::validate_solid(&solid);
+    assert!(
+        result.is_ok(),
+        "revolved solid should validate: {result:?}"
+    );
+}
+
+#[test]
+fn validate_swept_solid() {
+    let wire = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let guide = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0)],
+    );
+    let solid = profile::sweep_from_planar_profile(vec![wire], &guide, 4).unwrap();
+    let result = profile::validate_solid(&solid);
+    assert!(
+        result.is_ok(),
+        "swept solid should validate: {result:?}"
+    );
+}
+
+#[test]
+fn validate_triangle_extrusion() {
+    let tri = triangle_wire(
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(2.0, 0.0, 0.0),
+        Point3::new(1.0, 2.0, 0.0),
+    );
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![tri],
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .unwrap();
+    let result = profile::validate_solid(&solid);
+    assert!(
+        result.is_ok(),
+        "triangular extrusion should validate: {result:?}"
+    );
+}
+
+#[test]
+fn validate_diagonal_extrusion() {
+    let outer = rect_wire(0.0, 0.0, 1.0, 1.0);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![outer],
+        Vector3::new(1.0, 1.0, 1.0),
+    )
+    .unwrap();
+    let result = profile::validate_solid(&solid);
+    assert!(
+        result.is_ok(),
+        "diagonal extrusion should validate: {result:?}"
+    );
+}
+
+#[test]
+fn validate_reports_details() {
+    let outer = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![outer],
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .unwrap();
+    let report = profile::validate_solid(&solid).unwrap();
+    assert!(report.vertices > 0, "vertices must be > 0");
+    assert!(report.edges > 0, "edges must be > 0");
+    assert!(report.faces > 0, "faces must be > 0");
+    assert_eq!(
+        report.euler_characteristic, 2,
+        "euler characteristic must be 2 for closed shell"
+    );
+}
+
+#[test]
+fn validate_broken_solid_returns_error() {
+    let outer = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![outer],
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .unwrap();
+    let shell = &solid.boundaries()[0];
+    // Create a new shell with one face removed (making it non-closed).
+    let mut faces: Vec<_> = shell.iter().cloned().collect();
+    faces.pop();
+    let broken_shell: Shell = faces.into_iter().collect();
+    let broken_solid = monstertruck_topology::Solid::new_unchecked(vec![broken_shell]);
+    let result = profile::validate_solid(&broken_solid);
+    assert!(result.is_err(), "broken solid should fail validation");
+    let err_msg = result.unwrap_err().to_string();
+    assert!(
+        err_msg.contains("euler") || err_msg.contains("orientation") || err_msg.contains("closed"),
+        "error message should describe the topology violation: {err_msg}"
+    );
+}
+
+#[test]
+fn validate_tessellation_smoke() {
+    let outer = rect_wire(-1.0, -1.0, 1.0, 1.0);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        vec![outer],
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .unwrap();
+    // First validate the solid.
+    profile::validate_solid(&solid).unwrap();
+    // Then confirm geometric data is intact: sample each face's surface.
+    for boundary in solid.boundaries() {
+        for face in boundary.iter() {
+            let surface = face.oriented_surface();
+            // Sampling the surface at (0.5, 0.5) should not panic.
+            let _pt: Point3 = surface.subs(0.5, 0.5);
+        }
+    }
+}
+
 // -- Non-XY planes --
 
 #[test]

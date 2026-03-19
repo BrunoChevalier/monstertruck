@@ -389,6 +389,64 @@ fn merge_profiles_empty_second() {
     assert_eq!(merged.len(), 1);
 }
 
+// -- Phase 14-3: validate_solid tests for glyph-based solids --
+
+/// Glyph 'O' extruded solid passes validation.
+#[test]
+fn validate_glyph_o_extruded() {
+    let f = face();
+    let glyph_id = f.glyph_index('O').expect("glyph for 'O'");
+    let opts = default_opts();
+    let wires = text::glyph_profile(&f, glyph_id, &opts).expect("glyph_profile for 'O'");
+    let solid =
+        profile::solid_from_planar_profile::<Curve, Surface>(wires, Vector3::new(0.0, 0.0, 1.0))
+            .expect("solid_from_planar_profile for 'O'");
+    let result = profile::validate_solid(&solid);
+    assert!(
+        result.is_ok(),
+        "glyph 'O' extruded solid should validate: {result:?}"
+    );
+}
+
+/// Glyph 'B' extruded solid passes validation.
+#[test]
+fn validate_glyph_b_extruded() {
+    let f = face();
+    let glyph_id = f.glyph_index('B').expect("glyph for 'B'");
+    let opts = default_opts();
+    let wires = text::glyph_profile(&f, glyph_id, &opts).expect("glyph_profile for 'B'");
+    let solid =
+        profile::solid_from_planar_profile::<Curve, Surface>(wires, Vector3::new(0.0, 0.0, 1.0))
+            .expect("solid_from_planar_profile for 'B'");
+    let result = profile::validate_solid(&solid);
+    assert!(
+        result.is_ok(),
+        "glyph 'B' extruded solid should validate: {result:?}"
+    );
+}
+
+/// Mixed glyph+custom extruded solid passes validation.
+#[test]
+fn validate_mixed_glyph_custom_extruded() {
+    let f = face();
+    let glyph_id = f.glyph_index('O').expect("glyph for 'O'");
+    let opts = font_unit_opts();
+    let glyph_wires = text::glyph_profile(&f, glyph_id, &opts).expect("glyph_profile for 'O'");
+    let glyph_holes: Vec<Wire> = glyph_wires.into_iter().skip(1).collect();
+    let outer = large_rect_wire();
+    let merged = profile::merge_profiles(vec![vec![outer], glyph_holes]);
+    let solid = profile::solid_from_planar_profile::<Curve, Surface>(
+        merged,
+        Vector3::new(0.0, 0.0, 1.0),
+    )
+    .expect("solid_from_planar_profile mixed");
+    let result = profile::validate_solid(&solid);
+    assert!(
+        result.is_ok(),
+        "mixed glyph+custom solid should validate: {result:?}"
+    );
+}
+
 /// Y-flip option inverts Y coordinates.
 #[test]
 fn glyph_profile_y_flip() {
