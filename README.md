@@ -124,7 +124,14 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 12 -- v0.4.0 Milestone Completion)
+### Recent Changes (Phase 13 -- v0.5.0 API Polish & Surface Operations)
+
+- **Typed option structs** -- New `SweepRailOptions`, `Birail1Options`, `Birail2Options`, `GordonOptions`, `SkinOptions` structs and `CurveNetworkDiagnostic` error reporting for surface constructors in `monstertruck-geometry`.
+- **Fallible surface constructors** -- `BsplineSurface` gains `try_*` methods that return `Result` instead of panicking, with error variants in `monstertruck-geometry::errors`.
+- **Patch split/extract** -- `split_at_u`, `split_at_v`, and `sub_patch` methods on `BsplineSurface` and `NurbsSurface` for patch subdivision workflows.
+- **Option-struct builders in modeling** -- `try_sweep_rail_with_options`, `try_birail_with_options`, `try_gordon_with_options` and related functions in `monstertruck-modeling::builder` with full error chain from geometry to modeling layer.
+
+### Earlier Changes (Phase 12 -- v0.4.0 Milestone Completion)
 
 - **End-to-end font pipeline tests** -- 11 integration tests in `monstertruck-modeling/tests/font_pipeline.rs` exercise the full font outline to B-rep solid pipeline using a bundled DejaVuSans.ttf fixture. Tests cover glyph hole preservation (O, B, 8), wire topology validation (closure, edge count), solid extrusion with geometric consistency checks, multi-character `text_profile` layout (spacing, horizontal advance), Y-flip option, and space-character handling.
 - **Ayam port plan finalized** -- `AYAM_PORT_PLAN.md` updated with 11 items checked off, deferred items annotated with rationale and version targets (v0.5.0+), and a new status summary section documenting all completed work and architecture notes.

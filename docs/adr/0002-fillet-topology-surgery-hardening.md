@@ -57,3 +57,7 @@ No changes to fillet topology surgery. Phase 11 added `sweep_multi_rail` and `sw
 ## Status Update (Phase 12 -- v0.4.0 Final)
 
 No changes to fillet topology surgery. Phase 12 added end-to-end font pipeline integration tests and finalized the Ayam port plan. The fillet surgery code was unaffected. This ADR remains Accepted with no anticipated changes for v0.4.0.
+
+## Status Update (Phase 13 -- v0.5.0 API Polish)
+
+No changes to fillet topology surgery. Phase 13 added typed option structs, fallible `try_*` surface constructors, and patch split/extract methods in `monstertruck-geometry`, plus option-struct builder functions in `monstertruck-modeling`. The fillet surgery code was unaffected.

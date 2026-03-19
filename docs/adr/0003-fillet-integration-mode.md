@@ -50,3 +50,7 @@ No changes to fillet integration mode logic. Phase 11 added multi-rail sweep and
 ## Status Update (Phase 12 -- v0.4.0 Final)
 
 No changes to fillet integration mode logic. Phase 12 added end-to-end font pipeline integration tests and finalized the Ayam port plan. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted with no anticipated changes for v0.4.0.
+
+## Status Update (Phase 13 -- v0.5.0 API Polish)
+
+No changes to fillet integration mode logic. Phase 13 added typed option structs, fallible `try_*` surface constructors, and patch split/extract methods in `monstertruck-geometry`, plus option-struct builder functions in `monstertruck-modeling`. The fillet integration mode and continuity annotations from this ADR are unaffected.
