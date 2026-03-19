@@ -36,11 +36,11 @@ fn intersection_curve_lift_up_returns_bspline() {
     let end = lifted.subs(1.0);
     // Start should be near (0,0,0,1) and end near (1,0,0,1).
     assert!(
-        (start.truncate() - Vector3::new(0.0, 0.0, 0.0)).magnitude() < 1.0e-6,
+        (Homogeneous::truncate(start) - Vector3::new(0.0, 0.0, 0.0)).magnitude() < 1.0e-6,
         "start = {start:?}"
     );
     assert!(
-        (end.truncate() - Vector3::new(1.0, 0.0, 0.0)).magnitude() < 1.0e-6,
+        (Homogeneous::truncate(end) - Vector3::new(1.0, 0.0, 0.0)).magnitude() < 1.0e-6,
         "end = {end:?}"
     );
 }

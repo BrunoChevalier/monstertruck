@@ -2721,10 +2721,10 @@ mod tests {
     #[test]
     fn test_t_mesh_new() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mesh = Tmesh::new(points, 1.0);
@@ -2738,8 +2738,8 @@ mod tests {
 
         // Test that the origin and the right are correctly connected
         let con_test = test_points_are_connected(
-            mesh.find(Point3::from((0.0, 0.0, 0.0))).unwrap(),
-            mesh.find(Point3::from((1.0, 0.0, 0.0))).unwrap(),
+            mesh.find(Point3::new(0.0, 0.0, 0.0)).unwrap(),
+            mesh.find(Point3::new(1.0, 0.0, 0.0)).unwrap(),
             TmeshDirection::Right,
         );
         assert!(
@@ -2749,8 +2749,8 @@ mod tests {
 
         // Test that the origin and the up are correctly connected
         let con_test: std::result::Result<(), (i32, Error)> = test_points_are_connected(
-            mesh.find(Point3::from((0.0, 0.0, 0.0))).unwrap(),
-            mesh.find(Point3::from((0.0, 1.0, 0.0))).unwrap(),
+            mesh.find(Point3::new(0.0, 0.0, 0.0)).unwrap(),
+            mesh.find(Point3::new(0.0, 1.0, 0.0)).unwrap(),
             TmeshDirection::Up,
         );
         assert!(
@@ -2760,8 +2760,8 @@ mod tests {
 
         // Test that (1,1,0) and the up are correctly connected
         let con_test: std::result::Result<(), (i32, Error)> = test_points_are_connected(
-            mesh.find(Point3::from((1.0, 1.0, 0.0))).unwrap(),
-            mesh.find(Point3::from((0.0, 1.0, 0.0))).unwrap(),
+            mesh.find(Point3::new(1.0, 1.0, 0.0)).unwrap(),
+            mesh.find(Point3::new(0.0, 1.0, 0.0)).unwrap(),
             TmeshDirection::Left,
         );
         assert!(
@@ -2771,8 +2771,8 @@ mod tests {
 
         // Test that (1,1,0) and the right are correctly connected
         let con_test: std::result::Result<(), (i32, Error)> = test_points_are_connected(
-            mesh.find(Point3::from((1.0, 1.0, 0.0))).unwrap(),
-            mesh.find(Point3::from((1.0, 0.0, 0.0))).unwrap(),
+            mesh.find(Point3::new(1.0, 1.0, 0.0)).unwrap(),
+            mesh.find(Point3::new(1.0, 0.0, 0.0)).unwrap(),
             TmeshDirection::Down,
         );
         assert!(
@@ -2796,26 +2796,26 @@ mod tests {
     #[test]
     fn test_t_mesh_insert_control_point() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
 
         mesh.add_control_point(
-            Point3::from((0.5, 1.0, 0.0)),
-            mesh.find(Point3::from((0.0, 1.0, 0.0)))
+            Point3::new(0.5, 1.0, 0.0),
+            mesh.find(Point3::new(0.0, 1.0, 0.0))
                 .expect("Point (0, 1, 0) is a valid point in the T-mesh"),
             TmeshDirection::Right,
             0.5,
         )
         .expect("Arguments provided to add_control_point are valid and insertion is allowed");
 
-        let top_left = mesh.find(Point3::from((0.0, 1.0, 0.0))).unwrap();
-        let top_mid = mesh.find(Point3::from((0.5, 1.0, 0.0))).unwrap();
-        let top_right = mesh.find(Point3::from((1.0, 1.0, 0.0))).unwrap();
+        let top_left = mesh.find(Point3::new(0.0, 1.0, 0.0)).unwrap();
+        let top_mid = mesh.find(Point3::new(0.5, 1.0, 0.0)).unwrap();
+        let top_right = mesh.find(Point3::new(1.0, 1.0, 0.0)).unwrap();
 
         // Test that there are five control points in the mesh after insertion.
         assert!(
@@ -2878,18 +2878,18 @@ mod tests {
     #[test]
     fn test_t_mesh_insert_control_point_one_inferred_connection() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
 
         // Add the first control points
         mesh.add_control_point(
-            Point3::from((0.5, 1.0, 0.0)),
-            mesh.find(Point3::from((0.0, 1.0, 0.0)))
+            Point3::new(0.5, 1.0, 0.0),
+            mesh.find(Point3::new(0.0, 1.0, 0.0))
                 .expect("Point (0, 1, 0) is a valid point in the T-mesh"),
             TmeshDirection::Right,
             0.5,
@@ -2898,16 +2898,16 @@ mod tests {
 
         // Add second control point with inferred connection
         mesh.add_control_point(
-            Point3::from((0.5, 0.0, 0.0)),
-            mesh.find(Point3::from((0.0, 0.0, 0.0)))
+            Point3::new(0.5, 0.0, 0.0),
+            mesh.find(Point3::new(0.0, 0.0, 0.0))
                 .expect("Point (0, 0, 0) is a valid point in the T-mesh"),
             TmeshDirection::Right,
             0.5,
         )
         .expect("Arguments provided to add_control_point are valid and insertion is allowed");
 
-        let top_mid = mesh.find(Point3::from((0.5, 1.0, 0.0))).unwrap();
-        let bottom_mid = mesh.find(Point3::from((0.5, 0.0, 0.0))).unwrap();
+        let top_mid = mesh.find(Point3::new(0.5, 1.0, 0.0)).unwrap();
+        let bottom_mid = mesh.find(Point3::new(0.5, 0.0, 0.0)).unwrap();
 
         // Test that the inferrect connection exists
         let inferred_con_exist = test_points_are_connected(
@@ -2949,19 +2949,19 @@ mod tests {
     ///    |  |  |
     /// ```
     fn test_t_mesh_plus_mesh(mesh: &Tmesh<Point3>) {
-        let middle = mesh.find(Point3::from((0.5, 0.5, 0.0))).unwrap();
+        let middle = mesh.find(Point3::new(0.5, 0.5, 0.0)).unwrap();
 
         // Test connections in the four directions
         let up_con = test_points_are_connected(
             Arc::clone(&middle),
-            Arc::clone(&mesh.find(Point3::from((0.5, 1.0, 0.0))).unwrap()),
+            Arc::clone(&mesh.find(Point3::new(0.5, 1.0, 0.0)).unwrap()),
             TmeshDirection::Up,
         );
         assert!(up_con.is_ok(), "Middle is not correctly connected to UP");
 
         let right_con = test_points_are_connected(
             Arc::clone(&middle),
-            Arc::clone(&mesh.find(Point3::from((1.0, 0.5, 0.0))).unwrap()),
+            Arc::clone(&mesh.find(Point3::new(1.0, 0.5, 0.0)).unwrap()),
             TmeshDirection::Right,
         );
         assert!(
@@ -2971,7 +2971,7 @@ mod tests {
 
         let down_con = test_points_are_connected(
             Arc::clone(&middle),
-            Arc::clone(&mesh.find(Point3::from((0.5, 0.0, 0.0))).unwrap()),
+            Arc::clone(&mesh.find(Point3::new(0.5, 0.0, 0.0)).unwrap()),
             TmeshDirection::Down,
         );
         assert!(
@@ -2981,7 +2981,7 @@ mod tests {
 
         let left_con = test_points_are_connected(
             Arc::clone(&middle),
-            Arc::clone(&mesh.find(Point3::from((0.0, 0.5, 0.0))).unwrap()),
+            Arc::clone(&mesh.find(Point3::new(0.0, 0.5, 0.0)).unwrap()),
             TmeshDirection::Left,
         );
         assert!(
@@ -3007,10 +3007,10 @@ mod tests {
     #[test]
     fn test_t_mesh_insert_control_point_two_inferred_connections() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
@@ -3025,9 +3025,11 @@ mod tests {
         let mut dir = TmeshDirection::Right;
 
         for point_pair in points {
+            let (a, b, c) = point_pair.0;
+            let (d, e, f) = point_pair.1;
             mesh.add_control_point(
-                Point3::from(point_pair.0),
-                mesh.find(Point3::from(point_pair.1)).unwrap_or_else(|_| {
+                Point3::new(a, b, c),
+                mesh.find(Point3::new(d, e, f)).unwrap_or_else(|_| {
                     panic!("Point {:?} is a valid point in the T-mesh", point_pair.1)
                 }),
                 dir,
@@ -3039,8 +3041,8 @@ mod tests {
 
         // Add center control point with inferred connections
         mesh.add_control_point(
-            Point3::from((0.5, 0.5, 0.0)),
-            mesh.find(Point3::from((0.5, 0.0, 0.0)))
+            Point3::new(0.5, 0.5, 0.0),
+            mesh.find(Point3::new(0.5, 0.0, 0.0))
                 .expect("Point (0.5, 0, 0) is a valid point in the T-mesh"),
             TmeshDirection::Up,
             0.5,
@@ -3067,28 +3069,28 @@ mod tests {
     #[test]
     fn test_t_mesh_try_add_absolute_point_mesh_construction() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
 
         // Insert vertical aspect of the plus
-        mesh.try_add_absolute_point(Point3::from((0.0, 0.5, 0.0)), (0.0, 0.5))
+        mesh.try_add_absolute_point(Point3::new(0.0, 0.5, 0.0), (0.0, 0.5))
             .expect("Legal point insertion");
-        mesh.try_add_absolute_point(Point3::from((1.0, 0.5, 0.0)), (1.0, 0.5))
+        mesh.try_add_absolute_point(Point3::new(1.0, 0.5, 0.0), (1.0, 0.5))
             .expect("Legal point insertion");
 
         // Insert horizontal aspect of the plus
-        mesh.try_add_absolute_point(Point3::from((0.5, 0.0, 0.0)), (0.5, 0.0))
+        mesh.try_add_absolute_point(Point3::new(0.5, 0.0, 0.0), (0.5, 0.0))
             .expect("Legal point insertion");
-        mesh.try_add_absolute_point(Point3::from((0.5, 1.0, 0.0)), (0.5, 1.0))
+        mesh.try_add_absolute_point(Point3::new(0.5, 1.0, 0.0), (0.5, 1.0))
             .expect("Legal point insertion");
 
         // Insert center point of the plus
-        mesh.try_add_absolute_point(Point3::from((0.5, 0.5, 0.0)), (0.5, 0.5))
+        mesh.try_add_absolute_point(Point3::new(0.5, 0.5, 0.0), (0.5, 0.5))
             .expect("Legal point insertion");
 
         test_t_mesh_plus_mesh(&mesh);
@@ -3107,19 +3109,19 @@ mod tests {
     #[test]
     fn test_t_mesh_try_add_absolute_point_knot_intervals() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
-        mesh.try_add_absolute_point(Point3::from((0.2, 0.0, 0.0)), (0.2, 0.0))
+        mesh.try_add_absolute_point(Point3::new(0.2, 0.0, 0.0), (0.2, 0.0))
             .expect("Legal point insertion");
 
         // Insert a point asymetrically into a mesh to test if knot interval calculations work
         let knot_interval_check = mesh
-            .find(Point3::from((0.2, 0.0, 0.0)))
+            .find(Point3::new(0.2, 0.0, 0.0))
             .expect("Control point previously inserted into mesh");
 
         // Left connection should be connected to (0, 0, 0), with interval 0.2
@@ -3161,31 +3163,31 @@ mod tests {
     #[test]
     fn test_t_mesh_try_add_absolute_point_invalid_insertion() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
 
         // Test errors on inserting a point into the center of a face (unconnected point)
         assert!(
-            mesh.try_add_absolute_point(Point3::from((0.5, 0.5, 0.0)), (0.5, 0.5))
+            mesh.try_add_absolute_point(Point3::new(0.5, 0.5, 0.0), (0.5, 0.5))
                 .is_err_and(|e| { e == Error::TmeshConnectionNotFound }),
             "Expected Error TmeshConnectionNotFound when attempting to insert a point in a location with no intersecting mesh edges."
         );
 
         // Test errors on zero intervals (duplicate point)
         assert!(
-            mesh.try_add_absolute_point(Point3::from((0.0, 0.0, 0.0)), (0.0, 0.0))
+            mesh.try_add_absolute_point(Point3::new(0.0, 0.0, 0.0), (0.0, 0.0))
                 .is_err_and(|e| { e == Error::TmeshExistingControlPoint }),
             "Expected Error TmeshExistingControlPoint when attempting to insert a point in a location where a control point already exists."
         );
 
         // Test errrors on out-of-bounds insertions.
         assert!(
-            mesh.try_add_absolute_point(Point3::from((2.0, 2.0, 0.0)), (2.0, 2.0))
+            mesh.try_add_absolute_point(Point3::new(2.0, 2.0, 0.0), (2.0, 2.0))
                 .is_err_and(|e| { e == Error::TmeshOutOfBoundsInsertion }),
             "Expected Error TmeshOutOfBoundsInsertion when attempting to insert a point outside the parametric domain of the mesh."
         );
@@ -3209,20 +3211,20 @@ mod tests {
     #[test]
     fn test_t_mesh_navigate_until_con_existing_con() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
         let origin = mesh
-            .find(Point3::from((0.0, 0.0, 0.0)))
+            .find(Point3::new(0.0, 0.0, 0.0))
             .expect("Point exists in T-mesh");
 
         // Add control point for navigation
         mesh.add_control_point(
-            Point3::from((0.0, 0.5, 0.0)),
+            Point3::new(0.0, 0.5, 0.0),
             Arc::clone(&origin),
             TmeshDirection::Up,
             0.5,
@@ -3240,7 +3242,7 @@ mod tests {
         );
         assert_eq!(
             navigation_result.as_ref().unwrap().0.read().point,
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 1.0, 0.0),
             "Navigation returned incorrect point"
         );
         assert_eq!(
@@ -3268,20 +3270,20 @@ mod tests {
     #[test]
     fn test_t_mesh_navigate_until_con_no_existing_con() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
         let origin = mesh
-            .find(Point3::from((0.0, 0.0, 0.0)))
+            .find(Point3::new(0.0, 0.0, 0.0))
             .expect("Point exists in T-mesh");
 
         // Add control point for navigation
         mesh.add_control_point(
-            Point3::from((0.0, 0.5, 0.0)),
+            Point3::new(0.0, 0.5, 0.0),
             Arc::clone(&origin),
             TmeshDirection::Up,
             0.5,
@@ -3327,10 +3329,10 @@ mod tests {
     /// ```
     fn construct_ray_casting_example_mesh() -> Tmesh<Point3> {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         let mut mesh = Tmesh::new(points, 2.5);
@@ -3375,7 +3377,7 @@ mod tests {
 
         // Construct mesh
         for knot_pair in knot_pairs {
-            mesh.try_add_absolute_point(Point3::from((knot_pair.0, knot_pair.1, 0.0)), knot_pair)
+            mesh.try_add_absolute_point(Point3::new(knot_pair.0, knot_pair.1, 0.0), knot_pair)
                 .unwrap_or_else(|_| {
                     panic!(
                         "Valid addition of control point ({}, {}).",
@@ -3398,7 +3400,7 @@ mod tests {
 
         // Select the initial point
         let start = mesh
-            .find(Point3::from((0.0, 0.4, 0.0)))
+            .find(Point3::new(0.0, 0.4, 0.0))
             .expect("Known existing point in mesh");
 
         // Cast ray
@@ -3439,7 +3441,7 @@ mod tests {
 
         // Select the initial point
         let start = mesh
-            .find(Point3::from((0.0, 0.4, 0.0)))
+            .find(Point3::new(0.0, 0.4, 0.0))
             .expect("Known existing point in mesh");
 
         // Cast ray
@@ -3479,7 +3481,7 @@ mod tests {
 
         // Select the initial point
         let start = mesh
-            .find(Point3::from((0.3, 0.7, 0.0)))
+            .find(Point3::new(0.3, 0.7, 0.0))
             .expect("Known existing point in mesh");
 
         // Cast ray
@@ -3616,10 +3618,10 @@ mod tests {
     fn test_t_mesh_subs() {
         const C: usize = 100;
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 1.0)),
-            Point3::from((1.0, 1.0, 2.0)),
-            Point3::from((0.0, 1.0, 1.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 2.0),
+            Point3::new(0.0, 1.0, 1.0),
         ];
 
         // Tmesh is now the surface x + y = z
@@ -3652,10 +3654,10 @@ mod tests {
     #[test]
     fn test_t_mesh_subdivide() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 1.0)),
-            Point3::from((1.0, 1.0, 2.0)),
-            Point3::from((0.0, 1.0, 1.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 2.0),
+            Point3::new(0.0, 1.0, 1.0),
         ];
 
         // Tmesh is now a surface where all point on the surface are of the form (f(x), g(y), f(x) + g(y))
@@ -3679,7 +3681,7 @@ mod tests {
 
         // Test middle point for inifered connection shenanegins
         let middle_point = mesh
-            .find(Point3::from((0.5, 0.5, 1.0)))
+            .find(Point3::new(0.5, 0.5, 1.0))
             .expect("Control point should be located in subdivided mesh");
         for dir in TmeshDirection::iter() {
             assert_eq!(
@@ -3719,10 +3721,10 @@ mod tests {
     fn test_t_mesh_local_knot_insertion_no_edge_conditions() {
         const N: usize = 25;
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 1.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 1.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 1.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
@@ -3738,23 +3740,23 @@ mod tests {
         // will be the same. If the points are more scattered, then deviation in elements which get canceled out by the "averging"
         // nature of the LKI algorithm will become more evident in the elements which are not "averaged out".
         mesh.map_point(
-            Point3::from((0.25, 0.25, 0.375)),
-            Point3::from((0.25, 0.10, 0.375)),
+            Point3::new(0.25, 0.25, 0.375),
+            Point3::new(0.25, 0.10, 0.375),
         )
         .expect("Control point is in mesh");
         mesh.map_point(
-            Point3::from((0.50, 0.25, 0.500)),
-            Point3::from((0.50, 0.30, 0.300)),
+            Point3::new(0.50, 0.25, 0.500),
+            Point3::new(0.50, 0.30, 0.300),
         )
         .expect("Control point is in mesh");
         mesh.map_point(
-            Point3::from((0.75, 0.25, 0.625)),
-            Point3::from((0.75, 0.15, 0.625)),
+            Point3::new(0.75, 0.25, 0.625),
+            Point3::new(0.75, 0.15, 0.625),
         )
         .expect("Control point is in mesh");
         mesh.map_point(
-            Point3::from((1.00, 0.25, 0.750)),
-            Point3::from((1.00, 0.25, 0.200)),
+            Point3::new(1.00, 0.25, 0.750),
+            Point3::new(1.00, 0.25, 0.200),
         )
         .expect("Control point is in mesh");
 
@@ -3762,7 +3764,7 @@ mod tests {
 
         let ins_point = test
             .try_local_knot_insertion(
-                test.find(Point3::from((0.50, 0.30, 0.300)))
+                test.find(Point3::new(0.50, 0.30, 0.300))
                     .expect("Point is a valid point in mesh"),
                 TmeshDirection::Right,
                 0.1,
@@ -3785,15 +3787,15 @@ mod tests {
 
         // Values verified via https://www.desmos.com/3d/pitkyckhfn
         assert!(
-            points_eq(p3_prime, Point3::from((0.5916666, 0.245, 0.41916666))),
+            points_eq(p3_prime, Point3::new(0.5916666, 0.245, 0.41916666)),
             "Inserted point does not match expected cartesian coordinates"
         );
         assert!(
-            points_eq(p4_prime, Point3::from((0.75416666, 0.1516666, 0.617916666))),
+            points_eq(p4_prime, Point3::new(0.75416666, 0.1516666, 0.617916666)),
             "Point right of inserted point does not match expected cartesian coordinates"
         );
         assert!(
-            points_eq(p2_prime, Point3::from((0.425, 0.24, 0.3225))),
+            points_eq(p2_prime, Point3::new(0.425, 0.24, 0.3225)),
             "Point left of inserted point does not match expected cartesian coordinates"
         );
 
@@ -3820,10 +3822,10 @@ mod tests {
     #[test]
     fn test_t_mesh_local_knot_insertion_edge_conditions() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 1.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 1.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 1.0),
         ];
 
         let mut mesh = Tmesh::new(points, 1.0);
@@ -3836,7 +3838,7 @@ mod tests {
 
         let mut test = mesh.clone();
         let ins_point = test.try_local_knot_insertion(
-            test.find(Point3::from((1.0, 1.0, 0.0)))
+            test.find(Point3::new(1.0, 1.0, 0.0))
                 .expect("Point is a valid point in mesh"),
             TmeshDirection::Down,
             0.1,
@@ -3851,10 +3853,10 @@ mod tests {
     #[test]
     fn test_t_mesh_absolute_local_knot_insertion_mesh_construction() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 0.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 0.0),
         ];
 
         // 5x5
@@ -3942,10 +3944,10 @@ mod tests {
     fn test_t_mesh_local_knot_insertion_force_ray_casting() {
         const N: usize = 25;
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 1.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 1.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 1.0),
         ];
 
         // 5x5
@@ -3957,23 +3959,23 @@ mod tests {
 
         // Mangle linearity of control points in cartesian space
         mesh.map_point(
-            Point3::from((0.25, 0.25, 0.375)),
-            Point3::from((0.10, 0.25, 0.375)),
+            Point3::new(0.25, 0.25, 0.375),
+            Point3::new(0.10, 0.25, 0.375),
         )
         .expect("Control point is in mesh");
         mesh.map_point(
-            Point3::from((0.25, 0.50, 0.500)),
-            Point3::from((0.30, 0.50, 0.300)),
+            Point3::new(0.25, 0.50, 0.500),
+            Point3::new(0.30, 0.50, 0.300),
         )
         .expect("Control point is in mesh");
         mesh.map_point(
-            Point3::from((0.25, 0.75, 0.625)),
-            Point3::from((0.15, 0.75, 0.625)),
+            Point3::new(0.25, 0.75, 0.625),
+            Point3::new(0.15, 0.75, 0.625),
         )
         .expect("Control point is in mesh");
         mesh.map_point(
-            Point3::from((0.25, 1.00, 0.750)),
-            Point3::from((0.25, 1.00, 0.200)),
+            Point3::new(0.25, 1.00, 0.750),
+            Point3::new(0.25, 1.00, 0.200),
         )
         .expect("Control point is in mesh");
 
@@ -4055,10 +4057,10 @@ mod tests {
     /// Uses the same pattern as `test_t_mesh_local_knot_insertion_no_edge_conditions`.
     fn make_derivative_test_mesh() -> Tmesh<Point3> {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 1.0)),
-            Point3::from((1.0, 1.0, 0.0)),
-            Point3::from((0.0, 1.0, 1.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 0.0),
+            Point3::new(0.0, 1.0, 1.0),
         ];
         let mut mesh = Tmesh::new(points, 1.0);
         mesh.subdivide(average_points)
@@ -4068,18 +4070,18 @@ mod tests {
 
         // Mangle linearity so derivatives are nontrivial.
         mesh.map_point(
-            Point3::from((0.25, 0.25, 0.375)),
-            Point3::from((0.25, 0.10, 0.375)),
+            Point3::new(0.25, 0.25, 0.375),
+            Point3::new(0.25, 0.10, 0.375),
         )
         .expect("Control point is in mesh");
         mesh.map_point(
-            Point3::from((0.50, 0.25, 0.500)),
-            Point3::from((0.50, 0.30, 0.300)),
+            Point3::new(0.50, 0.25, 0.500),
+            Point3::new(0.50, 0.30, 0.300),
         )
         .expect("Control point is in mesh");
         mesh.map_point(
-            Point3::from((0.75, 0.25, 0.625)),
-            Point3::from((0.75, 0.15, 0.625)),
+            Point3::new(0.75, 0.25, 0.625),
+            Point3::new(0.75, 0.15, 0.625),
         )
         .expect("Control point is in mesh");
         mesh
@@ -4217,10 +4219,10 @@ mod tests {
     #[test]
     fn test_refine_at_existing_edge() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 1.0)),
-            Point3::from((1.0, 1.0, 2.0)),
-            Point3::from((0.0, 1.0, 1.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 2.0),
+            Point3::new(0.0, 1.0, 1.0),
         ];
         let mut mesh = Tmesh::new(points, 1.0);
         mesh.subdivide(average_points)
@@ -4262,10 +4264,10 @@ mod tests {
     #[test]
     fn test_refine_at_with_intermediate_edge() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 1.0)),
-            Point3::from((1.0, 1.0, 2.0)),
-            Point3::from((0.0, 1.0, 1.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 2.0),
+            Point3::new(0.0, 1.0, 1.0),
         ];
         let mut mesh = Tmesh::new(points, 1.0);
         mesh.subdivide(average_points)
@@ -4312,10 +4314,10 @@ mod tests {
     #[test]
     fn test_refine_at_shape_preserving() {
         let points = [
-            Point3::from((0.0, 0.0, 0.0)),
-            Point3::from((1.0, 0.0, 1.0)),
-            Point3::from((1.0, 1.0, 2.0)),
-            Point3::from((0.0, 1.0, 1.0)),
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 1.0, 2.0),
+            Point3::new(0.0, 1.0, 1.0),
         ];
         let mut mesh = Tmesh::new(points, 1.0);
         mesh.subdivide(average_points)

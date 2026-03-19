@@ -88,7 +88,7 @@ impl MyRender {
             let x = matrix[3][2];
             let mat = mat0 * *matrix * mat1 * matrix.invert().unwrap();
             *matrix = mat * *matrix;
-            let obj_pos = matrix[3].truncate();
+            let obj_pos = Truncate::truncate(matrix[3]);
             let new_length = 5.0 + time.sin() + (time * 3.0).sin() / 3.0;
             let obj_dir = obj_pos / obj_pos.magnitude();
             let move_vec = obj_dir * (new_length - obj_pos.magnitude());
@@ -217,7 +217,7 @@ impl App for MyRender {
                 axis += dir2d[0] * camera.matrix[1];
                 axis /= axis.magnitude();
                 let angle = dir2d.magnitude() * 0.01;
-                let mat = Matrix4::from_axis_angle(axis.truncate(), Rad(angle));
+                let mat = Matrix4::from_axis_angle(Truncate::truncate(axis), Rad(angle));
                 camera.matrix = mat.invert().unwrap() * camera.matrix;
             }
             self.prev_cursor = Some(position);

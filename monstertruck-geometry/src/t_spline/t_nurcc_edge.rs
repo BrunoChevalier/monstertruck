@@ -1031,11 +1031,11 @@ mod tests {
         // Control points needed
         let origin = Arc::new(RwLock::new(TnurccControlPoint::new(
             0,
-            Point3::from((0.0, 0.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
         )));
         let dest = Arc::new(RwLock::new(TnurccControlPoint::new(
             1,
-            Point3::from((0.0, 5.0, 0.0)),
+            Point3::new(0.0, 5.0, 0.0),
         )));
 
         // Edge to be split
@@ -1063,7 +1063,7 @@ mod tests {
         let middle = TnurccEdge::split_edge(
             Arc::clone(&edge),
             24,
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 1.0, 0.0),
             56,
             0.25,
         )
@@ -1144,19 +1144,19 @@ mod tests {
         // Control points to be used in the test. tl and tr are top left and top right respectively
         let origin = Arc::new(RwLock::new(TnurccControlPoint::new(
             0,
-            Point3::from((0.0, 0.0, 0.0)),
+            Point3::new(0.0, 0.0, 0.0),
         )));
         let dest = Arc::new(RwLock::new(TnurccControlPoint::new(
             1,
-            Point3::from((0.0, 5.0, 0.0)),
+            Point3::new(0.0, 5.0, 0.0),
         )));
         let tl = Arc::new(RwLock::new(TnurccControlPoint::new(
             1,
-            Point3::from((-1.0, 5.0, 0.0)),
+            Point3::new(-1.0, 5.0, 0.0),
         )));
         let tr = Arc::new(RwLock::new(TnurccControlPoint::new(
             1,
-            Point3::from((1.0, 5.0, 0.0)),
+            Point3::new(1.0, 5.0, 0.0),
         )));
 
         // Edges to be used. left_edge and right_edge are the edges which will not be split,
@@ -1193,7 +1193,7 @@ mod tests {
         let _middle = TnurccEdge::split_edge(
             Arc::clone(&edge),
             24,
-            Point3::from((0.0, 1.0, 0.0)),
+            Point3::new(0.0, 1.0, 0.0),
             56,
             0.25,
         );

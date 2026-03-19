@@ -15,14 +15,14 @@ use monstertruck_geometry::prelude::*;
 #[test]
 fn t_spline_validation_parity_asymmetric_knots() {
     let points = vec![
-        Point3::from((0.0, 0.0, 0.0)), // 0
-        Point3::from((0.0, 0.0, 1.0)), // 1
-        Point3::from((2.0, 0.0, 1.0)), // 2
-        Point3::from((2.0, 0.0, 0.0)), // 3
-        Point3::from((0.0, 1.0, 0.0)), // 4
-        Point3::from((0.0, 1.0, 1.0)), // 5
-        Point3::from((2.0, 1.0, 1.0)), // 6
-        Point3::from((2.0, 1.0, 0.0)), // 7
+        Point3::new(0.0, 0.0, 0.0), // 0
+        Point3::new(0.0, 0.0, 1.0), // 1
+        Point3::new(2.0, 0.0, 1.0), // 2
+        Point3::new(2.0, 0.0, 0.0), // 3
+        Point3::new(0.0, 1.0, 0.0), // 4
+        Point3::new(0.0, 1.0, 1.0), // 5
+        Point3::new(2.0, 1.0, 1.0), // 6
+        Point3::new(2.0, 1.0, 0.0), // 7
     ];
 
     // All faces use the convention: opposing edges sum to the same total.
@@ -96,14 +96,14 @@ fn t_spline_validation_parity_asymmetric_knots() {
 #[test]
 fn t_spline_validation_parity_uniform_baseline() {
     let points = vec![
-        Point3::from((0.0, 0.0, 0.0)),
-        Point3::from((0.0, 0.0, 1.0)),
-        Point3::from((1.0, 0.0, 1.0)),
-        Point3::from((1.0, 0.0, 0.0)),
-        Point3::from((0.0, 1.0, 0.0)),
-        Point3::from((0.0, 1.0, 1.0)),
-        Point3::from((1.0, 1.0, 1.0)),
-        Point3::from((1.0, 1.0, 0.0)),
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(0.0, 0.0, 1.0),
+        Point3::new(1.0, 0.0, 1.0),
+        Point3::new(1.0, 0.0, 0.0),
+        Point3::new(0.0, 1.0, 0.0),
+        Point3::new(0.0, 1.0, 1.0),
+        Point3::new(1.0, 1.0, 1.0),
+        Point3::new(1.0, 1.0, 0.0),
     ];
     let faces = [
         [0, 3, 2, 1],
@@ -139,10 +139,10 @@ fn t_spline_validation_parity_uniform_baseline() {
 #[test]
 fn t_spline_validation_zero_knot_interval_insertion() {
     let points = [
-        Point3::from((0.0, 0.0, 0.0)),
-        Point3::from((1.0, 0.0, 0.0)),
-        Point3::from((1.0, 1.0, 0.0)),
-        Point3::from((0.0, 1.0, 0.0)),
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(1.0, 0.0, 0.0),
+        Point3::new(1.0, 1.0, 0.0),
+        Point3::new(0.0, 1.0, 0.0),
     ];
 
     let mut mesh = Tmesh::new(points, 1.0);
@@ -150,11 +150,11 @@ fn t_spline_validation_zero_knot_interval_insertion() {
     // Insert a point with knot_ratio = 0.0, creating a zero knot interval
     // between the existing point and the new point.
     let origin = mesh
-        .find(Point3::from((0.0, 1.0, 0.0)))
+        .find(Point3::new(0.0, 1.0, 0.0))
         .expect("Origin point should exist");
 
     let result = mesh.add_control_point(
-        Point3::from((0.0, 1.0, 0.0)),
+        Point3::new(0.0, 1.0, 0.0),
         origin,
         TmeshDirection::Right,
         0.0,
@@ -179,20 +179,20 @@ fn t_spline_validation_zero_knot_interval_insertion() {
 #[test]
 fn t_spline_validation_zero_knot_interval_far_side() {
     let points = [
-        Point3::from((0.0, 0.0, 0.0)),
-        Point3::from((1.0, 0.0, 0.0)),
-        Point3::from((1.0, 1.0, 0.0)),
-        Point3::from((0.0, 1.0, 0.0)),
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(1.0, 0.0, 0.0),
+        Point3::new(1.0, 1.0, 0.0),
+        Point3::new(0.0, 1.0, 0.0),
     ];
 
     let mut mesh = Tmesh::new(points, 1.0);
 
     let origin = mesh
-        .find(Point3::from((0.0, 1.0, 0.0)))
+        .find(Point3::new(0.0, 1.0, 0.0))
         .expect("Origin point should exist");
 
     let result = mesh.add_control_point(
-        Point3::from((1.0, 1.0, 0.0)),
+        Point3::new(1.0, 1.0, 0.0),
         origin,
         TmeshDirection::Right,
         1.0,
@@ -216,21 +216,21 @@ fn t_spline_validation_zero_knot_interval_far_side() {
 #[test]
 fn t_spline_validation_zero_knot_interval_knot_vectors() {
     let points = [
-        Point3::from((0.0, 0.0, 0.0)),
-        Point3::from((1.0, 0.0, 0.0)),
-        Point3::from((1.0, 1.0, 0.0)),
-        Point3::from((0.0, 1.0, 0.0)),
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(1.0, 0.0, 0.0),
+        Point3::new(1.0, 1.0, 0.0),
+        Point3::new(0.0, 1.0, 0.0),
     ];
 
     let mut mesh = Tmesh::new(points, 1.0);
 
     // Insert a point at the midpoint of the top edge.
     let origin = mesh
-        .find(Point3::from((0.0, 1.0, 0.0)))
+        .find(Point3::new(0.0, 1.0, 0.0))
         .expect("Origin point should exist");
 
     mesh.add_control_point(
-        Point3::from((0.5, 1.0, 0.0)),
+        Point3::new(0.5, 1.0, 0.0),
         origin,
         TmeshDirection::Right,
         0.5,
@@ -239,11 +239,11 @@ fn t_spline_validation_zero_knot_interval_knot_vectors() {
 
     // Now insert another point with zero knot interval.
     let midpoint = mesh
-        .find(Point3::from((0.5, 1.0, 0.0)))
+        .find(Point3::new(0.5, 1.0, 0.0))
         .expect("Midpoint should exist");
 
     let result = mesh.add_control_point(
-        Point3::from((0.5, 1.0, 0.0)),
+        Point3::new(0.5, 1.0, 0.0),
         midpoint,
         TmeshDirection::Right,
         0.0,
@@ -263,21 +263,21 @@ fn t_spline_validation_zero_knot_interval_knot_vectors() {
 #[test]
 fn t_spline_validation_zero_knot_perpendicular_edges() {
     let points = [
-        Point3::from((0.0, 0.0, 0.0)),
-        Point3::from((1.0, 0.0, 0.0)),
-        Point3::from((1.0, 1.0, 0.0)),
-        Point3::from((0.0, 1.0, 0.0)),
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(1.0, 0.0, 0.0),
+        Point3::new(1.0, 1.0, 0.0),
+        Point3::new(0.0, 1.0, 0.0),
     ];
 
     let mut mesh = Tmesh::new(points, 1.0);
 
     let origin = mesh
-        .find(Point3::from((0.0, 0.0, 0.0)))
+        .find(Point3::new(0.0, 0.0, 0.0))
         .expect("Origin point should exist");
 
     // Insert on the bottom edge with zero ratio.
     let result = mesh.add_control_point(
-        Point3::from((0.0, 0.0, 0.0)),
+        Point3::new(0.0, 0.0, 0.0),
         origin,
         TmeshDirection::Right,
         0.0,
@@ -336,15 +336,15 @@ fn t_spline_validation_malformed_face_subdivide_error() {
     // Build a valid cube with 8 vertices (indices 0..7) plus one extra
     // isolated vertex at index 8 that participates in no face.
     let points = vec![
-        Point3::from((0.0, 0.0, 0.0)), // 0
-        Point3::from((0.0, 0.0, 1.0)), // 1
-        Point3::from((1.0, 0.0, 1.0)), // 2
-        Point3::from((1.0, 0.0, 0.0)), // 3
-        Point3::from((0.0, 1.0, 0.0)), // 4
-        Point3::from((0.0, 1.0, 1.0)), // 5
-        Point3::from((1.0, 1.0, 1.0)), // 6
-        Point3::from((1.0, 1.0, 0.0)), // 7
-        Point3::from((5.0, 5.0, 5.0)), // 8 -- isolated, not in any face
+        Point3::new(0.0, 0.0, 0.0), // 0
+        Point3::new(0.0, 0.0, 1.0), // 1
+        Point3::new(1.0, 0.0, 1.0), // 2
+        Point3::new(1.0, 0.0, 0.0), // 3
+        Point3::new(0.0, 1.0, 0.0), // 4
+        Point3::new(0.0, 1.0, 1.0), // 5
+        Point3::new(1.0, 1.0, 1.0), // 6
+        Point3::new(1.0, 1.0, 0.0), // 7
+        Point3::new(5.0, 5.0, 5.0), // 8 -- isolated, not in any face
     ];
 
     // Six faces of the cube reference only indices 0..7.
@@ -408,14 +408,14 @@ fn t_spline_validation_malformed_face_subdivide_error() {
 #[test]
 fn t_spline_validation_parity_to_tmesh_conversion() {
     let points = vec![
-        Point3::from((0.0, 0.0, 0.0)),
-        Point3::from((0.0, 0.0, 1.0)),
-        Point3::from((1.0, 0.0, 1.0)),
-        Point3::from((1.0, 0.0, 0.0)),
-        Point3::from((0.0, 1.0, 0.0)),
-        Point3::from((0.0, 1.0, 1.0)),
-        Point3::from((1.0, 1.0, 1.0)),
-        Point3::from((1.0, 1.0, 0.0)),
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(0.0, 0.0, 1.0),
+        Point3::new(1.0, 0.0, 1.0),
+        Point3::new(1.0, 0.0, 0.0),
+        Point3::new(0.0, 1.0, 0.0),
+        Point3::new(0.0, 1.0, 1.0),
+        Point3::new(1.0, 1.0, 1.0),
+        Point3::new(1.0, 1.0, 0.0),
     ];
     let faces = [
         [0, 3, 2, 1],

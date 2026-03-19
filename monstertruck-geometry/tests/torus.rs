@@ -56,7 +56,7 @@ proptest! {
         );
 
         let n0 = torus.normal(u, v);
-        let n1 = torus.uder(u, v).cross(torus.vder(u, v)).normalize();
+        let n1 = torus.uder(u, v).cross(&torus.vder(u, v)).normalize();
         prop_assert_near!(n0, n1);
 
         let (u0, v0) = torus.search_parameter(p, None, 1).unwrap();
@@ -81,7 +81,7 @@ proptest! {
         small_radius in 0.1f64..=5.0,
         u_derivate in prop::bool::ANY,
     ) {
-        let torus = Torus::new(Point3::from(center), large_radius, small_radius);
+        let torus = Torus::new(Point3::new(center[0], center[1], center[2]), large_radius, small_radius);
 
         const EPS: f64 = 1.0e-4;
         let (der0, der1) = if u_derivate {

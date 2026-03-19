@@ -161,7 +161,7 @@ fn exec_axis1_placement(org_coord: [f64; 3], dir_array: [f64; 2]) {
     );
     let placement = step_to_entity::<Axis1PlacementHolder>(&step_str);
     assert_near!(p, Point2::from(&placement.location));
-    assert_near!(dir, placement.direction().truncate());
+    assert_near!(dir, Truncate::truncate(placement.direction()));
 
     let p = Point3::from(org_coord);
     let dir = dir_from_array(dir_array);
@@ -214,12 +214,12 @@ fn exec_axis2_placement3d(org_coord: [f64; 3], dir_array: [f64; 2], ref_dir_arra
     let p = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let step_str = format!(
         "DATA;#1 = AXIS2_PLACEMENT_3D('', #2, #3, #4);{}{}{}ENDSEC;",
         StepDisplay::new(p, 2),
@@ -718,12 +718,12 @@ fn exec_circle(org_coord: [f64; 3], dir_array: [f64; 2], ref_dir_array: [f64; 2]
     let origin = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let step_str = format!(
         "DATA; #1 = CIRCLE('', #2, {radius}); #2 = AXIS2_PLACEMENT_3D('', #3, #4, #5); {}{}{}ENDSEC;",
         StepDisplay::new(origin, 3),
@@ -766,12 +766,12 @@ fn exec_ellipse(
     let origin = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let step_str = format!(
         "DATA; #1 = ELLIPSE('', #2, {}, {}); #2 = AXIS2_PLACEMENT_3D('', #3, #4, #5); {}{}{}ENDSEC;",
         FloatDisplay(radius[0]),
@@ -816,12 +816,12 @@ fn exec_hyperbola(
     let origin = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let step_str = format!(
         "DATA; #1 = HYPERBOLA('', #2, {}, {}); #2 = AXIS2_PLACEMENT_3D('', #3, #4, #5); {}{}{}ENDSEC;",
         FloatDisplay(radius[0]),
@@ -867,12 +867,12 @@ fn exec_parabola(
     let origin = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let step_str = format!(
         "DATA; #1 = PARABOLA('', #2, {}); #2 = AXIS2_PLACEMENT_3D('', #3, #4, #5); {}{}{}ENDSEC;",
         FloatDisplay(focal_dist),
@@ -911,12 +911,12 @@ fn exec_plane(org_coord: [f64; 3], dir_array: [f64; 2], ref_dir_array: [f64; 2])
     let origin = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let step_str = format!(
         "DATA;
 #1 = PLANE('', #2);
@@ -953,12 +953,12 @@ fn exec_spherical_surface(
     let p = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let step_str = format!(
         "DATA;
 #1 = SPHERICAL_SURFACE('', #2, {radius});
@@ -1012,12 +1012,12 @@ fn exec_cylindrical_surface(
     let p = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let step_str0 = format!(
         "DATA;
 #1 = CYLINDRICAL_SURFACE('', #2, {radius});
@@ -1076,12 +1076,12 @@ fn exec_toroidal_surface(
     let p = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let major_radius = f64::max(radii[0], radii[1]);
     let minor_radius = (f64::min(radii[0], radii[1])) / 2.0;
     let step_str = format!(
@@ -1138,12 +1138,12 @@ fn exec_conical_surface(
     let p = Point3::from(org_coord);
     let z = dir_from_array(dir_array);
     let ref_dir = dir_from_array(ref_dir_array);
-    let v = z.cross(ref_dir);
+    let v = z.cross(&ref_dir);
     let y = match v.so_small() {
         true => return,
         false => v.normalize(),
     };
-    let x = y.cross(z).normalize();
+    let x = y.cross(&z).normalize();
     let step_str = format!(
         "DATA;
 #1 = CONICAL_SURFACE('', #2, {radius}, {semi_angle});
@@ -1766,7 +1766,7 @@ fn exec_surface_of_revolution(
             let ans = origin
                 + lc * f64::cos(u)
                 + dir * lc.dot(dir) * (1.0 - f64::cos(u))
-                + dir.cross(lc) * f64::sin(u);
+                + dir.cross(&lc) * f64::sin(u);
             assert_near!(surface.subs(u, v), ans);
         });
 }

@@ -261,8 +261,8 @@ impl App for MyApp {
             if dir2d.so_small() {
                 return Self::default_control_flow();
             }
-            let mut axis = dir2d[1] * matrix[0].truncate();
-            axis += dir2d[0] * matrix[1].truncate();
+            let mut axis = dir2d[1] * Truncate::truncate(matrix[0]);
+            axis += dir2d[0] * Truncate::truncate(matrix[1]);
             axis /= axis.magnitude();
             let angle = dir2d.magnitude() * 0.01;
             let mat = Matrix4::from_axis_angle(axis, Rad(angle));

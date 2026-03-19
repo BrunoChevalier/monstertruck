@@ -82,7 +82,7 @@ impl PolygonState {
     /// ```
     #[inline(always)]
     pub fn matrix_buffer(&self, device: &Device) -> BufferHandler {
-        let matrix_data: [[f32; 4]; 4] = self.matrix.cast::<f32>().unwrap().into();
+        let matrix_data: [[f32; 4]; 4] = self.matrix.cast().unwrap().into();
         BufferHandler::from_slice(&matrix_data, device, BufferUsages::UNIFORM)
     }
 

@@ -81,9 +81,9 @@ impl Rendered for WireFrameInstance {
     }
     fn bind_group(&self, handler: &DeviceHandler, layout: &BindGroupLayout) -> Arc<BindGroup> {
         let device = handler.device();
-        let matrix_data: [[f32; 4]; 4] = self.state.matrix.cast::<f32>().unwrap().into();
+        let matrix_data: [[f32; 4]; 4] = self.state.matrix.cast().unwrap().into();
         let matrix_buffer = BufferHandler::from_slice(&matrix_data, device, BufferUsages::UNIFORM);
-        let color_data: [f32; 4] = self.state.color.cast::<f32>().unwrap().into();
+        let color_data: [f32; 4] = self.state.color.cast::<f32>().into();
         let color_buffer = BufferHandler::from_slice(&color_data, device, BufferUsages::UNIFORM);
         Arc::new(bind_group_util::create_bind_group(
             device,
@@ -164,7 +164,7 @@ impl ToInstance<WireFrameInstance> for Vec<(Point3, Point3)> {
         let positions: Vec<[f32; 3]> = self
             .iter()
             .flat_map(|p| vec![p.0, p.1])
-            .map(|p| p.cast().unwrap().into())
+            .map(|p| p.cast::<f32>().into())
             .collect();
         let strips: Vec<u32> = (0..2 * self.len()).map(|i| i as u32).collect();
         let vb = BufferHandler::from_slice(&positions, device, BufferUsages::VERTEX);

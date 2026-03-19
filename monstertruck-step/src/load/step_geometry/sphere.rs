@@ -139,7 +139,7 @@ proptest::proptest! {
         );
 
         let n0 = sphere.normal(u, v);
-        let n1 = sphere.uder(u, v).cross(sphere.vder(u, v)).normalize();
+        let n1 = sphere.uder(u, v).cross(&sphere.vder(u, v)).normalize();
         assert!(
             (n0 - n1).magnitude2() < EPS,
             "normal failed: {n0:?}, {n1:?}"

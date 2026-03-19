@@ -17,7 +17,7 @@ fn sphere_interference() {
         assert!(pt1[2].so_small());
         assert!(f64::abs(pt0.to_vec().magnitude2() - 0.51) < 0.05);
         assert!(f64::abs(pt1.to_vec().magnitude2() - 0.51) < 0.05);
-        counter += if pt0.to_vec().cross(pt1.to_vec())[2] > 0.0 {
+        counter += if pt0.to_vec().cross(&pt1.to_vec())[2] > 0.0 {
             pt1 - pt0
         } else {
             pt0 - pt1

@@ -422,18 +422,18 @@ mod tests {
         let surface0 = &BsplineSurface::<Point3>::new(
             (KnotVector::bezier_knot(2), KnotVector::bezier_knot(2)),
             vec![
-                vec![(-1.0, 0.0, 0.0).into(), (-1.0, 0.5, 0.0).into(), (-1.0, 1.0, 0.0).into()],
-                vec![(-0.5, 0.0, 0.0).into(), (-0.5, 0.5, 1.0).into(), (-0.5, 1.0, 0.0).into()],
-                vec![(0.0, 0.0, 0.0).into(), (0.0, 0.5, 0.0).into(), (0.0, 1.0, 0.0).into()],
+                vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.5, 0.0), Point3::new(-1.0, 1.0, 0.0)],
+                vec![Point3::new(-0.5, 0.0, 0.0), Point3::new(-0.5, 0.5, 1.0), Point3::new(-0.5, 1.0, 0.0)],
+                vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.5, 0.0), Point3::new(0.0, 1.0, 0.0)],
             ]
         );
         #[rustfmt::skip]
         let surface1 = &BsplineSurface::<Point3>::new(
             (KnotVector::bezier_knot(2), KnotVector::bezier_knot(2)),
             vec![
-                vec![(0.0, 0.0, -1.0).into(), (0.0, 0.0, -0.5).into(), (0.0, 0.0, 0.0).into()],
-                vec![(0.0, 0.5, -1.0).into(), (1.0, 0.5, -0.5).into(), (0.0, 0.5, 0.0).into()],
-                vec![(0.0, 1.0, -1.0).into(), (0.0, 1.0, -0.5).into(), (0.0, 1.0, 0.0).into()],
+                vec![Point3::new(0.0, 0.0, -1.0), Point3::new(0.0, 0.0, -0.5), Point3::new(0.0, 0.0, 0.0)],
+                vec![Point3::new(0.0, 0.5, -1.0), Point3::new(1.0, 0.5, -0.5), Point3::new(0.0, 0.5, 0.0)],
+                vec![Point3::new(0.0, 1.0, -1.0), Point3::new(0.0, 1.0, -0.5), Point3::new(0.0, 1.0, 0.0)],
             ]
         );
 

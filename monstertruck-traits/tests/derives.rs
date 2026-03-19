@@ -3,7 +3,7 @@
 
 use monstertruck_core::{cgmath64::*, hash::HashGen};
 use monstertruck_traits::*;
-use polynomial::{PolynomialCurve, PolynomialSurface};
+use monstertruck_traits::polynomial::{PolynomialCurve, PolynomialSurface};
 
 #[test]
 fn derive_build_test_is_running() {}
