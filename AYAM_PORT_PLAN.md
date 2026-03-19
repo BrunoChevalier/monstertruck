@@ -44,7 +44,7 @@ Main practical gaps relative to Ayam are high-level surface constructors and pro
 | Curve/surface compatibility normalization | `ay_nct_makecompatible`, `ay_npt_makecompatible` | **Done** (`compat::make_curves_compatible`, `compat::make_surfaces_compatible`) | P0 | `truck-geometry` | [x] |
 | Curve and surface offsets | `ay_nct_offset`, `ay_npt_offset` | **Done** (`offset::curve_offset_2d`, `curve_offset_3d`, `surface_offset`) | P1 | `truck-geometry` | [x] |
 | Fairing and reparameterization workflows | `ay_nct_fair`, `ay_nct_reparam*` | **Done** (`fair::fair_curve`, `fair::reparameterize_arc_length`) | P2 | `truck-geometry` | [x] |
-| Patch split/extract workflows | `ay_npt_splitu/v`, `ay_npt_extractnp` | Partial via existing cut operations | P2 | `truck-geometry` + `truck-shapeops` | [ ] *(partial: basic cut ops exist, full split/extract deferred)* |
+| Patch split/extract workflows | `ay_npt_splitu/v`, `ay_npt_extractnp` | **Done** (`BsplineSurface::split_at_u`, `split_at_v`, `sub_patch`) | P2 | `truck-geometry` | [x] |
 | PatchMesh basis conversion | `src/nurbs/pmt.c` | **Done** (`basis::{HermiteSegment, CatmullRomSpline, PowerBasisCurve, PiecewiseBezier}` via `From` conversions) | P2 | `truck-geometry` | [x] |
 | Font outline to NURBS contours | `src/contrib/tti.c`, `src/objects/text.c` | **Done** (`text::glyph_profile`, `text::text_profile`) | P0 | `truck-modeling` (feature gated) | [x] |
 | Trim tessellation heuristics | `src/nurbs/stess.c`, `src/nurbs/rtess.c` | Not started | P3 | `truck-meshalgo` | [ ] |
@@ -170,7 +170,7 @@ Tasks:
 - [x] Implement `skin`.
 - [x] Implement `sweep_rail`.
 - [x] Implement periodic sweep variants (`try_sweep_periodic`, `try_sweep_multi_rail`).
-- [ ] Add dedicated option structs for orientation/frame rules and interpolation modes. *(deferred: v0.5.0 candidate)*
+- [x] Add dedicated option structs for orientation/frame rules and interpolation modes. *(completed in v0.5.0: `SweepRailOptions`, `Birail1Options`, `Birail2Options`, `GordonOptions`, `SkinOptions`)*
 - [x] Add builder-level wrappers in `truck-modeling`.
 
 Done criteria:
@@ -186,7 +186,7 @@ Tasks:
 - [x] Implement `birail2`.
 - [x] Implement `gordon` based on compatibility core.
 - [ ] Support intersection-grid driven and supplied-grid variants for Gordon. *(deferred: v0.5.0 candidate)*
-- [ ] Add fallback and diagnostics for invalid curve networks. *(partial: `GridDimensionMismatch` error exists; full diagnostics deferred)*
+- [x] Add fallback and diagnostics for invalid curve networks. *(completed in v0.5.0: `CurveNetworkDiagnostic` enum with 7 variants — `InsufficientCurves`, `InsufficientSections`, `EndpointMismatch`, `DomainMismatch`, `GridDimensionMismatch`, `CompatNormalizationFailed`, `DegenerateGeometry`)*
 
 Done criteria:
 
@@ -296,8 +296,8 @@ Done criteria:
 5. [x] Loop classification and winding normalization.
 6. [x] Planar face creation with holes.
 7. [x] Solid creation by extrusion (v1).
-8. [ ] Solid creation by revolve/sweep (v2). *(v0.5.0 candidate)*
-9. [ ] Consistency and tessellation validation. *(v0.5.0 candidate)*
+8. [x] Solid creation by revolve/sweep (v2). *(completed in v0.5.0: `profile::revolve_from_planar_profile`, `profile::sweep_from_planar_profile`)*
+9. [x] Consistency and tessellation validation. *(completed in v0.5.0: `profile::validate_solid` with `ValidationReport`)*
 
 ### 8.2 Why this is native to Truck, not bolt-on
 
@@ -309,8 +309,8 @@ Done criteria:
 
 - [x] M1: Single glyph with one hole to valid solid (real-font fixture). *(validated by `glyph_profile_solid_extrusion` test)*
 - [x] M2: Multi-glyph Latin text, baseline and advance support (real-font fixture). *(validated by `text_profile_hello` and `text_profile_spacing` tests)*
-- [ ] M3: Mixed glyph + custom profile loops to single face and solid (real-font fixture). *(deferred: v0.5.0 candidate)*
-- [ ] M4: Stress corpus of tricky fonts and small-feature geometry. *(deferred: v0.5.0 candidate)*
+- [x] M3: Mixed glyph + custom profile loops to single face and solid (real-font fixture). *(completed in v0.5.0: `profile::merge_profiles` with 6 integration tests in `font_pipeline.rs`)*
+- [x] M4: Stress corpus of tricky fonts and small-feature geometry. *(completed in v0.5.0: 11 pathological fixtures in `test-fixtures/stress-corpus/`, 16 regression tests)*
 
 ## 9) Testing and Verification Strategy
 
@@ -327,13 +327,13 @@ Integration tests:
 
 Regression corpus:
 
-- [ ] Curated pathological geometry and font fixtures. *(deferred: will be driven by real-world usage reports)*
+- [x] Curated pathological geometry and font fixtures. *(completed in v0.5.0: 11 synthetic fixtures in `test-fixtures/stress-corpus/` with failure mode catalog in README.md)*
 
 Performance tests:
 
 - [x] Profile pipeline throughput (benchmarks exist).
 - [x] Constructor throughput for surface constructors (benchmarks in `truck-geometry/benches/surface_constructors.rs`).
-- [ ] Large text and large loop-set profile build times. *(deferred: v0.5.0 candidate)*
+- [x] Large text and large loop-set profile build times. *(completed in v0.5.0: Criterion benchmarks in `monstertruck-modeling/benches/font_profile_bench.rs` for 1/10/100/1000 chars)*
 
 Quality gates:
 
@@ -383,7 +383,7 @@ Mitigation: profile-first rollout and targeted parallelism.
 
 This order delivers immediate utility while reducing risk for advanced surface features.
 
-## 14) Status Summary (v0.4.0)
+## 14) Status Summary (v0.5.0)
 
 *Last updated: 2026-03-19*
 
@@ -400,16 +400,19 @@ This order delivers immediate utility while reducing risk for advanced surface f
 - Performance benchmarks for all constructors and profile pipeline (Phase 9)
 - Documentation and examples for all shipped features (Phase 10)
 - Topological integration and healing hooks (monstertruck-solid)
+- **v0.5.0:** Typed option structs for all surface constructors (`SweepRailOptions`, `Birail1Options`, `Birail2Options`, `GordonOptions`, `SkinOptions`)
+- **v0.5.0:** Full curve network diagnostics (`CurveNetworkDiagnostic` with 7 variants)
+- **v0.5.0:** Patch split/extract workflows (`split_at_u`, `split_at_v`, `sub_patch`)
+- **v0.5.0:** Modeling-layer option-based builder functions (`try_sweep_rail_with_options`, etc.)
+- **v0.5.0:** Profile revolve/sweep solids (`revolve_from_planar_profile`, `sweep_from_planar_profile`)
+- **v0.5.0:** Mixed glyph + custom profile combinations (`merge_profiles`)
+- **v0.5.0:** Profile validation (`validate_solid` with `ValidationReport`)
+- **v0.5.0:** Stress corpus of 11 pathological font fixtures with regression tests
+- **v0.5.0:** Large-text performance benchmarks (Criterion, 1/10/100/1000 chars)
 
-### Deferred to v0.5.0+
-- Dedicated option structs for orientation/frame rules (Phase 2 remaining)
+### Deferred to v0.6.0+
 - Intersection-grid driven Gordon variants (Phase 3 remaining)
-- Mixed glyph + custom profile combinations (M3)
-- Stress corpus of tricky fonts (M4)
 - Trim tessellation robustness improvements (Phase 8)
-- Large-text performance benchmarks
-- Solid creation by revolve/sweep for profiles (data flow step 8)
-- Patch split/extract workflows (partial)
 - Migration guidance for manual workflow users
 
 ### Architecture Notes
@@ -417,3 +420,5 @@ This order delivers immediate utility while reducing risk for advanced surface f
 - Text pipeline uses rayon parallelism on non-WASM targets
 - Profile normalization is reusable for both font and arbitrary CAD sketch workflows
 - All surface constructors use the compatibility normalization core
+- Surface constructors now have fallible `try_*` variants returning `CurveNetworkDiagnostic` errors
+- Profile pipeline supports extrusion, revolve, and sweep solid creation with validation
