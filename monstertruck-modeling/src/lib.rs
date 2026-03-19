@@ -98,6 +98,11 @@ pub use topo_traits::*;
 /// `Result` with crate's errors.
 pub type Result<T> = std::result::Result<T, errors::Error>;
 
+/// Re-export surface option structs from the geometry layer for convenience.
+pub use monstertruck_geometry::nurbs::surface_options::{
+    Birail1Options, Birail2Options, GordonOptions, SweepRailOptions,
+};
+
 /// the building model utility API
 pub mod builder;
 mod closed_sweep;

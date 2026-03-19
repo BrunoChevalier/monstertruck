@@ -4,6 +4,9 @@ use crate::{
     geom_impls::{self, ArcConnector, ExtrudeConnector, LineConnector, RevoluteConnector},
     topo_traits::*,
 };
+use monstertruck_geometry::nurbs::surface_options::{
+    Birail1Options, Birail2Options, GordonOptions, SweepRailOptions,
+};
 use monstertruck_geometry::prelude::*;
 use monstertruck_topology::*;
 const PI: Rad<f64> = Rad(std::f64::consts::PI);
@@ -434,6 +437,7 @@ fn face_from_bspline_surface(surface: BsplineSurface<Point3>) -> Face<Curve, Sur
 /// let face: Face = builder::try_sweep_rail(&profile, &rail, 3).unwrap();
 /// assert_eq!(face.boundaries()[0].len(), 4);
 /// ```
+#[allow(deprecated)]
 pub fn try_sweep_rail(
     profile: &BsplineCurve<Point3>,
     rail: &BsplineCurve<Point3>,
@@ -446,6 +450,46 @@ pub fn try_sweep_rail(
         });
     }
     let surface = BsplineSurface::sweep_rail(profile.clone(), rail, n_sections);
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Sweeps a profile along a single rail with full diagnostic error handling,
+/// returning a [`Face`].
+///
+/// Uses the geometry-level [`BsplineSurface::try_sweep_rail`] with a
+/// [`SweepRailOptions`] struct. Geometry errors propagate through
+/// [`Error::FromGeometry`].
+///
+/// # Errors
+///
+/// Returns [`Error::FromGeometry`] wrapping geometry-level diagnostics
+/// (e.g., [`InsufficientSections`](monstertruck_geometry::errors::Error::InsufficientSections),
+/// [`CurveNetworkIncompatible`](monstertruck_geometry::errors::Error::CurveNetworkIncompatible)).
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+/// use monstertruck_geometry::nurbs::surface_options::SweepRailOptions;
+///
+/// let profile = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let rail = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0)],
+/// );
+/// let opts = SweepRailOptions::default();
+/// let face: Face = builder::try_sweep_rail_with_options(&profile, &rail, &opts).unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_sweep_rail_with_options(
+    profile: &BsplineCurve<Point3>,
+    rail: &BsplineCurve<Point3>,
+    options: &SweepRailOptions,
+) -> Result<Face<Curve, Surface>> {
+    let surface = BsplineSurface::try_sweep_rail(profile.clone(), rail, options)?;
     Ok(face_from_bspline_surface(surface))
 }
 
@@ -479,6 +523,7 @@ pub fn try_sweep_rail(
 /// let face: Face = builder::try_birail(&profile, &rail1, &rail2, 3).unwrap();
 /// assert_eq!(face.boundaries()[0].len(), 4);
 /// ```
+#[allow(deprecated)]
 pub fn try_birail(
     profile: &BsplineCurve<Point3>,
     rail1: &BsplineCurve<Point3>,
@@ -492,6 +537,105 @@ pub fn try_birail(
         });
     }
     let surface = BsplineSurface::birail1(profile.clone(), rail1, rail2, n_sections);
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Sweeps a profile along two rail curves with full diagnostic error
+/// handling, returning a [`Face`].
+///
+/// Uses the geometry-level [`BsplineSurface::try_birail1`] with a
+/// [`Birail1Options`] struct. Geometry errors propagate through
+/// [`Error::FromGeometry`].
+///
+/// # Errors
+///
+/// Returns [`Error::FromGeometry`] wrapping geometry-level diagnostics
+/// (e.g., [`EndpointMismatch`](monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic::EndpointMismatch),
+/// [`InsufficientSections`](monstertruck_geometry::errors::Error::InsufficientSections)).
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+/// use monstertruck_geometry::nurbs::surface_options::Birail1Options;
+///
+/// let rail1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0)],
+/// );
+/// let rail2 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0)],
+/// );
+/// let profile = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let opts = Birail1Options::default();
+/// let face: Face =
+///     builder::try_birail_with_options(&profile, &rail1, &rail2, &opts).unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_birail_with_options(
+    profile: &BsplineCurve<Point3>,
+    rail1: &BsplineCurve<Point3>,
+    rail2: &BsplineCurve<Point3>,
+    options: &Birail1Options,
+) -> Result<Face<Curve, Surface>> {
+    let surface = BsplineSurface::try_birail1(profile.clone(), rail1, rail2, options)?;
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Sweeps two profiles along two rail curves with full diagnostic error
+/// handling, returning a [`Face`].
+///
+/// Uses the geometry-level [`BsplineSurface::try_birail2`] with a
+/// [`Birail2Options`] struct. Geometry errors propagate through
+/// [`Error::FromGeometry`].
+///
+/// # Errors
+///
+/// Returns [`Error::FromGeometry`] wrapping geometry-level diagnostics
+/// (e.g., [`InsufficientSections`](monstertruck_geometry::errors::Error::InsufficientSections)).
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+/// use monstertruck_geometry::nurbs::surface_options::Birail2Options;
+///
+/// let rail1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0)],
+/// );
+/// let rail2 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0)],
+/// );
+/// let profile1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let profile2 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(-1.0, 0.0, 5.0), Point3::new(1.0, 0.0, 5.0)],
+/// );
+/// let opts = Birail2Options::default();
+/// let face: Face = builder::try_birail2_with_options(
+///     &profile1, &profile2, &rail1, &rail2, &opts,
+/// )
+/// .unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_birail2_with_options(
+    profile1: &BsplineCurve<Point3>,
+    profile2: &BsplineCurve<Point3>,
+    rail1: &BsplineCurve<Point3>,
+    rail2: &BsplineCurve<Point3>,
+    options: &Birail2Options,
+) -> Result<Face<Curve, Surface>> {
+    let surface =
+        BsplineSurface::try_birail2(profile1.clone(), profile2.clone(), rail1, rail2, options)?;
     Ok(face_from_bspline_surface(surface))
 }
 
@@ -531,6 +675,7 @@ pub fn try_birail(
 /// let face: Face = builder::try_gordon(vec![u0, u1], vec![v0, v1], &points).unwrap();
 /// assert_eq!(face.boundaries()[0].len(), 4);
 /// ```
+#[allow(deprecated)]
 pub fn try_gordon(
     u_curves: Vec<BsplineCurve<Point3>>,
     v_curves: Vec<BsplineCurve<Point3>>,
@@ -555,6 +700,60 @@ pub fn try_gordon(
         });
     }
     let surface = BsplineSurface::gordon(u_curves, v_curves, points);
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Constructs a Gordon surface from a u/v curve network and intersection
+/// points with full diagnostic error handling, returning a [`Face`].
+///
+/// Uses the geometry-level [`BsplineSurface::try_gordon`] with a
+/// [`GordonOptions`] struct. Geometry errors propagate through
+/// [`Error::FromGeometry`].
+///
+/// # Errors
+///
+/// Returns [`Error::FromGeometry`] wrapping geometry-level diagnostics
+/// (e.g., [`GridDimensionMismatch`](monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic::GridDimensionMismatch),
+/// [`InsufficientCurves`](monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic::InsufficientCurves)).
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+/// use monstertruck_geometry::nurbs::surface_options::GordonOptions;
+///
+/// let u0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let u1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 1.0), Point3::new(1.0, 0.0, 1.0)],
+/// );
+/// let v0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 1.0)],
+/// );
+/// let v1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 1.0)],
+/// );
+/// let points = vec![
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+///     vec![Point3::new(0.0, 0.0, 1.0), Point3::new(1.0, 0.0, 1.0)],
+/// ];
+/// let opts = GordonOptions::default();
+/// let face: Face =
+///     builder::try_gordon_with_options(vec![u0, u1], vec![v0, v1], &points, &opts).unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_gordon_with_options(
+    u_curves: Vec<BsplineCurve<Point3>>,
+    v_curves: Vec<BsplineCurve<Point3>>,
+    points: &[Vec<Point3>],
+    options: &GordonOptions,
+) -> Result<Face<Curve, Surface>> {
+    let surface = BsplineSurface::try_gordon(u_curves, v_curves, points, options)?;
     Ok(face_from_bspline_surface(surface))
 }
 
@@ -1166,6 +1365,69 @@ where
 {
     let origin = wire.front_vertex().map_or(Point3::origin(), |v| v.point());
     revolve_wire(wire, origin, axis, angle, division)
+}
+
+#[cfg(test)]
+mod option_builder_tests {
+    use crate::*;
+    use monstertruck_geometry::nurbs::surface_options::{
+        Birail1Options, Birail2Options, GordonOptions, SweepRailOptions,
+    };
+
+    fn line_bspline(a: Point3, b: Point3) -> BsplineCurve<Point3> {
+        BsplineCurve::new(KnotVector::bezier_knot(1), vec![a, b])
+    }
+
+    #[test]
+    fn sweep_rail_with_options_success() {
+        let profile = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+        let rail = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 5.0));
+        let opts = SweepRailOptions::default();
+        let face = builder::try_sweep_rail_with_options(&profile, &rail, &opts).unwrap();
+        assert_eq!(face.boundaries()[0].len(), 4);
+    }
+
+    #[test]
+    fn birail_with_options_success() {
+        let rail1 = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0));
+        let rail2 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0));
+        let profile = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+        let opts = Birail1Options::default();
+        let face =
+            builder::try_birail_with_options(&profile, &rail1, &rail2, &opts).unwrap();
+        assert_eq!(face.boundaries()[0].len(), 4);
+    }
+
+    #[test]
+    fn birail2_with_options_success() {
+        let rail1 = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(-1.0, 0.0, 5.0));
+        let rail2 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0));
+        let profile1 = line_bspline(Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+        let profile2 = line_bspline(Point3::new(-1.0, 0.0, 5.0), Point3::new(1.0, 0.0, 5.0));
+        let opts = Birail2Options::default();
+        let face = builder::try_birail2_with_options(
+            &profile1, &profile2, &rail1, &rail2, &opts,
+        )
+        .unwrap();
+        assert_eq!(face.boundaries()[0].len(), 4);
+    }
+
+    #[test]
+    fn gordon_with_options_success() {
+        let u0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+        let u1 = line_bspline(Point3::new(0.0, 0.0, 1.0), Point3::new(1.0, 0.0, 1.0));
+        let v0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 1.0));
+        let v1 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 1.0));
+        let points = vec![
+            vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+            vec![Point3::new(0.0, 0.0, 1.0), Point3::new(1.0, 0.0, 1.0)],
+        ];
+        let opts = GordonOptions::default();
+        let face =
+            builder::try_gordon_with_options(vec![u0, u1], vec![v0, v1], &points, &opts)
+                .unwrap();
+        assert_eq!(face.boundaries()[0].len(), 4);
+    }
 }
 
 #[cfg(test)]
