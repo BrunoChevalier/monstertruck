@@ -269,12 +269,25 @@ pub fn fixture_gordon_degenerate_shell() -> CompressedShell<Point3, Curve, Surfa
         ))
     };
 
+    // Edge layout:
+    //   0: bottom-left  (0 -> 1)
+    //   1: shared-mid   (1 -> 4) -- used forward by face 0, reversed by face 1
+    //   2: top-left     (4 -> 3)
+    //   3: left          (3 -> 0)
+    //   4: bottom-right (6 -> 2)  -- vertex 6 ~= vertex 1 after welding
+    //   5: right         (2 -> 5)
+    //   6: top-right    (5 -> 7)  -- vertex 7 ~= vertex 4 after welding
+    //
+    // Face 1 references edge 1 in reverse orientation. After welding merges
+    // vertices 6->1 and 7->4, edges 4/6 get consistent vertex indices and the
+    // shared edge becomes manifold.
     let edges = vec![
-        // Face 0 edges (left half): bottom(0->1), shared-right(1->4), top(4->3), left(3->0).
+        // Face 0 edges.
         CompressedEdge {
             vertices: (0, 1),
             curve: make_line_curve(p00, pm0),
         },
+        // Shared edge (forward = face 0 direction: 1 -> 4).
         CompressedEdge {
             vertices: (1, 4),
             curve: make_line_curve(pm0, pm1),
@@ -287,8 +300,7 @@ pub fn fixture_gordon_degenerate_shell() -> CompressedShell<Point3, Curve, Surfa
             vertices: (3, 0),
             curve: make_line_curve(p01, p00),
         },
-        // Face 1 edges (right half): bottom(6->2), right(2->5), top(5->7), shared-left(7->6).
-        // Uses mismatched vertices 6,7 for the shared edge.
+        // Face 1 edges (shared edge is edge 1 reversed).
         CompressedEdge {
             vertices: (6, 2),
             curve: make_line_curve(pm0_b, p10),
@@ -300,10 +312,6 @@ pub fn fixture_gordon_degenerate_shell() -> CompressedShell<Point3, Curve, Surfa
         CompressedEdge {
             vertices: (5, 7),
             curve: make_line_curve(p11, pm1_b),
-        },
-        CompressedEdge {
-            vertices: (7, 6),
-            curve: make_line_curve(pm1_b, pm0_b),
         },
     ];
 
@@ -332,6 +340,11 @@ pub fn fixture_gordon_degenerate_shell() -> CompressedShell<Point3, Curve, Surfa
 
     let face1 = CompressedFace {
         boundaries: vec![vec![
+            // Shared edge reversed (4 -> 1 direction, i.e. edge 1 with orientation=false).
+            CompressedEdgeIndex {
+                index: 1,
+                orientation: false,
+            },
             CompressedEdgeIndex {
                 index: 4,
                 orientation: true,
@@ -342,10 +355,6 @@ pub fn fixture_gordon_degenerate_shell() -> CompressedShell<Point3, Curve, Surfa
             },
             CompressedEdgeIndex {
                 index: 6,
-                orientation: true,
-            },
-            CompressedEdgeIndex {
-                index: 7,
                 orientation: true,
             },
         ]],
