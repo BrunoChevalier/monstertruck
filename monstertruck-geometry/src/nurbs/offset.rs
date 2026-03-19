@@ -7,6 +7,7 @@
 //! offset points.
 
 use super::*;
+use crate::nurbs::surface_options::SkinOptions;
 use errors::Error;
 use std::result::Result as StdResult;
 
@@ -242,7 +243,7 @@ pub fn surface_offset(
         .collect::<Result<Vec<_>>>()?;
 
     // Now skin the rows into a surface.
-    Ok(BsplineSurface::skin(rows))
+    BsplineSurface::try_skin(rows, &SkinOptions::default())
 }
 
 #[cfg(test)]

@@ -1,7 +1,9 @@
 use super::*;
 use crate::errors::Error;
 use crate::nurbs::surface_diagnostics::CurveNetworkDiagnostic;
-use crate::nurbs::surface_options::{Birail1Options, Birail2Options, SweepRailOptions};
+use crate::nurbs::surface_options::{
+    Birail1Options, Birail2Options, GordonOptions, SkinOptions, SweepRailOptions,
+};
 use algo::surface::{SearchNearestParameterVector, SearchParameterVector};
 use std::iter::FusedIterator;
 use std::ops::*;
@@ -1476,6 +1478,7 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// assert_near2!(surface.subs(0.0, 1.0), Vector2::new(0.0, 2.0));
     /// assert_near2!(surface.subs(1.0, 1.0), Vector2::new(1.0, 2.0));
     /// ```
+    #[deprecated(since = "0.5.0", note = "use try_skin with SkinOptions")]
     pub fn skin(mut curves: Vec<BsplineCurve<P>>) -> BsplineSurface<P> {
         assert!(
             !curves.is_empty(),
@@ -1515,6 +1518,70 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
             .collect();
         BsplineSurface::new_unchecked((knot_vector_u, knot_vector_v), control_points)
     }
+
+    /// Fallible skin surface construction using typed options.
+    ///
+    /// Returns [`Error::CurveNetworkIncompatible`] with
+    /// [`CurveNetworkDiagnostic::InsufficientCurves`] if `curves` is empty.
+    /// Returns [`Error::CurveNetworkIncompatible`] with
+    /// [`CurveNetworkDiagnostic::CompatNormalizationFailed`] if compatibility
+    /// normalization fails.
+    #[allow(unused_variables)]
+    pub fn try_skin(
+        mut curves: Vec<BsplineCurve<P>>,
+        options: &SkinOptions,
+    ) -> Result<BsplineSurface<P>> {
+        if curves.is_empty() {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::InsufficientCurves {
+                    required: 1,
+                    got: 0,
+                },
+            ));
+        }
+        if curves.len() == 1 {
+            // Degenerate: single curve -> constant surface in v.
+            let c = &mut curves[0];
+            c.knot_normalize();
+            let knot_vector_u = c.knot_vec().clone();
+            let knot_vector_v = KnotVector::from(vec![0.0, 0.0, 1.0, 1.0]);
+            let control_points: Vec<Vec<_>> =
+                c.control_points().iter().map(|p| vec![*p, *p]).collect();
+            return Ok(BsplineSurface::new_unchecked(
+                (knot_vector_u, knot_vector_v),
+                control_points,
+            ));
+        }
+        if curves.len() == 2 {
+            return Ok(Self::homotopy(curves.swap_remove(0), curves.swap_remove(0)));
+        }
+
+        // Make all section curves compatible.
+        compat::make_curves_compatible(&mut curves).map_err(|e| {
+            Error::CurveNetworkIncompatible(CurveNetworkDiagnostic::CompatNormalizationFailed {
+                reason: e.to_string(),
+            })
+        })?;
+
+        let n = curves.len();
+        let m = curves[0].control_points().len();
+
+        // Build the v-direction knot vector (degree 1, clamped, uniform).
+        let mut v_knots = Vec::with_capacity(n + 2);
+        v_knots.push(0.0);
+        (0..n).for_each(|i| v_knots.push(i as f64 / (n - 1) as f64));
+        v_knots.push(1.0);
+        let knot_vector_v = KnotVector::from(v_knots);
+
+        let knot_vector_u = curves[0].knot_vec().clone();
+        let control_points: Vec<Vec<P>> = (0..m)
+            .map(|j| curves.iter().map(|c| *c.control_point(j)).collect())
+            .collect();
+        Ok(BsplineSurface::new_unchecked(
+            (knot_vector_u, knot_vector_v),
+            control_points,
+        ))
+    }
 }
 
 impl BsplineSurface<Point3> {
@@ -1552,6 +1619,7 @@ impl BsplineSurface<Point3> {
     /// assert_near2!(surface.subs(1.0, 1.0), Point3::new(1.0, 0.0, 5.0));
     /// ```
     #[deprecated(since = "0.5.0", note = "use try_sweep_rail with SweepRailOptions")]
+    #[allow(deprecated)]
     pub fn sweep_rail(
         profile: BsplineCurve<Point3>,
         rail: &BsplineCurve<Point3>,
@@ -1633,6 +1701,7 @@ impl BsplineSurface<Point3> {
     /// assert_near2!(surface.subs(1.0, 1.0), Point3::new(1.0, 0.0, 5.0));
     /// ```
     #[deprecated(since = "0.5.0", note = "use try_birail1 with Birail1Options")]
+    #[allow(deprecated)]
     pub fn birail1(
         profile: BsplineCurve<Point3>,
         rail1: &BsplineCurve<Point3>,
@@ -1728,6 +1797,7 @@ impl BsplineSurface<Point3> {
     /// assert_near2!(surface.subs(1.0, 1.0), Point3::new(2.0, 0.0, 4.0));
     /// ```
     #[deprecated(since = "0.5.0", note = "use try_birail2 with Birail2Options")]
+    #[allow(deprecated)]
     pub fn birail2(
         profile1: BsplineCurve<Point3>,
         profile2: BsplineCurve<Point3>,
@@ -1861,7 +1931,7 @@ impl BsplineSurface<Point3> {
             })
             .collect();
 
-        Ok(BsplineSurface::skin(sections))
+        BsplineSurface::try_skin(sections, &SkinOptions::default())
     }
 
     /// Fallible single-profile birail using typed options.
@@ -1923,7 +1993,7 @@ impl BsplineSurface<Point3> {
             })
             .collect();
 
-        Ok(BsplineSurface::skin(sections))
+        BsplineSurface::try_skin(sections, &SkinOptions::default())
     }
 
     /// Fallible dual-profile birail using typed options.
@@ -2016,7 +2086,7 @@ impl BsplineSurface<Point3> {
             })
             .collect();
 
-        Ok(BsplineSurface::skin(sections))
+        BsplineSurface::try_skin(sections, &SkinOptions::default())
     }
 
     /// Sweeps a profile curve along multiple rail curves with affine fitting.
@@ -2070,6 +2140,7 @@ impl BsplineSurface<Point3> {
     /// ).unwrap();
     /// assert_eq!(surface.udegree(), 2);
     /// ```
+    #[allow(deprecated)]
     pub fn sweep_multi_rail(
         profile: BsplineCurve<Point3>,
         rails: &[BsplineCurve<Point3>],
@@ -2214,6 +2285,7 @@ impl BsplineSurface<Point3> {
     /// // C0 continuity at seam.
     /// assert_near2!(surface.subs(0.5, 0.0), surface.subs(0.5, 1.0));
     /// ```
+    #[allow(deprecated)]
     pub fn sweep_periodic(
         profile: BsplineCurve<Point3>,
         rail: &BsplineCurve<Point3>,
@@ -2413,6 +2485,8 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// assert_near2!(gordon.subs(0.0, 1.0), Vector2::new(0.0, 1.0));
     /// assert_near2!(gordon.subs(1.0, 1.0), Vector2::new(1.0, 1.0));
     /// ```
+    #[deprecated(since = "0.5.0", note = "use try_gordon with GordonOptions")]
+    #[allow(deprecated)]
     pub fn gordon(
         u_curves: Vec<BsplineCurve<P>>,
         v_curves: Vec<BsplineCurve<P>>,
@@ -2478,6 +2552,114 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
             .collect();
 
         BsplineSurface::new_unchecked(surfaces[0].knot_vecs().clone(), result_cp)
+    }
+
+    /// Fallible Gordon surface construction using typed options.
+    ///
+    /// Returns [`Error::CurveNetworkIncompatible`] with
+    /// [`CurveNetworkDiagnostic::InsufficientCurves`] if `u_curves` or
+    /// `v_curves` is empty.
+    /// Returns [`Error::CurveNetworkIncompatible`] with
+    /// [`CurveNetworkDiagnostic::GridDimensionMismatch`] if the `points` grid
+    /// dimensions do not match the curve counts.
+    /// Returns [`Error::CurveNetworkIncompatible`] with
+    /// [`CurveNetworkDiagnostic::CompatNormalizationFailed`] if compatibility
+    /// normalization fails.
+    #[allow(unused_variables)]
+    pub fn try_gordon(
+        u_curves: Vec<BsplineCurve<P>>,
+        v_curves: Vec<BsplineCurve<P>>,
+        points: &[Vec<P>],
+        options: &GordonOptions,
+    ) -> Result<BsplineSurface<P>> {
+        let n = u_curves.len();
+        let m = v_curves.len();
+
+        if u_curves.is_empty() {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::InsufficientCurves {
+                    required: 1,
+                    got: 0,
+                },
+            ));
+        }
+        if v_curves.is_empty() {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::InsufficientCurves {
+                    required: 1,
+                    got: 0,
+                },
+            ));
+        }
+        if points.len() != n || points.iter().any(|row| row.len() != m) {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::GridDimensionMismatch {
+                    expected_rows: n,
+                    expected_cols: m,
+                    actual_rows: points.len(),
+                    actual_cols: points.first().map_or(0, |r| r.len()),
+                },
+            ));
+        }
+
+        let skin_opts = SkinOptions::default();
+
+        // S_u: skin the u-curves (v parameterizes across sections).
+        let s_u = Self::try_skin(u_curves, &skin_opts)?;
+
+        // S_v: skin the v-curves (u parameterizes across sections),
+        // then swap axes so u/v orientation matches S_u.
+        let mut s_v = Self::try_skin(v_curves, &skin_opts)?;
+        s_v.swap_axes();
+
+        // T: tensor product surface interpolating the grid points.
+        // Build as degree-1 in both u and v, using the grid points directly.
+        let n_u = n;
+        let n_v = m;
+        let mut u_knots = Vec::with_capacity(n_u + 2);
+        u_knots.push(0.0);
+        (0..n_u).for_each(|i| u_knots.push(i as f64 / (n_u - 1).max(1) as f64));
+        u_knots.push(1.0);
+
+        let mut v_knots = Vec::with_capacity(n_v + 2);
+        v_knots.push(0.0);
+        (0..n_v).for_each(|j| v_knots.push(j as f64 / (n_v - 1).max(1) as f64));
+        v_knots.push(1.0);
+
+        let knot_u = KnotVector::from(u_knots);
+        let knot_v = KnotVector::from(v_knots);
+        // Control points: rows indexed by u-column (matching skin layout).
+        let t_cp: Vec<Vec<P>> = (0..n_v)
+            .map(|j| (0..n_u).map(|i| points[i][j]).collect())
+            .collect();
+        let tensor = BsplineSurface::new_unchecked((knot_u, knot_v), t_cp);
+
+        // Make all three surfaces compatible.
+        let mut surfaces = vec![s_u, s_v, tensor];
+        compat::make_surfaces_compatible(&mut surfaces).map_err(|e| {
+            Error::CurveNetworkIncompatible(CurveNetworkDiagnostic::CompatNormalizationFailed {
+                reason: e.to_string(),
+            })
+        })?;
+
+        // G = S_u + S_v - T (boolean sum).
+        let cp_u = surfaces[0].control_points();
+        let cp_v = surfaces[1].control_points();
+        let cp_t = surfaces[2].control_points();
+        let rows = cp_u.len();
+        let cols = cp_u[0].len();
+        let result_cp: Vec<Vec<P>> = (0..rows)
+            .map(|i| {
+                (0..cols)
+                    .map(|j| cp_u[i][j] + (cp_v[i][j] - cp_t[i][j]))
+                    .collect()
+            })
+            .collect();
+
+        Ok(BsplineSurface::new_unchecked(
+            surfaces[0].knot_vecs().clone(),
+            result_cp,
+        ))
     }
 
     /// Creates a surface by its boundary.
