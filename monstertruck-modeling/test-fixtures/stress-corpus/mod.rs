@@ -1,13 +1,23 @@
 //! Stress corpus of pathological font geometry fixtures.
+//!
+//! Provides synthetic pathological font geometry for regression testing.
+//! Each fixture constructs [`Wire`] objects that simulate problematic
+//! font outlines -- self-intersections, near-zero areas, deep nesting,
+//! and degenerate geometry.
+//!
+//! Run the tests with:
+//! ```bash
+//! cargo nextest run -p monstertruck-modeling --features font font_stress
+//! ```
 
 use monstertruck_modeling::Wire;
 
-pub mod self_intersecting;
-pub mod near_zero_area;
-pub mod deeply_nested;
 pub mod degenerate;
+pub mod deeply_nested;
+pub mod near_zero_area;
+pub mod self_intersecting;
 
-/// Returns all named fixtures in the corpus.
+/// Returns all named fixtures in the corpus as `(name, wires)` pairs.
 pub fn all_fixtures() -> Vec<(&'static str, Vec<Wire>)> {
     vec![
         ("self_intersecting_cubic", self_intersecting::self_intersecting_cubic()),
