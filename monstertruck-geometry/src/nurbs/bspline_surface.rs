@@ -1800,6 +1800,305 @@ impl BsplineSurface<Point3> {
 
         BsplineSurface::skin(sections)
     }
+
+    /// Sweeps a profile curve along multiple rail curves with affine fitting.
+    ///
+    /// At each of `n_sections` uniformly sampled parameter values along the
+    /// rails, the profile is affinely transformed so that its anchor points
+    /// (the profile positions closest to each rail start) map to the
+    /// corresponding rail positions. The resulting sections are then skinned.
+    ///
+    /// For 2 rails this reduces to the same scale-rotate-translate approach as
+    /// [`birail1`](Self::birail1). For 3+ rails a least-squares affine fit is
+    /// computed.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if:
+    /// - Fewer than 2 rails are provided.
+    /// - `n_sections` is less than 2.
+    /// - The affine fit is degenerate (e.g. reference anchor points are
+    ///   collinear or coincident, producing a singular covariance matrix).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use monstertruck_geometry::prelude::*;
+    ///
+    /// let rail0 = BsplineCurve::new(
+    ///     KnotVector::bezier_knot(1),
+    ///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(-2.0, 0.0, 5.0)],
+    /// );
+    /// let rail1 = BsplineCurve::new(
+    ///     KnotVector::bezier_knot(1),
+    ///     vec![Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 2.0, 5.0)],
+    /// );
+    /// let rail2 = BsplineCurve::new(
+    ///     KnotVector::bezier_knot(1),
+    ///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(2.0, 0.0, 5.0)],
+    /// );
+    /// let profile = BsplineCurve::new(
+    ///     KnotVector::bezier_knot(2),
+    ///     vec![
+    ///         Point3::new(-1.0, 0.0, 0.0),
+    ///         Point3::new(0.0, 1.0, 0.0),
+    ///         Point3::new(1.0, 0.0, 0.0),
+    ///     ],
+    /// );
+    /// let surface = BsplineSurface::sweep_multi_rail(
+    ///     profile,
+    ///     &[rail0, rail1, rail2],
+    ///     5,
+    /// ).unwrap();
+    /// assert_eq!(surface.udegree(), 2);
+    /// ```
+    pub fn sweep_multi_rail(
+        profile: BsplineCurve<Point3>,
+        rails: &[BsplineCurve<Point3>],
+        n_sections: usize,
+    ) -> std::result::Result<BsplineSurface<Point3>, &'static str> {
+        if rails.len() < 2 {
+            return Err("sweep_multi_rail requires at least 2 rails");
+        }
+        if n_sections < 2 {
+            return Err("sweep_multi_rail requires at least 2 sections");
+        }
+        if profile.control_points().is_empty() {
+            return Err("sweep_multi_rail: profile is empty");
+        }
+
+        // Compute reference anchor points on the profile for each rail.
+        let (p_start, _) = profile.range_tuple();
+        let ref_points: Vec<Point3> = rails
+            .iter()
+            .map(|rail| {
+                let rail_start = rail.subs(rail.range_tuple().0);
+                let t = profile
+                    .search_nearest_parameter(rail_start, Some(p_start), 100)
+                    .unwrap_or(p_start);
+                profile.subs(t)
+            })
+            .collect();
+
+        // For 3+ rails, verify the reference points are not degenerate now.
+        if rails.len() >= 3 {
+            affine_fit_3x3(&ref_points, &ref_points)?;
+        }
+
+        let sections: std::result::Result<Vec<BsplineCurve<Point3>>, &'static str> = (0
+            ..n_sections)
+            .map(|i| {
+                // Collect target positions from each rail at the normalized parameter.
+                let targets: Vec<Point3> = rails
+                    .iter()
+                    .map(|rail| {
+                        let (rs, re) = rail.range_tuple();
+                        let rt = rs + (re - rs) * i as f64 / (n_sections - 1) as f64;
+                        rail.subs(rt)
+                    })
+                    .collect();
+
+                if rails.len() == 2 {
+                    // 2-rail case: scale+rotate+translate like birail1.
+                    let chord = ref_points[1] - ref_points[0];
+                    let chord_len = chord.magnitude();
+                    let target_chord = targets[1] - targets[0];
+                    let target_len = target_chord.magnitude();
+
+                    let scale = if chord_len.so_small() {
+                        1.0
+                    } else {
+                        target_len / chord_len
+                    };
+
+                    let rotation = if chord_len.so_small() || target_len.so_small() {
+                        Matrix3::from_value(1.0)
+                    } else {
+                        rotation_between(chord, target_chord)
+                    };
+
+                    let origin = ref_points[0];
+                    let mut section = profile.clone();
+                    section.transform_control_points(|pt| {
+                        let local = *pt - origin;
+                        let transformed = rotation * local * scale;
+                        *pt = targets[0] + transformed;
+                    });
+                    Ok(section)
+                } else {
+                    // 3+ rails: least-squares affine fit.
+                    let (m, translation) = affine_fit_3x3(&ref_points, &targets)?;
+                    let centroid_ref = ref_points
+                        .iter()
+                        .fold(Vector3::new(0.0, 0.0, 0.0), |acc, p| acc + p.coords)
+                        / ref_points.len() as f64;
+
+                    let mut section = profile.clone();
+                    section.transform_control_points(|pt| {
+                        let centered = pt.coords - centroid_ref;
+                        let transformed = m * centered;
+                        *pt = Point3::from(transformed + translation);
+                    });
+                    Ok(section)
+                }
+            })
+            .collect();
+
+        let sections = sections?;
+        Ok(BsplineSurface::skin(sections))
+    }
+
+    /// Sweeps a profile curve along a rail curve to produce a periodic
+    /// (closed) surface using the duplicated-endpoint approach.
+    ///
+    /// Samples `n_sections` positions along the rail with tangent-aligned
+    /// framing, then duplicates the first section as `section[n_sections]`.
+    /// This guarantees `subs(u, 0) == subs(u, 1)` by construction (C0
+    /// continuity at the wrap seam).
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if:
+    /// - `n_sections` is less than 3.
+    /// - The profile or rail has no control points.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use monstertruck_geometry::prelude::*;
+    ///
+    /// let rail = BsplineCurve::new(
+    ///     KnotVector::from(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]),
+    ///     vec![
+    ///         Point3::new(1.0, 0.0, 0.0),
+    ///         Point3::new(0.0, 1.0, 0.0),
+    ///         Point3::new(-1.0, 0.0, 0.0),
+    ///         Point3::new(0.0, -1.0, 0.0),
+    ///         Point3::new(1.0, 0.0, 0.0),
+    ///     ],
+    /// );
+    /// let profile = BsplineCurve::new(
+    ///     KnotVector::bezier_knot(1),
+    ///     vec![Point3::new(1.0, 0.0, -0.2), Point3::new(1.0, 0.0, 0.2)],
+    /// );
+    /// let surface = BsplineSurface::sweep_periodic(profile, &rail, 8).unwrap();
+    /// // C0 continuity at seam.
+    /// assert_near2!(surface.subs(0.5, 0.0), surface.subs(0.5, 1.0));
+    /// ```
+    pub fn sweep_periodic(
+        profile: BsplineCurve<Point3>,
+        rail: &BsplineCurve<Point3>,
+        n_sections: usize,
+    ) -> std::result::Result<BsplineSurface<Point3>, &'static str> {
+        if n_sections < 3 {
+            return Err("sweep_periodic requires at least 3 sections");
+        }
+        if profile.control_points().is_empty() {
+            return Err("sweep_periodic: profile is empty");
+        }
+        if rail.control_points().is_empty() {
+            return Err("sweep_periodic: rail is empty");
+        }
+
+        let (t_start, t_end) = rail.range_tuple();
+        let rail_origin = rail.subs(t_start);
+        let tangent0 = rail.derivative(t_start);
+        let t0_len = tangent0.magnitude();
+
+        // Sample n_sections positions and build tangent-aligned sections.
+        let mut sections: Vec<BsplineCurve<Point3>> = (0..n_sections)
+            .map(|i| {
+                let t = t_start + (t_end - t_start) * i as f64 / n_sections as f64;
+                let rail_pt = rail.subs(t);
+                let tangent_i = rail.derivative(t);
+                let translation = rail_pt - rail_origin;
+
+                let rotation = if t0_len.so_small() || tangent_i.magnitude().so_small() {
+                    Matrix3::from_value(1.0)
+                } else {
+                    rotation_between(tangent0, tangent_i)
+                };
+
+                let mut section = profile.clone();
+                section.transform_control_points(|pt| {
+                    let local = *pt - rail_origin;
+                    let rotated = rotation * local;
+                    *pt = rail_origin + rotated + translation;
+                });
+                section
+            })
+            .collect();
+
+        // Duplicate the first section as the last to close the surface.
+        sections.push(sections[0].clone());
+
+        Ok(BsplineSurface::skin(sections))
+    }
+}
+
+/// Computes a least-squares affine fit mapping reference points to target points.
+///
+/// Returns `(M, t)` where the transform is: `result = t + M * (pt - centroid_ref)`.
+/// The returned `t` is `centroid_target`.
+///
+/// Uses SVD-based pseudoinverse to handle points lying in a plane (rank 2).
+/// Returns `Err` if the reference points are collinear or coincident (rank < 2),
+/// producing a degenerate configuration.
+fn affine_fit_3x3(
+    ref_pts: &[Point3],
+    target_pts: &[Point3],
+) -> std::result::Result<(Matrix3, Vector3), &'static str> {
+    let n = ref_pts.len();
+
+    // Compute centroids.
+    let centroid_ref = ref_pts
+        .iter()
+        .fold(Vector3::new(0.0, 0.0, 0.0), |acc, p| acc + p.coords)
+        / n as f64;
+    let centroid_target = target_pts
+        .iter()
+        .fold(Vector3::new(0.0, 0.0, 0.0), |acc, p| acc + p.coords)
+        / n as f64;
+
+    // Build covariance matrix C = sum(ref_centered * ref_centered^T)
+    // and cross-covariance H = sum(target_centered * ref_centered^T).
+    // We want M such that M * (ref - centroid_ref) ≈ (target - centroid_target).
+    // Solution: M = H * C^+  (pseudoinverse of C).
+    let mut c_na = <Matrix3 as Default>::default().0;
+    let mut h_na = <Matrix3 as Default>::default().0;
+
+    ref_pts.iter().zip(target_pts.iter()).for_each(|(r, t)| {
+        let rc = r.coords - centroid_ref;
+        let tc = t.coords - centroid_target;
+        c_na += rc * rc.transpose();
+        h_na += tc * rc.transpose();
+    });
+
+    // SVD of C to compute pseudoinverse, handling rank-deficient cases
+    // (e.g. all points in a plane → rank 2).
+    let svd = c_na.svd(true, true);
+    let max_sv = svd.singular_values[0];
+
+    // Count significant singular values.
+    let rank = svd
+        .singular_values
+        .iter()
+        .filter(|sv| **sv > max_sv * TOLERANCE)
+        .count();
+
+    if rank < 2 {
+        return Err("degenerate rail configuration: reference points are collinear or coincident");
+    }
+
+    // Pseudoinverse: C^+ = V * S^+ * U^T.
+    let c_pinv = svd.pseudo_inverse(max_sv * TOLERANCE).map_err(
+        |_| "degenerate rail configuration: reference points are collinear or coincident",
+    )?;
+
+    let m_na = h_na * c_pinv;
+    let m = Matrix3::from(m_na);
+
+    Ok((m, centroid_target))
 }
 
 /// Computes a rotation [`Matrix3`] that rotates vector `from` to align with `to`.

@@ -497,9 +497,11 @@ fn test_sweep_multi_rail_three_rails() {
         ],
     );
 
-    let result =
-        BsplineSurface::sweep_multi_rail(profile.clone(), &[rail0, rail1, rail2], 5);
-    assert!(result.is_ok(), "sweep_multi_rail should succeed with 3 rails");
+    let result = BsplineSurface::sweep_multi_rail(profile.clone(), &[rail0, rail1, rail2], 5);
+    assert!(
+        result.is_ok(),
+        "sweep_multi_rail should succeed with 3 rails"
+    );
     let surface = result.unwrap();
 
     // The u-degree should match the profile degree.
@@ -517,7 +519,10 @@ fn test_sweep_multi_rail_error_on_single_rail() {
         vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
     );
     let result = BsplineSurface::sweep_multi_rail(profile, &[rail], 3);
-    assert!(result.is_err(), "sweep_multi_rail should fail with a single rail");
+    assert!(
+        result.is_err(),
+        "sweep_multi_rail should fail with a single rail"
+    );
 }
 
 #[test]
@@ -602,10 +607,7 @@ fn test_sweep_periodic_closed_seam() {
     // Small profile perpendicular to the rail start tangent.
     let profile = BsplineCurve::new(
         KnotVector::bezier_knot(1),
-        vec![
-            Point3::new(1.0, 0.0, -0.2),
-            Point3::new(1.0, 0.0, 0.2),
-        ],
+        vec![Point3::new(1.0, 0.0, -0.2), Point3::new(1.0, 0.0, 0.2)],
     );
 
     let result = BsplineSurface::sweep_periodic(profile, &rail, 8);
@@ -632,5 +634,8 @@ fn test_sweep_periodic_error_on_too_few_sections() {
         vec![Point3::new(0.0, 0.0, -0.1), Point3::new(0.0, 0.0, 0.1)],
     );
     let result = BsplineSurface::sweep_periodic(profile, &rail, 2);
-    assert!(result.is_err(), "sweep_periodic should fail with n_sections < 3");
+    assert!(
+        result.is_err(),
+        "sweep_periodic should fail with n_sections < 3"
+    );
 }
