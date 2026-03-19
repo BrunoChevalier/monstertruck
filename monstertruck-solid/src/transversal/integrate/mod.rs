@@ -408,11 +408,10 @@ fn split_edges_at_intermediate_vertices<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>
                     if da2 > edge_len2 + tol2 || db2 > edge_len2 + tol2 {
                         return None;
                     }
-                    let t = curve.search_nearest_parameter(
-                        pv,
-                        Some((t0 + t1) * 0.5),
-                        100,
-                    )?;
+                    // Use fewer trials for this proximity check -- full
+                    // Newton convergence is not needed, just a rough
+                    // nearest-parameter estimate.
+                    let t = curve.search_nearest_parameter(pv, Some((t0 + t1) * 0.5), 10)?;
                     let margin = (t1 - t0) * 0.01;
                     if t <= t0 + margin || t >= t1 - margin {
                         return None;
@@ -427,9 +426,7 @@ fn split_edges_at_intermediate_vertices<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>
                 .collect::<Vec<_>>()
         })
         .map(|mut splits| {
-            splits.sort_by(|a, b| {
-                a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal)
-            });
+            splits.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
             splits.dedup_by_key(|s| s.1);
             splits
         })
@@ -456,7 +453,7 @@ fn split_edges_at_intermediate_vertices<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>
                     if let Some(split_t) = remaining_curve.search_nearest_parameter(
                         cshell.vertices[vi],
                         Some((rt0 + rt1) * 0.5),
-                        100,
+                        10,
                     ) {
                         let margin = (rt1 - rt0) * 0.01;
                         if split_t > rt0 + margin && split_t < rt1 - margin {
@@ -606,9 +603,7 @@ fn heal_shell_if_needed<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
 
     // Use the best shell so far as the base for further healing.
     let (base_shell, base_quality) = match &welded {
-        Some(w) if shell_quality(w) <= original_quality => {
-            (w.clone(), shell_quality(w))
-        }
+        Some(w) if shell_quality(w) <= original_quality => (w.clone(), shell_quality(w)),
         _ => (shell.clone(), original_quality),
     };
 
@@ -672,7 +667,7 @@ fn shell_quality<C, S>(shell: &Shell<Point3, C, S>) -> (usize, usize, usize) {
 
 fn try_cap_shell_with_existing_surfaces<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
     shell: Shell<Point3, C, S>,
-    tol: f64,
+    _tol: f64,
 ) -> Shell<Point3, C, S> {
     // Early exit: already closed shells don't need capping.
     if shell.shell_condition() == ShellCondition::Closed {
@@ -695,7 +690,6 @@ fn try_cap_shell_with_existing_surfaces<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>
         });
         let current_quality = shell_quality(&capped);
         let mut candidate_count = 0usize;
-        let mut shell_triangulatable_count = 0usize;
         let best = candidate_surfaces
             .into_iter()
             .flat_map(|surface| {
@@ -707,27 +701,17 @@ fn try_cap_shell_with_existing_surfaces<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>
             .map(|face| {
                 let mut candidate = capped.clone();
                 candidate.push(face.clone());
-                // Mesh triangulation for capping uses at least 10x `TOLERANCE` for vertex snap reliability.
-                let triangulatable = candidate
-                    .triangulation(f64::max(10.0 * TOLERANCE, tol))
-                    .face_iter()
-                    .all(|f| f.surface().is_some());
-                if triangulatable {
-                    shell_triangulatable_count += 1;
-                }
-                (shell_quality(&candidate), triangulatable, face)
+                (shell_quality(&candidate), face)
             })
-            .filter(|(_, triangulatable, _)| *triangulatable)
-            .min_by_key(|(quality, _, _)| *quality)
-            .filter(|(quality, _, _)| *quality < current_quality)
-            .map(|(_, _, face)| face);
+            .min_by_key(|(quality, _)| *quality)
+            .filter(|(quality, _)| *quality < current_quality)
+            .map(|(_, face)| face);
         if debug_cap {
             eprintln!(
-                "debug cap boundary_len={} current={:?} candidates={} shell_triangulatable={} picked={}",
+                "debug cap boundary_len={} current={:?} candidates={} picked={}",
                 wire.len(),
                 current_quality,
                 candidate_count,
-                shell_triangulatable_count,
                 best.is_some(),
             );
         }
@@ -828,7 +812,7 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
         );
     }
 
-    let [mut and1, mut or1, unknown1] = cls1.and_or_unknown();
+    let [and1, or1, unknown1] = cls1.and_or_unknown();
     if debug_bool {
         eprintln!(
             "debug class1 and={} or={} unknown={}",
@@ -855,33 +839,50 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
         );
     }
 
-    let mut known_and = and0;
-    known_and.append(&mut and1);
-    let mut known_or = or0;
-    known_or.append(&mut or1);
-    let build_faces = |assignments: &[bool]| {
-        let mut and_faces = known_and.clone();
-        let mut or_faces = known_or.clone();
-        unknown_faces
+    // Pre-convert known AND/OR faces from `AltCurve` to regular curves once.
+    // This avoids re-running expensive `quadratic_approximation` on intersection
+    // curves during every `evaluate` call in the hill-climbing loop.
+    let mut known_and_alt: Shell<Point3, _, S> = Shell::default();
+    and0.into_iter().for_each(|f| known_and_alt.push(f));
+    and1.into_iter().for_each(|f| known_and_alt.push(f));
+    let mut known_or_alt: Shell<Point3, _, S> = Shell::default();
+    or0.into_iter().for_each(|f| known_or_alt.push(f));
+    or1.into_iter().for_each(|f| known_or_alt.push(f));
+    let known_and_shell = altshell_to_shell(&known_and_alt, tol)
+        .ok_or(ShapeOpsError::AltShellConversionFailed { operation: "and" })?;
+    let known_or_shell = altshell_to_shell(&known_or_alt, tol)
+        .ok_or(ShapeOpsError::AltShellConversionFailed { operation: "and" })?;
+    // Pre-convert unknown faces (cheap: they have no intersection curves).
+    let unknown_converted: Vec<(Face<Point3, C, S>, bool)> = unknown_faces
+        .iter()
+        .map(|(face, is_and)| {
+            let mut single: Shell<Point3, _, S> = Shell::default();
+            single.push(face.clone());
+            altshell_to_shell(&single, tol).map(|s| {
+                // SAFETY: single-face shell always has exactly one face.
+                let converted_face = s.into_iter().next().unwrap();
+                (converted_face, *is_and)
+            })
+        })
+        .collect::<Option<Vec<_>>>()
+        .ok_or(ShapeOpsError::AltShellConversionFailed { operation: "and" })?;
+    let build_raw_shells = |assignments: &[bool]| -> [Shell<Point3, C, S>; 2] {
+        let mut and_shell = known_and_shell.clone();
+        let mut or_shell = known_or_shell.clone();
+        unknown_converted
             .iter()
             .zip(assignments.iter().copied())
             .for_each(|((face, _), is_and)| {
                 if is_and {
-                    and_faces.push(face.clone());
+                    and_shell.push(face.clone());
                 } else {
-                    or_faces.push(face.clone());
+                    or_shell.push(face.clone());
                 }
             });
-        (and_faces, or_faces)
-    };
-    let build_raw_shells = |assignments: &[bool]| -> Option<[Shell<Point3, C, S>; 2]> {
-        let (and_faces, or_faces) = build_faces(assignments);
-        let and_shell = altshell_to_shell(&and_faces, tol)?;
-        let or_shell = altshell_to_shell(&or_faces, tol)?;
-        Some([and_shell, or_shell])
+        [and_shell, or_shell]
     };
     let build_shells = |assignments: &[bool]| -> Option<[Shell<Point3, C, S>; 2]> {
-        let [and_shell, or_shell] = build_raw_shells(assignments)?;
+        let [and_shell, or_shell] = build_raw_shells(assignments);
         let and_shell = heal_shell_if_needed(and_shell, tol)?;
         let or_shell = heal_shell_if_needed(or_shell, tol)?;
         Some([and_shell, or_shell])
@@ -894,39 +895,39 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
             shell.singular_vertices().len(),
         )
     };
-    let evaluate = |assignments: &[bool]| -> Option<BooleanQualityScore> {
-        let [and_shell, or_shell] = build_raw_shells(assignments)?;
-        Some((score(&and_shell), score(&or_shell)))
+    let evaluate = |assignments: &[bool]| -> BooleanQualityScore {
+        let [and_shell, or_shell] = build_raw_shells(assignments);
+        (score(&and_shell), score(&or_shell))
     };
-    let mut assignments: Vec<bool> = unknown_faces.iter().map(|(_, is_and)| *is_and).collect();
-    let mut best_score = evaluate(&assignments)
-        .ok_or(ShapeOpsError::AltShellConversionFailed { operation: "and" })?;
+    let mut assignments: Vec<bool> = unknown_converted
+        .iter()
+        .map(|(_, is_and)| *is_and)
+        .collect();
+    let mut best_score = evaluate(&assignments);
     let exact_unknown = std::env::var("MT_BOOL_EXACT_UNKNOWN").is_ok();
-    if exact_unknown && unknown_faces.len() <= 12 {
-        let total = 1usize << unknown_faces.len();
+    if exact_unknown && unknown_converted.len() <= 12 {
+        let total = 1usize << unknown_converted.len();
         let mut best_assignments = assignments.clone();
         (0..total).for_each(|mask| {
-            let candidate: Vec<bool> = (0..unknown_faces.len())
+            let candidate: Vec<bool> = (0..unknown_converted.len())
                 .map(|i| ((mask >> i) & 1) == 1)
                 .collect();
-            if let Some(candidate_score) = evaluate(&candidate)
-                && candidate_score < best_score
-            {
+            let candidate_score = evaluate(&candidate);
+            if candidate_score < best_score {
                 best_score = candidate_score;
                 best_assignments = candidate;
             }
         });
         assignments = best_assignments;
-    } else if unknown_faces.len() <= 24 {
+    } else if unknown_converted.len() <= 24 {
         let mut improved = true;
         while improved {
             improved = false;
             (0..assignments.len()).for_each(|index| {
                 let mut candidate = assignments.clone();
                 candidate[index] = !candidate[index];
-                if let Some(candidate_score) = evaluate(&candidate)
-                    && candidate_score < best_score
-                {
+                let candidate_score = evaluate(&candidate);
+                if candidate_score < best_score {
                     assignments = candidate;
                     best_score = candidate_score;
                     improved = true;
@@ -938,8 +939,9 @@ fn process_one_pair_of_shells<C: ShapeOpsCurve<S>, S: ShapeOpsSurface>(
         .ok_or(ShapeOpsError::AltShellConversionFailed { operation: "and" })?;
     if debug_bool {
         let and_count =
-            known_and.len() + assignments.iter().copied().filter(|is_and| *is_and).count();
-        let or_count = known_or.len() + assignments.len() - (and_count - known_and.len());
+            known_and_shell.len() + assignments.iter().copied().filter(|is_and| *is_and).count();
+        let or_count =
+            known_or_shell.len() + assignments.len() - (and_count - known_and_shell.len());
         eprintln!(
             "debug class-final and={} or={} score_and={:?} score_or={:?}",
             and_count, or_count, best_score.0, best_score.1,
