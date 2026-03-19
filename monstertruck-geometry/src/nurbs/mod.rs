@@ -171,6 +171,11 @@ mod knot_vector;
 mod nurbs_curve;
 mod nurbs_surface;
 
+/// Programmatic fixture generators for problematic NURBS geometries.
+///
+/// Unconditionally compiled so other crates' test code can import these fixtures.
+pub mod test_fixtures;
+
 #[doc(hidden)]
 #[inline(always)]
 pub const fn inv_or_zero(delta: f64) -> f64 {
