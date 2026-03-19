@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 35 | Approval-needed: 0 | Total: 35
+**Summary:** Auto-fixes: 36 | Approval-needed: 0 | Total: 36
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -243,5 +243,12 @@
 **Type:** auto-fix
 **Category:** bug
 **Description:** Pre-existing compile errors in monstertruck-geometry lib test target (approx_fillet_surface.rs, t_nurcc_edge.rs) prevent running --lib tests. Using --test binaries instead.
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-19T15:42:12.728Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing compile errors in t_spline/t_mesh.rs, approx_fillet_surface.rs, t_spline_validation.rs prevent full --lib test run; not caused by this change
 **Files changed:** none
 **Status:** applied
