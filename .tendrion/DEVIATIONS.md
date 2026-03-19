@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 30 | Approval-needed: 0 | Total: 30
+**Summary:** Auto-fixes: 33 | Approval-needed: 0 | Total: 33
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -209,4 +209,25 @@
 **Category:** bug
 **Description:** Pre-existing compilation error in geom_impls.rs proptest: prop_assert_near! comparing Rad<f64> instead of f64. Fixed by extracting .0 fields.
 **Files changed:** monstertruck-modeling/src/geom_impls.rs
+**Status:** applied
+
+### [2026-03-19T13:48:55.325Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Exempt: Task 1 is pure configuration (binary font fixture copy, no testable behavior)
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-19T13:50:13.661Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Tests pass immediately: font pipeline code already exists and works. Tests verify existing glyph_profile, text_profile, attach_plane_normalized, and solid_from_planar_profile functionality.
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-19T13:50:29.309Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing clippy error in text.rs: collapsible_if in ContourCollector::move_to. Fixing to pass verification.
+**Files changed:** none
 **Status:** applied
