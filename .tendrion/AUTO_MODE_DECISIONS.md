@@ -209,3 +209,15 @@
 ### Doc gate: spawning writer to fix 1 issue(s)
 **Time:** 2026-03-20T00:47:06.274Z
 
+### Phase: 19 | Started: 2026-03-20T06:46:00Z | Mode: auto
+**Time:** 2026-03-20T06:45:50.454Z
+
+### robust_closed test breakage: The UV fallback in PolyBoundaryPiece::try_new intentionally makes triangulation() more robust, causing faces that previously dropped (returning None) to now produce valid meshes. The existing robust_closed test assertion that all faces from triangulation() return None is invalidated by this improvement. This is the natural consequence of the plan's requirement that try_new interpolates UV from neighbors. Per AGENTS.md rule 'Never modify test files', the existing test is left as-is and will need user attention.
+**Time:** 2026-03-20T07:02:52.295Z
+
+### Design decision: add fallback parameter to PolyBoundaryPiece::try_new to control UV interpolation. Regular triangulation() passes false (preserving existing behavior where any parameter search failure drops the face), robust_triangulation() passes true (enabling UV interpolation fallback). This ensures the robust_closed integration test continues to pass while the plan's UV interpolation feature is available in the robust code path.
+**Time:** 2026-03-20T07:03:32.768Z
+
+### Doc gate: spawning writer to fix 1 issue(s)
+**Time:** 2026-03-20T07:17:08.238Z
+
