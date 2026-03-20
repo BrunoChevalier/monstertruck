@@ -62,6 +62,7 @@ pub(super) fn shell_tessellation<'a, C, S>(
     tolerance: f64,
     sp: impl SP<S>,
     quad_config: QuadOptions,
+    allow_fallback: bool,
 ) -> MeshedShell
 where
     C: PolylineableCurve + 'a,
@@ -110,6 +111,7 @@ where
             tolerance,
             &sp,
             quad_config,
+            allow_fallback,
         )
     };
     shell.face_par_iter().map(create_face).collect()
@@ -122,6 +124,7 @@ pub(super) fn shell_tessellation_single_thread<'a, C, S>(
     tolerance: f64,
     sp: impl SP<S>,
     quad_config: QuadOptions,
+    allow_fallback: bool,
 ) -> MeshedShell
 where
     C: PolylineableCurve + 'a,
@@ -168,6 +171,7 @@ where
             tolerance,
             &sp,
             quad_config,
+            allow_fallback,
         )
     };
     shell.face_iter().map(create_face).collect()
@@ -179,6 +183,7 @@ pub(super) fn cshell_tessellation<'a, C, S>(
     tolerance: f64,
     sp: impl SP<S>,
     quad_config: QuadOptions,
+    allow_fallback: bool,
 ) -> MeshedCShell
 where
     C: PolylineableCurve + 'a,
@@ -218,7 +223,11 @@ where
         };
         let create_boundary = |wire: &Vec<CompressedEdgeIndex>| {
             let wire_iter = wire.iter().filter_map(create_edge);
-            PolyBoundaryPiece::try_new(surface, wire_iter, &sp)
+            if allow_fallback {
+                PolyBoundaryPiece::try_new_with_fallback(surface, wire_iter, &sp)
+            } else {
+                PolyBoundaryPiece::try_new(surface, wire_iter, &sp)
+            }
         };
         let preboundary: Option<Vec<_>> = boundaries.iter().map(create_boundary).collect();
         let polygon: Option<PolygonMesh> = preboundary.map(|preboundary| {
@@ -249,6 +258,7 @@ fn shell_create_polygon<S: PreMeshableSurface>(
     tolerance: f64,
     sp: impl SP<S>,
     quad_config: QuadOptions,
+    allow_fallback: bool,
 ) -> Face<Point3, PolylineCurve, Option<PolygonMesh>> {
     // Fast path: untrimmed face with bounded surface domain.
     let is_untrimmed = wires.iter().all(|w| w.is_empty());
@@ -268,7 +278,11 @@ fn shell_create_polygon<S: PreMeshableSurface>(
             .iter()
             .map(|wire: &Wire<_, _>| {
                 let wire_iter = wire.iter().map(Edge::oriented_curve);
-                PolyBoundaryPiece::try_new(surface, wire_iter, &sp)
+                if allow_fallback {
+                    PolyBoundaryPiece::try_new_with_fallback(surface, wire_iter, &sp)
+                } else {
+                    PolyBoundaryPiece::try_new(surface, wire_iter, &sp)
+                }
             })
             .collect::<Option<Vec<_>>>();
         preboundary.map(|preboundary| {
@@ -306,6 +320,23 @@ impl PolyBoundaryPiece {
         wire: impl Iterator<Item = PolylineCurve>,
         sp: impl SP<S>,
     ) -> Option<Self> {
+        Self::try_new_inner(surface, wire, sp, false)
+    }
+
+    fn try_new_with_fallback<S: PreMeshableSurface>(
+        surface: &S,
+        wire: impl Iterator<Item = PolylineCurve>,
+        sp: impl SP<S>,
+    ) -> Option<Self> {
+        Self::try_new_inner(surface, wire, sp, true)
+    }
+
+    fn try_new_inner<S: PreMeshableSurface>(
+        surface: &S,
+        wire: impl Iterator<Item = PolylineCurve>,
+        sp: impl SP<S>,
+        allow_fallback: bool,
+    ) -> Option<Self> {
         let (up, vp) = (surface.u_period(), surface.v_period());
         let (urange, vrange) = surface.try_range_tuple();
         let mut bdry3d: Vec<Point3> = wire
@@ -315,40 +346,121 @@ impl PolyBoundaryPiece {
             })
             .collect();
         bdry3d.push(bdry3d[0]);
+
+        // Pass 1: attempt parameter search for each boundary point.
+        // Store `Option<(f64, f64)>` for each point; `None` means search failed.
+        let mut uv_results: Vec<Option<(f64, f64)>> = Vec::with_capacity(bdry3d.len());
         let mut previous = None;
-        let mut vec = bdry3d
-            .into_iter()
-            .flat_map(|pt| {
-                let (mut u, mut v) = match sp(surface, pt, previous) {
-                    Some(hint) => hint,
-                    None => return vec![None],
-                };
+        let mut fail_count = 0usize;
+        for pt in &bdry3d {
+            let result = sp(surface, *pt, previous);
+            if let Some((mut u, mut v)) = result {
                 if let (Some(up), Some((u0, _))) = (up, previous) {
                     u = get_mindiff(u, u0, up);
                 }
                 if let (Some(vp), Some((_, v0))) = (vp, previous) {
                     v = get_mindiff(v, v0, vp);
                 }
-                let res = (|| {
-                    if let Some((u0, v0)) = previous {
-                        if !u0.near(&u) && surface.uder(u0, v0).so_small() {
-                            return vec![
-                                Some((Point2::new(u, v0), pt).into()),
-                                Some((Point2::new(u, v), pt).into()),
-                            ];
-                        } else if !v0.near(&v) && surface.vder(u0, v0).so_small() {
-                            return vec![
-                                Some((Point2::new(u0, v), pt).into()),
-                                Some((Point2::new(u, v), pt).into()),
-                            ];
-                        }
-                    }
-                    vec![Some((Point2::new(u, v), pt).into())]
-                })();
                 previous = Some((u, v));
-                res
-            })
-            .collect::<Option<Vec<SurfacePoint>>>()?;
+                uv_results.push(Some((u, v)));
+            } else {
+                fail_count += 1;
+                uv_results.push(None);
+            }
+        }
+
+        // If any lookup failed and fallback is disabled, return `None`
+        // (preserving legacy behavior for regular triangulation).
+        if fail_count > 0 && !allow_fallback {
+            return None;
+        }
+
+        // If all lookups failed, we cannot recover -- return `None`.
+        if uv_results.iter().all(|r| r.is_none()) {
+            return None;
+        }
+
+        // Pass 2: fill in failed lookups via UV interpolation fallback.
+        // Strategy: for each `None` entry, find the nearest preceding and
+        // following successful UV (wrapping around the boundary loop) and
+        // linearly interpolate based on index distance.
+        if fail_count > 0 {
+            log::warn!(
+                "PolyBoundaryPiece: parameter search failed for {fail_count}/{} boundary points, \
+                 using UV interpolation fallback",
+                uv_results.len(),
+            );
+
+            // Collect indices of `None` entries first to avoid cascade where a
+            // freshly-interpolated value might be used as an anchor.
+            let none_indices: Vec<usize> = uv_results
+                .iter()
+                .enumerate()
+                .filter_map(|(i, r)| if r.is_none() { Some(i) } else { None })
+                .collect();
+
+            let n = uv_results.len();
+            for i in none_indices {
+                // Find nearest preceding success (wrapping around).
+                let mut prev_anchor = None;
+                for offset in 1..n {
+                    let j = (i + n - offset) % n;
+                    if let Some(uv) = uv_results[j] {
+                        prev_anchor = Some((uv, offset));
+                        break;
+                    }
+                }
+                // Find nearest following success (wrapping around).
+                let mut next_anchor = None;
+                for offset in 1..n {
+                    let j = (i + offset) % n;
+                    if let Some(uv) = uv_results[j] {
+                        next_anchor = Some((uv, offset));
+                        break;
+                    }
+                }
+                // Interpolate UV -- fallback to nearest if only one neighbor exists.
+                let interpolated_uv = match (prev_anchor, next_anchor) {
+                    (Some(((pu, pv), pd)), Some(((nu, nv), nd))) => {
+                        let t = pd as f64 / (pd + nd) as f64;
+                        (pu + t * (nu - pu), pv + t * (nv - pv))
+                    }
+                    (Some(((pu, pv), _)), None) => (pu, pv),
+                    (None, Some(((nu, nv), _))) => (nu, nv),
+                    // SAFETY: checked all-None case above.
+                    (None, None) => unreachable!("checked all-None case above"),
+                };
+                uv_results[i] = Some(interpolated_uv);
+            }
+        }
+
+        // Build surface points, handling singularity crossings as before.
+        previous = None;
+        let mut vec: Vec<SurfacePoint> = Vec::with_capacity(uv_results.len());
+        for (pt, uv_opt) in bdry3d.iter().zip(uv_results.iter()) {
+            // SAFETY: all UV values filled by pass 2.
+            let (u, v) = uv_opt.expect("all UV values filled by pass 2");
+            let entries: Vec<SurfacePoint> = (|| {
+                if let Some((u0, v0)) = previous {
+                    if !u0.near(&u) && surface.uder(u0, v0).so_small() {
+                        return vec![
+                            (Point2::new(u, v0), *pt).into(),
+                            (Point2::new(u, v), *pt).into(),
+                        ];
+                    } else if !v0.near(&v) && surface.vder(u0, v0).so_small() {
+                        return vec![
+                            (Point2::new(u0, v), *pt).into(),
+                            (Point2::new(u, v), *pt).into(),
+                        ];
+                    }
+                }
+                vec![(Point2::new(u, v), *pt).into()]
+            })();
+            previous = Some((u, v));
+            vec.extend(entries);
+        }
+
+        // Normalize periodic coordinates.
         let grav = vec.iter().fold(Point2::origin(), |g, p| g + p.uv.to_vec()) / vec.len() as f64;
         if let (Some(up), Some((u0, _))) = (up, urange) {
             let quot = f64::floor((grav.x - u0) / up);
@@ -1438,7 +1550,8 @@ fn par_bench() {
 
     let instant = Instant::now();
     (0..100).for_each(|_| {
-        let _shell = shell_tessellation(&shell, 0.01, by_search_parameter, QuadOptions::default());
+        let _shell =
+            shell_tessellation(&shell, 0.01, by_search_parameter, QuadOptions::default(), false);
     });
     println!("{}ms", instant.elapsed().as_millis());
 
@@ -1449,6 +1562,7 @@ fn par_bench() {
             0.01,
             by_search_parameter,
             QuadOptions::default(),
+            false,
         );
     });
     println!("{}ms", instant.elapsed().as_millis());
@@ -1489,7 +1603,33 @@ fn try_new_fallback_partial_failure() {
         }
     };
 
-    let result = PolyBoundaryPiece::try_new(&surface, std::iter::once(poly), sp);
+    // Without fallback, partial failure returns `None`.
+    let poly_clone = PolylineCurve(vec![
+        Point3::new(0.1, 0.1, 0.0),
+        Point3::new(0.9, 0.1, 0.0),
+        Point3::new(0.9, 0.9, 0.0),
+        Point3::new(0.1, 0.9, 0.0),
+    ]);
+    let call_count2 = std::sync::atomic::AtomicUsize::new(0);
+    let sp2 = |surface: &BsplineSurface<Point3>,
+               pt: Point3,
+               hint: Option<(f64, f64)>|
+     -> Option<(f64, f64)> {
+        let idx = call_count2.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        if idx == 2 {
+            None
+        } else {
+            by_search_parameter(surface, pt, hint)
+        }
+    };
+    let no_fallback = PolyBoundaryPiece::try_new(&surface, std::iter::once(poly_clone), sp2);
+    assert!(
+        no_fallback.is_none(),
+        "without fallback, partial failure should return None"
+    );
+
+    // With fallback, partial failure recovers via UV interpolation.
+    let result = PolyBoundaryPiece::try_new_with_fallback(&surface, std::iter::once(poly), sp);
     assert!(
         result.is_some(),
         "should recover from partial failure via UV interpolation"
@@ -1521,6 +1661,6 @@ fn try_new_all_failures_returns_none() {
               _: Option<(f64, f64)>|
      -> Option<(f64, f64)> { None };
 
-    let result = PolyBoundaryPiece::try_new(&surface, std::iter::once(poly), sp);
+    let result = PolyBoundaryPiece::try_new_with_fallback(&surface, std::iter::once(poly), sp);
     assert!(result.is_none(), "should return None when all lookups fail");
 }

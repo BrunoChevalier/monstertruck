@@ -331,10 +331,16 @@ pub fn triangulation_with<C: PolylineableCurve, S: MeshableSurface>(
     nonpositive_tolerance!(options.tolerance);
     let sp = triangulation::search_parameter_sp::<S>(options.search_trials);
     #[cfg(not(target_arch = "wasm32"))]
-    let mut res = triangulation::shell_tessellation(shell, options.tolerance, sp, options.quad);
-    #[cfg(target_arch = "wasm32")]
     let mut res =
-        triangulation::shell_tessellation_single_thread(shell, options.tolerance, sp, options.quad);
+        triangulation::shell_tessellation(shell, options.tolerance, sp, options.quad, false);
+    #[cfg(target_arch = "wasm32")]
+    let mut res = triangulation::shell_tessellation_single_thread(
+        shell,
+        options.tolerance,
+        sp,
+        options.quad,
+        false,
+    );
     stitch_boundaries(&mut res, options.tolerance);
     res
 }
@@ -347,10 +353,16 @@ pub fn robust_triangulation_with<C: PolylineableCurve, S: RobustMeshableSurface>
     nonpositive_tolerance!(options.tolerance);
     let sp = triangulation::search_nearest_parameter_sp::<S>(options.search_trials);
     #[cfg(not(target_arch = "wasm32"))]
-    let mut res = triangulation::shell_tessellation(shell, options.tolerance, sp, options.quad);
-    #[cfg(target_arch = "wasm32")]
     let mut res =
-        triangulation::shell_tessellation_single_thread(shell, options.tolerance, sp, options.quad);
+        triangulation::shell_tessellation(shell, options.tolerance, sp, options.quad, true);
+    #[cfg(target_arch = "wasm32")]
+    let mut res = triangulation::shell_tessellation_single_thread(
+        shell,
+        options.tolerance,
+        sp,
+        options.quad,
+        true,
+    );
     stitch_boundaries(&mut res, options.tolerance);
     res
 }
@@ -362,7 +374,8 @@ pub fn cshell_triangulation_with<C: PolylineableCurve, S: MeshableSurface>(
 ) -> CompressedShell<Point3, PolylineCurve, Option<PolygonMesh>> {
     nonpositive_tolerance!(options.tolerance);
     let sp = triangulation::search_parameter_sp::<S>(options.search_trials);
-    let mut res = triangulation::cshell_tessellation(shell, options.tolerance, sp, options.quad);
+    let mut res =
+        triangulation::cshell_tessellation(shell, options.tolerance, sp, options.quad, false);
     stitch_compressed_boundaries(&mut res, options.tolerance);
     res
 }
@@ -374,7 +387,8 @@ pub fn robust_cshell_triangulation_with<C: PolylineableCurve, S: RobustMeshableS
 ) -> CompressedShell<Point3, PolylineCurve, Option<PolygonMesh>> {
     nonpositive_tolerance!(options.tolerance);
     let sp = triangulation::search_nearest_parameter_sp::<S>(options.search_trials);
-    let mut res = triangulation::cshell_tessellation(shell, options.tolerance, sp, options.quad);
+    let mut res =
+        triangulation::cshell_tessellation(shell, options.tolerance, sp, options.quad, true);
     stitch_compressed_boundaries(&mut res, options.tolerance);
     res
 }

@@ -22,6 +22,7 @@ default = ["analyzers", "filters", "tessellation", "vtk"]
 array-macro = { workspace = true }
 derive_more = { workspace = true }
 itertools = { workspace = true }
+log = { workspace = true }
 rustc-hash = { workspace = true }
 spade = { workspace = true, optional = true }
 monstertruck-core = { workspace = true }
