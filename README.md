@@ -124,7 +124,11 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 16 -- Tolerance Centralization & API Hardening)
+### Recent Changes (Phase 17 -- Curve-Curve Intersection)
+
+- **Curve intersection module** -- New `monstertruck-geometry::nurbs::curve_intersect` module implementing curve-curve and self-intersection detection via subdivision + Newton-Raphson refinement. Public API: `find_intersections(curve_a, curve_b)` and `find_self_intersections(curve)`, returning `CurveIntersection` results with parameter values (`t0`, `t1`) and intersection `point`. Uses `SNAP_TOLERANCE` from centralized constants. 12 tests cover crossing, tangent, multiple intersections, self-intersection, parallel curves, and degenerate cases.
+
+### Earlier Changes (Phase 16 -- Tolerance Centralization & API Hardening)
 
 - **Centralized tolerance constants** -- New `monstertruck-core::tolerance_constants` module consolidates 6 numeric tolerance constants (`SNAP_TOLERANCE`, `VERTEX_MERGE_TOLERANCE`, `TESSELLATION_TOLERANCE`, `PERIODIC_CLOSURE_RATIO`, `G1_ANGLE_TOLERANCE`, `G2_CURVATURE_TOLERANCE`) previously scattered as magic numbers across `monstertruck-solid`. All call sites now import from the central module.
 - **`#[non_exhaustive]` option structs** -- All 5 surface constructor option structs (`GordonOptions`, `SkinOptions`, `SweepRailOptions`, `Birail1Options`, `Birail2Options`) in `monstertruck-geometry` are now marked `#[non_exhaustive]`, allowing future field additions without breaking downstream crate builds.

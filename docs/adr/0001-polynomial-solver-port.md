@@ -74,3 +74,7 @@ No changes to the polynomial solver module. Phase 15 added a font stress corpus 
 ## Status Update (Phase 16 -- Tolerance Centralization & API Hardening)
 
 No changes to the polynomial solver module. Phase 16 centralized tolerance constants in `monstertruck-core::tolerance_constants`, added `#[non_exhaustive]` to surface option structs, and deduplicated deprecated surface constructors. The math layer was unaffected.
+
+## Status Update (Phase 17 -- Curve-Curve Intersection)
+
+No changes to the polynomial solver module. Phase 17 added a curve-curve intersection module (`monstertruck-geometry::nurbs::curve_intersect`) using subdivision + Newton-Raphson refinement. The intersection algorithm does not use the polynomial solvers; the math layer was unaffected.

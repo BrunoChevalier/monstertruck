@@ -66,3 +66,7 @@ No changes to fillet integration mode logic. Phase 15 added a font stress corpus
 ## Status Update (Phase 16 -- Tolerance Centralization & API Hardening)
 
 No changes to fillet integration mode logic. Phase 16 centralized tolerance constants in `monstertruck-core::tolerance_constants` and refactored import paths in `monstertruck-solid` modules. The `G1_ANGLE_TOLERANCE` and `G2_CURVATURE_TOLERANCE` constants used by continuity classification are now sourced from the central module. The fillet integration mode and continuity annotations from this ADR are functionally unaffected.
+
+## Status Update (Phase 17 -- Curve-Curve Intersection)
+
+No changes to fillet integration mode logic. Phase 17 added a curve-curve intersection module in `monstertruck-geometry`. The fillet integration mode and continuity annotations from this ADR are unaffected.

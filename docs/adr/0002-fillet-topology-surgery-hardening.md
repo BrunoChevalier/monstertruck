@@ -73,3 +73,7 @@ No changes to fillet topology surgery. Phase 15 added a font stress corpus with 
 ## Status Update (Phase 16 -- Tolerance Centralization & API Hardening)
 
 Phase 16 centralized tolerance constants (including `SNAP_TOLERANCE` and `VERTEX_MERGE_TOLERANCE`) in `monstertruck-core::tolerance_constants`. The fillet integration module (`monstertruck-solid::fillet::integrate`) and transversal modules now import these constants from the central location instead of defining them locally. The fillet topology surgery logic itself is unchanged; only the import paths for tolerance values were updated.
+
+## Status Update (Phase 17 -- Curve-Curve Intersection)
+
+No changes to fillet topology surgery. Phase 17 added a curve-curve intersection module in `monstertruck-geometry`. The new module uses `SNAP_TOLERANCE` from the centralized constants established in Phase 16 but does not interact with the fillet pipeline. The fillet surgery code was unaffected.
