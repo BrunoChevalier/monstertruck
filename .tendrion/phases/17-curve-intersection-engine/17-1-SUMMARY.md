@@ -9,11 +9,14 @@ key-files:
 decisions:
   - "Used curvature-based overlap detection to distinguish tangent intersections from parallel overlaps"
   - "Added direct_check fallback for when Newton-Raphson fails due to singular Jacobian at tangent points"
+  - "S2 review finding was false positive -- doc comments already ended with periods"
 metrics:
   lines_added: 625
-  tests_added: 12
-  tests_passed: 12
+  tests_added: 15
+  tests_passed: 15
   tdd_violations: 0
+  quality_findings_fixed: 4
+  quality_findings_false_positive: 1
 ---
 
 ## What Was Built
@@ -23,11 +26,12 @@ metrics:
 - `find_intersections()` -- public entry point for curve-curve intersection using bounding-box subdivision and Newton-Raphson refinement.
 - `find_self_intersections()` -- public entry point that subdivides a single curve into sub-arcs and tests non-adjacent pairs.
 - `SubdivisionContext` struct to bundle recursion state and avoid too-many-arguments clippy lint.
-- `subdivide_and_collect()` -- recursive subdivision with bounding-box overlap pruning.
+- `SubArcRange` struct bundling pre-extracted sub-curve with parameter range.
+- `subdivide_and_collect()` -- recursive subdivision with bounding-box overlap pruning and sub-arc caching.
 - `newton_refine()` -- pseudo-inverse Newton-Raphson solver for 3D curves with 2 unknowns.
 - `direct_check()` -- fallback for tangent/singular cases where Newton fails.
 - `is_parallel_overlap()` -- curvature-based filter to reject overlapping segments while allowing tangent point intersections.
-- `deduplicate_intersections()` -- merges nearby duplicates within `SNAP_TOLERANCE`.
+- `deduplicate_intersections()` -- functional `dedup_by` approach merging nearby duplicates within `SNAP_TOLERANCE`.
 - `extract_subarc()` -- helper to extract a parameter sub-range via `cut()`.
 - `finalize_results()` -- helper that deduplicates and sorts results.
 
@@ -53,6 +57,19 @@ metrics:
 | 098ecbc6 | test(curve_intersect): add failing tests for curve-curve intersection |
 | ccbf5c81 | feat(curve_intersect): implement subdivision/Newton-Raphson curve intersection |
 | 53e3bd33 | refactor(curve_intersect): extract helpers, improve doc comments and code structure |
+| ecb277f6 | fix(curve-intersect): address code quality review findings B1, S1, S3, S4 |
+
+## Quality Review Fixes (Round 1)
+
+**B1 (blocker, fixed):** Replaced imperative `while` loop in `deduplicate_intersections` with functional `dedup_by`. Refactored `find_self_intersections` from pre-allocated `Vec`+`extend` to `flat_map`/`collect`.
+
+**S1 (fixed):** Introduced `SubArcRange` struct. `subdivide_and_collect` now receives pre-cut sub-arcs, only calling `extract_subarc` when splitting at midpoints.
+
+**S2 (false positive):** Doc comments already ended with periods. No changes needed.
+
+**S3 (fixed):** Tightened test tolerances from `SNAP_TOLERANCE * 100.0` to `SNAP_TOLERANCE * 10.0`. Added 3 new unit tests verifying tight accuracy.
+
+**S4 (fixed):** Added `#[must_use]` to `find_intersections` and `find_self_intersections`.
 
 ## Decisions Made
 
@@ -60,7 +77,7 @@ metrics:
 
 2. **Direct fallback for singular Jacobian**: When curves touch tangentially, the Newton Jacobian is singular (parallel tangent vectors yield rank-deficient J^T J). Added `direct_check` fallback that accepts the intersection if the points are close enough.
 
-3. **Concrete type rather than generic**: Used `BsplineCurve<Point3>` directly instead of the fully generic bounds suggested in the plan. The generic version would require `Bounded + ControlPoint + EuclideanSpace + MetricSpace + Tolerance` bounds with associated type constraints. The concrete version is simpler and covers the immediate use cases. Can be generalized later if needed.
+3. **Concrete type rather than generic**: Used `BsplineCurve<Point3>` directly instead of the fully generic bounds suggested in the plan. The concrete version is simpler and covers the immediate use cases. Can be generalized later if needed.
 
 ## Deviations from Plan
 
@@ -70,7 +87,9 @@ metrics:
 
 - [x] `curve_intersect.rs` exists and exports `find_intersections` and `find_self_intersections`.
 - [x] `CurveIntersection` has `t0`, `t1`, `point` fields.
-- [x] All 96 lib tests pass, all 10 integration tests pass, 2 unit tests pass.
-- [x] `cargo clippy -p monstertruck-geometry -- -W warnings` produces no warnings.
-- [x] Intersection accuracy within `SNAP_TOLERANCE` for all test cases.
+- [x] All 15 tests pass (5 unit + 10 integration).
+- [x] `cargo clippy -p monstertruck-geometry -- -W warnings` produces no warnings from this module.
+- [x] Intersection accuracy within `SNAP_TOLERANCE * 10.0` verified by tests.
 - [x] No panics on degenerate inputs (parallel, tangent, singular Jacobian).
+- [x] `#[must_use]` on both public functions.
+- [x] Functional style throughout (no imperative loops with mutable accumulators).
