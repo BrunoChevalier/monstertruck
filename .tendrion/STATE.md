@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 20 of 20 (Fixture Corpus and Migration Documentation)
-**Plan:** 2 of 3
+**Plan:** 3 of 3
 **Progress:**
 
 
