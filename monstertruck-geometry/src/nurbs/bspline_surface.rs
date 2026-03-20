@@ -2494,9 +2494,8 @@ impl BsplineSurface<Point3> {
                         let pt = points[i][j];
 
                         // Find nearest parameter on u_curves[i].
-                        let u_t = u_curves[i]
-                            .search_nearest_parameter(pt, None, 100)
-                            .ok_or(Error::CurveNetworkIncompatible(
+                        let u_t = u_curves[i].search_nearest_parameter(pt, None, 100).ok_or(
+                            Error::CurveNetworkIncompatible(
                                 CurveNetworkDiagnostic::GridPointNotOnCurve {
                                     row: i,
                                     col: j,
@@ -2504,14 +2503,14 @@ impl BsplineSurface<Point3> {
                                     v_distance: f64::INFINITY,
                                     tolerance: tol,
                                 },
-                            ))?;
+                            ),
+                        )?;
                         let u_nearest: Point3 = u_curves[i].subs(u_t);
                         let u_distance = pt.distance(u_nearest);
 
                         // Find nearest parameter on v_curves[j].
-                        let v_t = v_curves[j]
-                            .search_nearest_parameter(pt, None, 100)
-                            .ok_or(Error::CurveNetworkIncompatible(
+                        let v_t = v_curves[j].search_nearest_parameter(pt, None, 100).ok_or(
+                            Error::CurveNetworkIncompatible(
                                 CurveNetworkDiagnostic::GridPointNotOnCurve {
                                     row: i,
                                     col: j,
@@ -2519,7 +2518,8 @@ impl BsplineSurface<Point3> {
                                     v_distance: f64::INFINITY,
                                     tolerance: tol,
                                 },
-                            ))?;
+                            ),
+                        )?;
                         let v_nearest: Point3 = v_curves[j].subs(v_t);
                         let v_distance = pt.distance(v_nearest);
 

@@ -215,12 +215,8 @@ fn try_gordon_verified_success_with_exact_points() {
         vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
         vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
     ];
-    let result = BsplineSurface::try_gordon_verified(
-        u_curves,
-        v_curves,
-        &points,
-        &GordonOptions::default(),
-    );
+    let result =
+        BsplineSurface::try_gordon_verified(u_curves, v_curves, &points, &GordonOptions::default());
     assert!(result.is_ok(), "Expected success, got {:?}", result.err());
     let surface = result.unwrap();
     assert_near2!(surface.subs(0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
@@ -233,21 +229,14 @@ fn try_gordon_verified_snaps_near_miss_points() {
     // Slightly perturbed points (within SNAP_TOLERANCE = 1e-5).
     let eps = SNAP_TOLERANCE * 0.5;
     let points = vec![
-        vec![
-            Point3::new(eps, eps, 0.0),
-            Point3::new(1.0 - eps, eps, 0.0),
-        ],
+        vec![Point3::new(eps, eps, 0.0), Point3::new(1.0 - eps, eps, 0.0)],
         vec![
             Point3::new(eps, 1.0 - eps, 0.0),
             Point3::new(1.0 - eps, 1.0 - eps, 0.0),
         ],
     ];
-    let result = BsplineSurface::try_gordon_verified(
-        u_curves,
-        v_curves,
-        &points,
-        &GordonOptions::default(),
-    );
+    let result =
+        BsplineSurface::try_gordon_verified(u_curves, v_curves, &points, &GordonOptions::default());
     assert!(
         result.is_ok(),
         "Near-miss points within tolerance should be snapped, got {:?}",
@@ -260,21 +249,14 @@ fn try_gordon_verified_rejects_far_points() {
     let (u_curves, v_curves) = make_simple_grid_curves();
     // Point far from the curves.
     let points = vec![
-        vec![
-            Point3::new(0.0, 0.0, 0.0),
-            Point3::new(1.0, 0.0, 0.0),
-        ],
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
         vec![
             Point3::new(0.0, 1.0, 0.0),
             Point3::new(1.0, 1.0, 5.0), // z=5.0, way off the curve
         ],
     ];
-    let result = BsplineSurface::try_gordon_verified(
-        u_curves,
-        v_curves,
-        &points,
-        &GordonOptions::default(),
-    );
+    let result =
+        BsplineSurface::try_gordon_verified(u_curves, v_curves, &points, &GordonOptions::default());
     assert!(
         matches!(
             result,
@@ -291,16 +273,9 @@ fn try_gordon_verified_rejects_far_points() {
 fn try_gordon_verified_dimension_mismatch() {
     let (u_curves, v_curves) = make_simple_grid_curves();
     // Wrong number of rows.
-    let points = vec![vec![
-        Point3::new(0.0, 0.0, 0.0),
-        Point3::new(1.0, 0.0, 0.0),
-    ]];
-    let result = BsplineSurface::try_gordon_verified(
-        u_curves,
-        v_curves,
-        &points,
-        &GordonOptions::default(),
-    );
+    let points = vec![vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)]];
+    let result =
+        BsplineSurface::try_gordon_verified(u_curves, v_curves, &points, &GordonOptions::default());
     assert!(
         matches!(
             result,
@@ -318,14 +293,8 @@ fn try_gordon_verified_custom_tolerance() {
     let (u_curves, v_curves) = make_simple_grid_curves();
     // Points with z offset of 0.005 (within custom tolerance of 0.01).
     let points = vec![
-        vec![
-            Point3::new(0.0, 0.0, 0.005),
-            Point3::new(1.0, 0.0, 0.005),
-        ],
-        vec![
-            Point3::new(0.0, 1.0, 0.005),
-            Point3::new(1.0, 1.0, 0.005),
-        ],
+        vec![Point3::new(0.0, 0.0, 0.005), Point3::new(1.0, 0.0, 0.005)],
+        vec![Point3::new(0.0, 1.0, 0.005), Point3::new(1.0, 1.0, 0.005)],
     ];
     let mut opts = GordonOptions::default();
     opts.grid_tolerance = 0.01;

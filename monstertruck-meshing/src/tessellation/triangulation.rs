@@ -1550,8 +1550,13 @@ fn par_bench() {
 
     let instant = Instant::now();
     (0..100).for_each(|_| {
-        let _shell =
-            shell_tessellation(&shell, 0.01, by_search_parameter, QuadOptions::default(), false);
+        let _shell = shell_tessellation(
+            &shell,
+            0.01,
+            by_search_parameter,
+            QuadOptions::default(),
+            false,
+        );
     });
     println!("{}ms", instant.elapsed().as_millis());
 
@@ -1649,17 +1654,13 @@ fn try_new_all_failures_returns_none() {
     ];
     let surface = BsplineSurface::new((knots.clone(), knots), ctrl);
 
-    let pts = vec![
-        Point3::new(0.1, 0.1, 0.0),
-        Point3::new(0.9, 0.1, 0.0),
-    ];
+    let pts = vec![Point3::new(0.1, 0.1, 0.0), Point3::new(0.9, 0.1, 0.0)];
     let poly = PolylineCurve(pts);
 
     // SP that always fails.
-    let sp = |_: &BsplineSurface<Point3>,
-              _: Point3,
-              _: Option<(f64, f64)>|
-     -> Option<(f64, f64)> { None };
+    let sp = |_: &BsplineSurface<Point3>, _: Point3, _: Option<(f64, f64)>| -> Option<(f64, f64)> {
+        None
+    };
 
     let result = PolyBoundaryPiece::try_new_with_fallback(&surface, std::iter::once(poly), sp);
     assert!(result.is_none(), "should return None when all lookups fail");

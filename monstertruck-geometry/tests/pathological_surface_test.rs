@@ -35,7 +35,10 @@ fn sweep_inflection_rail_produces_surface() {
     let mut opts = SweepRailOptions::default();
     opts.n_sections = 5;
     let result = BsplineSurface::try_sweep_rail(profile, &rail, &opts);
-    assert!(result.is_ok(), "sweep with inflection rail failed: {result:?}");
+    assert!(
+        result.is_ok(),
+        "sweep with inflection rail failed: {result:?}"
+    );
     let surface = result.unwrap();
     // Evaluate at corners and midpoint.
     [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0), (0.5, 0.5)]

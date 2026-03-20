@@ -1,6 +1,6 @@
+use monstertruck_geometry::nurbs::surface_options::GordonOptions;
 use monstertruck_modeling::errors::Error;
 use monstertruck_modeling::*;
-use monstertruck_geometry::nurbs::surface_options::GordonOptions;
 
 /// Verify that the new error variants exist and display correct messages.
 #[test]
@@ -290,8 +290,7 @@ fn gordon_from_network_error_propagates() {
     // Parallel non-intersecting curves.
     let u0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
     let v0 = line_bspline(Point3::new(2.0, 0.0, 0.0), Point3::new(3.0, 0.0, 0.0));
-    let result =
-        builder::try_gordon_from_network(vec![u0], vec![v0], &GordonOptions::default());
+    let result = builder::try_gordon_from_network(vec![u0], vec![v0], &GordonOptions::default());
     assert!(
         matches!(result, Err(Error::FromGeometry(_))),
         "Expected FromGeometry error, got {:?}",
@@ -307,14 +306,8 @@ fn gordon_verified_error_propagates() {
     let v1 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0));
     // Deliberately wrong grid point.
     let points = vec![
-        vec![
-            Point3::new(0.5, 0.5, 0.5),
-            Point3::new(1.0, 0.0, 0.0),
-        ],
-        vec![
-            Point3::new(0.0, 1.0, 0.0),
-            Point3::new(1.0, 1.0, 0.0),
-        ],
+        vec![Point3::new(0.5, 0.5, 0.5), Point3::new(1.0, 0.0, 0.0)],
+        vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
     ];
     let result = builder::try_gordon_verified(
         vec![u0, u1],
