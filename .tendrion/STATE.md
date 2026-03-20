@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 18 of 20 (Gordon Surface Variants)
-**Plan:** 1 of 2
+**Plan:** 2 of 2
 **Progress:**
 
 
