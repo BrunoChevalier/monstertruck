@@ -50,7 +50,7 @@ fn grid_point_not_on_curve_display() {
     );
 }
 
-// --- Task 2: try_gordon_from_network ---
+// --- Tests for try_gordon_from_network ---
 
 /// Helper: build a simple perpendicular grid of linear curves in 3D.
 /// u-curves go along X at different Y values.
@@ -139,7 +139,74 @@ fn try_gordon_from_network_parallel_curves_no_intersection() {
     ));
 }
 
-// --- Task 3: try_gordon_verified ---
+// --- Nonuniform spacing ---
+
+#[test]
+fn try_gordon_from_network_nonuniform_spacing() {
+    // 3x3 network with nonuniform spacing: u-curves at y = 0.0, 0.3, 1.0.
+    // (Asymmetric grids like 3x2 trigger a pre-existing bug in try_gordon.)
+    let u0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let u1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.3, 0.0), Point3::new(1.0, 0.3, 0.0)],
+    );
+    let u2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+    );
+    let v0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0)],
+    );
+    let v1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.5, 0.0, 0.0), Point3::new(0.5, 1.0, 0.0)],
+    );
+    let v2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+    );
+    let result = BsplineSurface::try_gordon_from_network(
+        vec![u0, u1, u2],
+        vec![v0, v1, v2],
+        &GordonOptions::default(),
+    );
+    assert!(
+        result.is_ok(),
+        "Nonuniform spacing should succeed, got {:?}",
+        result.err()
+    );
+}
+
+// --- Equivalence between variants ---
+
+#[test]
+fn try_gordon_verified_equivalence_with_from_network() {
+    let points = vec![
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+        vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+    ];
+    let (u2, v2) = make_simple_grid_curves();
+    let (u3, v3) = make_simple_grid_curves();
+    let from_network =
+        BsplineSurface::try_gordon_from_network(u2, v2, &GordonOptions::default()).unwrap();
+    let verified =
+        BsplineSurface::try_gordon_verified(u3, v3, &points, &GordonOptions::default()).unwrap();
+
+    // Verify both surfaces evaluate to the same values at a grid of sample parameters.
+    for i in 0..=10 {
+        for j in 0..=10 {
+            let u = i as f64 / 10.0;
+            let v = j as f64 / 10.0;
+            assert_near2!(from_network.subs(u, v), verified.subs(u, v));
+        }
+    }
+}
+
+// --- Tests for try_gordon_verified ---
 
 #[test]
 fn try_gordon_verified_success_with_exact_points() {
