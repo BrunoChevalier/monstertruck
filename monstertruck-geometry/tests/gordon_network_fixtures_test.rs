@@ -82,7 +82,7 @@ fn gordon_high_degree_family_from_network() {
         result.err()
     );
     let surface = result.unwrap();
-    // Evaluate at corners; x=0, y=0 => z=0.1*(0*(1-0))=0.
+    // Evaluate at corners and verify finite results.
     let p00 = surface.subs(0.0, 0.0);
     assert!(p00.x.is_finite() && p00.y.is_finite() && p00.z.is_finite());
     let p11 = surface.subs(1.0, 1.0);
