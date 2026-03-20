@@ -1587,6 +1587,27 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// Returns [`Error::CurveNetworkIncompatible`] with
     /// [`CurveNetworkDiagnostic::CompatNormalizationFailed`] if compatibility
     /// normalization fails.
+    ///
+    /// # Migration
+    ///
+    /// **Before** (deprecated, panics on failure):
+    /// ```ignore
+    /// let surface = BsplineSurface::skin(curves);
+    /// ```
+    ///
+    /// **After** (fallible, with error handling):
+    /// ```ignore
+    /// use monstertruck_geometry::nurbs::surface_options::SkinOptions;
+    /// let result = BsplineSurface::try_skin(curves, &SkinOptions::default());
+    /// match result {
+    ///     Ok(surface) => { /* use surface */ }
+    ///     Err(e) => eprintln!("Construction failed: {e}"),
+    /// }
+    /// ```
+    ///
+    /// [`SkinOptions`] currently acts as a placeholder for future
+    /// customization (e.g. degree control).  Pass `&SkinOptions::default()`
+    /// for behavior identical to the deprecated [`skin`](Self::skin).
     #[allow(unused_variables)]
     pub fn try_skin(
         mut curves: Vec<BsplineCurve<P>>,
@@ -1811,6 +1832,20 @@ impl BsplineSurface<Point3> {
     /// Returns [`Error::InsufficientSections`] if `options.n_sections < 2`.
     /// Returns [`Error::SurfaceConstructionFailed`] if the rail tangent at the
     /// start is degenerate (zero-length).
+    ///
+    /// # Migration
+    ///
+    /// **Before** (deprecated, panics on failure):
+    /// ```ignore
+    /// let surface = BsplineSurface::sweep_rail(profile, &rail, n_sections);
+    /// ```
+    ///
+    /// **After** (fallible, with error handling):
+    /// ```ignore
+    /// use monstertruck_geometry::nurbs::surface_options::SweepRailOptions;
+    /// let opts = SweepRailOptions { n_sections, ..Default::default() };
+    /// let surface = BsplineSurface::try_sweep_rail(profile, &rail, &opts)?;
+    /// ```
     pub fn try_sweep_rail(
         profile: BsplineCurve<Point3>,
         rail: &BsplineCurve<Point3>,
@@ -1873,6 +1908,20 @@ impl BsplineSurface<Point3> {
     /// Returns [`Error::CurveNetworkIncompatible`] with
     /// [`CurveNetworkDiagnostic::DegenerateGeometry`] if the profile chord is
     /// zero-length.
+    ///
+    /// # Migration
+    ///
+    /// **Before** (deprecated, panics on failure):
+    /// ```ignore
+    /// let surface = BsplineSurface::birail1(profile, &rail1, &rail2, n_sections);
+    /// ```
+    ///
+    /// **After** (fallible, with error handling):
+    /// ```ignore
+    /// use monstertruck_geometry::nurbs::surface_options::Birail1Options;
+    /// let opts = Birail1Options { n_sections, ..Default::default() };
+    /// let surface = BsplineSurface::try_birail1(profile, &rail1, &rail2, &opts)?;
+    /// ```
     pub fn try_birail1(
         profile: BsplineCurve<Point3>,
         rail1: &BsplineCurve<Point3>,
@@ -1955,6 +2004,24 @@ impl BsplineSurface<Point3> {
     /// Returns [`Error::CurveNetworkIncompatible`] with
     /// [`CurveNetworkDiagnostic::CompatNormalizationFailed`] if profile
     /// compatibility normalization fails.
+    ///
+    /// # Migration
+    ///
+    /// **Before** (deprecated, panics on failure):
+    /// ```ignore
+    /// let surface = BsplineSurface::birail2(
+    ///     profile1, profile2, &rail1, &rail2, n_sections,
+    /// );
+    /// ```
+    ///
+    /// **After** (fallible, with error handling):
+    /// ```ignore
+    /// use monstertruck_geometry::nurbs::surface_options::Birail2Options;
+    /// let opts = Birail2Options { n_sections, ..Default::default() };
+    /// let surface = BsplineSurface::try_birail2(
+    ///     profile1, profile2, &rail1, &rail2, &opts,
+    /// )?;
+    /// ```
     pub fn try_birail2(
         profile1: BsplineCurve<Point3>,
         profile2: BsplineCurve<Point3>,
@@ -2296,6 +2363,10 @@ impl BsplineSurface<Point3> {
     /// engine **before** compatibility normalization, ensuring numerical
     /// accuracy on the original curve parameterizations.
     ///
+    /// This is the recommended approach when grid intersection points are not
+    /// pre-computed.  There is no deprecated counterpart -- this function is
+    /// new in v0.5.0.
+    ///
     /// # Errors
     ///
     /// Returns [`Error::CurveNetworkIncompatible`] with:
@@ -2303,6 +2374,16 @@ impl BsplineSurface<Point3> {
     /// - [`CurveNetworkDiagnostic::IntersectionCountMismatch`] if any curve pair
     ///   has zero or multiple intersections.
     /// - Any error from the underlying [`try_gordon`](BsplineSurface::try_gordon) call.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use monstertruck_geometry::nurbs::surface_options::GordonOptions;
+    /// // Build u-curves and v-curves forming a compatible grid.
+    /// let surface = BsplineSurface::try_gordon_from_network(
+    ///     u_curves, v_curves, &GordonOptions::default(),
+    /// )?;
+    /// ```
     pub fn try_gordon_from_network(
         u_curves: Vec<BsplineCurve<Point3>>,
         v_curves: Vec<BsplineCurve<Point3>>,
@@ -2363,6 +2444,8 @@ impl BsplineSurface<Point3> {
     /// Points within `options.grid_tolerance` of both curves are snapped to
     /// the average of the nearest curve positions for numerical consistency.
     ///
+    /// There is no deprecated counterpart -- this function is new in v0.5.0.
+    ///
     /// # Errors
     ///
     /// Returns [`Error::CurveNetworkIncompatible`] with:
@@ -2371,6 +2454,16 @@ impl BsplineSurface<Point3> {
     /// - [`CurveNetworkDiagnostic::GridPointNotOnCurve`] if any point exceeds the
     ///   tolerance on either curve.
     /// - Any error from the underlying [`try_gordon`](BsplineSurface::try_gordon) call.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use monstertruck_geometry::nurbs::surface_options::GordonOptions;
+    /// // Caller provides pre-computed grid points for validation.
+    /// let surface = BsplineSurface::try_gordon_verified(
+    ///     u_curves, v_curves, &points, &GordonOptions::default(),
+    /// )?;
+    /// ```
     pub fn try_gordon_verified(
         u_curves: Vec<BsplineCurve<Point3>>,
         v_curves: Vec<BsplineCurve<Point3>>,
@@ -2622,6 +2715,24 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// Returns [`Error::CurveNetworkIncompatible`] with
     /// [`CurveNetworkDiagnostic::CompatNormalizationFailed`] if compatibility
     /// normalization fails.
+    ///
+    /// # Migration
+    ///
+    /// **Before** (deprecated, panics on failure):
+    /// ```ignore
+    /// let surface = BsplineSurface::gordon(u_curves, v_curves, &points);
+    /// ```
+    ///
+    /// **After** (fallible, with error handling):
+    /// ```ignore
+    /// use monstertruck_geometry::nurbs::surface_options::GordonOptions;
+    /// let surface = BsplineSurface::try_gordon(
+    ///     u_curves, v_curves, &points, &GordonOptions::default(),
+    /// )?;
+    /// ```
+    ///
+    /// Consider [`try_gordon_from_network`](Self::try_gordon_from_network)
+    /// if grid intersection points are not pre-computed.
     #[allow(unused_variables)]
     pub fn try_gordon(
         u_curves: Vec<BsplineCurve<P>>,

@@ -1,5 +1,44 @@
 //! Geometric primitives for CAD modeling: B-spline and NURBS curves/surfaces,
 //! knot vectors, and decorator types (revolved, extruded, intersection curves).
+//!
+//! # Migration Guide (v0.5.0+)
+//!
+//! Surface constructor functions have been migrated from panicking APIs to
+//! fallible `try_*` variants that return [`Result`].  The old functions are
+//! deprecated and will be removed in a future version.
+//!
+//! ## Quick Reference
+//!
+//! | Deprecated | Replacement | Options type |
+//! |-----------|-------------|-------------|
+//! | `BsplineSurface::skin` | [`BsplineSurface::try_skin`](nurbs::BsplineSurface::try_skin) | [`SkinOptions`](nurbs::surface_options::SkinOptions) |
+//! | `BsplineSurface::sweep_rail` | [`BsplineSurface::try_sweep_rail`](nurbs::BsplineSurface::try_sweep_rail) | [`SweepRailOptions`](nurbs::surface_options::SweepRailOptions) |
+//! | `BsplineSurface::birail1` | [`BsplineSurface::try_birail1`](nurbs::BsplineSurface::try_birail1) | [`Birail1Options`](nurbs::surface_options::Birail1Options) |
+//! | `BsplineSurface::birail2` | [`BsplineSurface::try_birail2`](nurbs::BsplineSurface::try_birail2) | [`Birail2Options`](nurbs::surface_options::Birail2Options) |
+//! | `BsplineSurface::gordon` | [`BsplineSurface::try_gordon`](nurbs::BsplineSurface::try_gordon) | [`GordonOptions`](nurbs::surface_options::GordonOptions) |
+//!
+//! ## New Functions (no deprecated counterpart)
+//!
+//! - [`BsplineSurface::try_gordon_from_network`](nurbs::BsplineSurface::try_gordon_from_network):
+//!   Builds a Gordon surface by auto-computing intersection grid points from the
+//!   curve network.
+//! - [`BsplineSurface::try_gordon_verified`](nurbs::BsplineSurface::try_gordon_verified):
+//!   Builds a Gordon surface from caller-supplied grid points after validating
+//!   each lies on both curves.
+//!
+//! ## Before / After Example
+//!
+//! ```ignore
+//! // BEFORE (panics on failure):
+//! let surface = BsplineSurface::skin(curves);
+//!
+//! // AFTER (returns Result):
+//! use monstertruck_geometry::nurbs::surface_options::SkinOptions;
+//! let surface = BsplineSurface::try_skin(curves, &SkinOptions::default())?;
+//! ```
+//!
+//! All `try_*` functions return [`errors::Error`] with detailed diagnostics
+//! via [`nurbs::surface_diagnostics::CurveNetworkDiagnostic`].
 
 #![cfg_attr(not(debug_assertions), deny(warnings))]
 #![deny(clippy::all, rust_2018_idioms)]
