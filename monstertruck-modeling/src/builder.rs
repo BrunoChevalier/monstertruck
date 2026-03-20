@@ -757,6 +757,104 @@ pub fn try_gordon_with_options(
     Ok(face_from_bspline_surface(surface))
 }
 
+/// Constructs a Gordon surface by auto-computing intersection grid points
+/// from the curve network, returning a [`Face`].
+///
+/// Intersects each u-curve with each v-curve using the curve intersection
+/// engine before compatibility normalization.
+///
+/// # Errors
+///
+/// Returns [`Error::FromGeometry`] wrapping geometry-level diagnostics.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+/// use monstertruck_geometry::nurbs::surface_options::GordonOptions;
+///
+/// let u0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let u1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+/// );
+/// let v0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0)],
+/// );
+/// let v1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+/// );
+/// let face: Face =
+///     builder::try_gordon_from_network(vec![u0, u1], vec![v0, v1], &GordonOptions::default())
+///         .unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_gordon_from_network(
+    u_curves: Vec<BsplineCurve<Point3>>,
+    v_curves: Vec<BsplineCurve<Point3>>,
+    options: &GordonOptions,
+) -> Result<Face<Curve, Surface>> {
+    let surface = BsplineSurface::try_gordon_from_network(u_curves, v_curves, options)?;
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Constructs a Gordon surface from caller-supplied grid points after
+/// validating that each point lies on both corresponding curves, returning
+/// a [`Face`].
+///
+/// Points within the tolerance are snapped. Points outside tolerance
+/// cause an error with diagnostic information.
+///
+/// # Errors
+///
+/// Returns [`Error::FromGeometry`] wrapping geometry-level diagnostics.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+/// use monstertruck_geometry::nurbs::surface_options::GordonOptions;
+///
+/// let u0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let u1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+/// );
+/// let v0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0)],
+/// );
+/// let v1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+/// );
+/// let points = vec![
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+///     vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+/// ];
+/// let face: Face =
+///     builder::try_gordon_verified(vec![u0, u1], vec![v0, v1], &points, &GordonOptions::default())
+///         .unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_gordon_verified(
+    u_curves: Vec<BsplineCurve<Point3>>,
+    v_curves: Vec<BsplineCurve<Point3>>,
+    points: &[Vec<Point3>],
+    options: &GordonOptions,
+) -> Result<Face<Curve, Surface>> {
+    let surface = BsplineSurface::try_gordon_verified(u_curves, v_curves, points, options)?;
+    Ok(face_from_bspline_surface(surface))
+}
+
 /// Sweeps a profile along multiple rail curves using least-squares affine
 /// fitting, returning a [`Face`] with typed error handling.
 ///
