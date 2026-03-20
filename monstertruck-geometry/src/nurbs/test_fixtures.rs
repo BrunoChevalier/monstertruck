@@ -225,6 +225,173 @@ pub fn fixture_glyph_nested_contours() -> Vec<Vec<BsplineCurve<Point3>>> {
     vec![outer, inner]
 }
 
+// ---------------------------------------------------------------------------
+// Pathological rail/section combinations (FIXTURE-01)
+// ---------------------------------------------------------------------------
+
+/// A cubic rail with an inflection point (S-curve shape).
+///
+/// Control points create a curve that changes curvature sign, going from
+/// concave-up to concave-down. Tests [`BsplineSurface::try_sweep_rail`]
+/// framing stability through inflection points.
+pub fn fixture_inflection_rail() -> BsplineCurve<Point3> {
+    let knot_vec = KnotVector::bezier_knot(3);
+    let control_points = vec![
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(1.0, 2.0, 0.0),
+        Point3::new(2.0, -2.0, 0.0),
+        Point3::new(3.0, 0.0, 0.0),
+    ];
+    BsplineCurve::new(knot_vec, control_points)
+}
+
+/// Two cubic rails that start apart and converge to the same endpoint
+/// (within 1e-8).
+///
+/// Tests [`BsplineSurface::try_birail1`] behavior when the profile must
+/// shrink to near-zero width.
+pub fn fixture_converging_rails() -> (BsplineCurve<Point3>, BsplineCurve<Point3>) {
+    let knot = KnotVector::bezier_knot(3);
+    let rail1 = BsplineCurve::new(
+        knot.clone(),
+        vec![
+            Point3::new(-1.0, 0.0, 0.0),
+            Point3::new(-0.7, 0.0, 1.0),
+            Point3::new(-0.3, 0.0, 2.0),
+            Point3::new(0.0, 0.0, 3.0),
+        ],
+    );
+    let rail2 = BsplineCurve::new(
+        knot,
+        vec![
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(0.7, 0.0, 1.0),
+            Point3::new(0.3, 0.0, 2.0),
+            // Converge to (nearly) the same endpoint as rail1.
+            Point3::new(1e-9, 0.0, 3.0),
+        ],
+    );
+    (rail1, rail2)
+}
+
+/// A cubic section curve where all control points are nearly collinear
+/// (within 1e-10 of a line), creating an effectively 1D profile.
+///
+/// Tests [`BsplineSurface::try_sweep_rail`] with a section that has
+/// near-zero cross-sectional area.
+pub fn fixture_degenerate_section() -> BsplineCurve<Point3> {
+    let knot_vec = KnotVector::bezier_knot(3);
+    let control_points = vec![
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(1.0, 1e-11, 0.0),
+        Point3::new(2.0, -1e-11, 0.0),
+        Point3::new(3.0, 0.0, 0.0),
+    ];
+    BsplineCurve::new(knot_vec, control_points)
+}
+
+/// A cubic rail with a cusp (tangent goes to zero at a point).
+///
+/// Control points are arranged so the curve has zero tangent magnitude
+/// at an interior parameter value.
+pub fn fixture_cusped_rail() -> BsplineCurve<Point3> {
+    // A cusp occurs when two adjacent control points coincide, causing
+    // the derivative to vanish at that parameter.
+    let knot_vec = KnotVector::bezier_knot(3);
+    let control_points = vec![
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(1.0, 1.0, 0.0),
+        // Duplicate of the previous point creates a cusp.
+        Point3::new(1.0, 1.0, 0.0),
+        Point3::new(2.0, 0.0, 0.0),
+    ];
+    BsplineCurve::new(knot_vec, control_points)
+}
+
+// ---------------------------------------------------------------------------
+// Near-degenerate NURBS cases (FIXTURE-02)
+// ---------------------------------------------------------------------------
+
+/// A bi-quadratic surface where the surface Jacobian (cross product of partial
+/// derivatives) is near-zero along the u=0 boundary.
+///
+/// The first row of control points are nearly coincident (within 1e-10),
+/// creating a pole-like degeneracy.
+pub fn fixture_near_zero_jacobian_surface() -> BsplineSurface<Point3> {
+    let knot_u = KnotVector::bezier_knot(2);
+    let knot_v = KnotVector::bezier_knot(2);
+    // First row: all points nearly coincident at the origin.
+    let control_points = vec![
+        vec![
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1e-11, 0.0, 0.0),
+            Point3::new(2e-11, 0.0, 0.0),
+        ],
+        vec![
+            Point3::new(0.0, 0.5, 0.0),
+            Point3::new(0.5, 0.5, 0.5),
+            Point3::new(1.0, 0.5, 0.0),
+        ],
+        vec![
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(0.5, 1.0, 0.5),
+            Point3::new(1.0, 1.0, 0.0),
+        ],
+    ];
+    BsplineSurface::new((knot_u, knot_v), control_points)
+}
+
+/// A degree-3 NURBS curve (using [`NurbsCurve<Vector4>`]) where one control
+/// point has a weight approaching zero (1e-12), creating a near-singularity
+/// in rational evaluation.
+pub fn fixture_near_zero_weight_nurbs() -> NurbsCurve<Vector4> {
+    let knot_vec = KnotVector::bezier_knot(3);
+    // Homogeneous coordinates: (w*x, w*y, w*z, w).
+    let control_points = vec![
+        Vector4::new(0.0, 0.0, 0.0, 1.0),
+        Vector4::new(1.0, 1.0, 0.0, 1.0),
+        // Near-zero weight: w = 1e-12, so (w*x, w*y, w*z, w).
+        Vector4::new(2.0e-12, 0.0, 0.0, 1e-12),
+        Vector4::new(3.0, 0.0, 0.0, 1.0),
+    ];
+    NurbsCurve::new(BsplineCurve::new(knot_vec, control_points))
+}
+
+/// A bi-cubic surface where an entire column of control points collapses
+/// to the same location, creating a degenerate edge.
+pub fn fixture_collapsed_control_polygon_surface() -> BsplineSurface<Point3> {
+    let knot_u = KnotVector::bezier_knot(3);
+    let knot_v = KnotVector::bezier_knot(3);
+    // Column 0 (v=0) has all control points at (0,0,0).
+    let control_points = vec![
+        vec![
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, 1.0),
+            Point3::new(0.0, 0.0, 2.0),
+            Point3::new(0.0, 0.0, 3.0),
+        ],
+        vec![
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(1.0, 0.0, 1.0),
+            Point3::new(1.0, 0.0, 2.0),
+            Point3::new(1.0, 0.0, 3.0),
+        ],
+        vec![
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(2.0, 0.0, 1.0),
+            Point3::new(2.0, 0.0, 2.0),
+            Point3::new(2.0, 0.0, 3.0),
+        ],
+        vec![
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(3.0, 0.0, 1.0),
+            Point3::new(3.0, 0.0, 2.0),
+            Point3::new(3.0, 0.0, 3.0),
+        ],
+    ];
+    BsplineSurface::new((knot_u, knot_v), control_points)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -307,6 +474,103 @@ mod tests {
         contours.iter().flatten().for_each(|c| {
             assert_eq!(c.degree(), 1);
             assert_eq!(c.control_points().len(), 2);
+        });
+    }
+
+    // FIXTURE-01: Pathological rail/section combinations
+
+    #[test]
+    fn inflection_rail_valid() {
+        let curve = fixture_inflection_rail();
+        assert_eq!(curve.degree(), 3);
+        assert_eq!(curve.control_points().len(), 4);
+        // Verify S-curve shape: middle control points have opposite y signs.
+        assert!(curve.control_points()[1].y > 0.0);
+        assert!(curve.control_points()[2].y < 0.0);
+    }
+
+    #[test]
+    fn converging_rails_valid() {
+        let (rail1, rail2) = fixture_converging_rails();
+        assert_eq!(rail1.degree(), 3);
+        assert_eq!(rail2.degree(), 3);
+        assert_eq!(rail1.control_points().len(), 4);
+        assert_eq!(rail2.control_points().len(), 4);
+        // Verify convergence: endpoints are within 1e-8.
+        let end1 = rail1.control_points().last().unwrap();
+        let end2 = rail2.control_points().last().unwrap();
+        let dist = ((end1.x - end2.x).powi(2)
+            + (end1.y - end2.y).powi(2)
+            + (end1.z - end2.z).powi(2))
+        .sqrt();
+        assert!(dist < 1e-8, "endpoints should converge, dist = {dist}");
+    }
+
+    #[test]
+    fn degenerate_section_valid() {
+        let curve = fixture_degenerate_section();
+        assert_eq!(curve.degree(), 3);
+        assert_eq!(curve.control_points().len(), 4);
+        // Verify near-collinearity: all y-coordinates within 1e-10 of zero.
+        curve
+            .control_points()
+            .iter()
+            .for_each(|p| assert!(p.y.abs() < 1e-10));
+    }
+
+    #[test]
+    fn cusped_rail_valid() {
+        let curve = fixture_cusped_rail();
+        assert_eq!(curve.degree(), 3);
+        assert_eq!(curve.control_points().len(), 4);
+        // Verify cusp: two adjacent control points coincide.
+        let p1 = &curve.control_points()[1];
+        let p2 = &curve.control_points()[2];
+        let dist = ((p1.x - p2.x).powi(2) + (p1.y - p2.y).powi(2) + (p1.z - p2.z).powi(2)).sqrt();
+        assert!(dist < 1e-14, "adjacent points should coincide, dist = {dist}");
+    }
+
+    // FIXTURE-02: Near-degenerate NURBS cases
+
+    #[test]
+    fn near_zero_jacobian_surface_valid() {
+        let surface = fixture_near_zero_jacobian_surface();
+        assert_eq!(surface.degrees(), (2, 2));
+        assert_eq!(surface.control_points().len(), 3);
+        assert_eq!(surface.control_points()[0].len(), 3);
+        // Verify first row is nearly coincident.
+        let row0 = &surface.control_points()[0];
+        row0.windows(2).for_each(|w| {
+            let dist = ((w[0].x - w[1].x).powi(2)
+                + (w[0].y - w[1].y).powi(2)
+                + (w[0].z - w[1].z).powi(2))
+            .sqrt();
+            assert!(dist < 1e-10, "first-row points should be nearly coincident, dist = {dist}");
+        });
+    }
+
+    #[test]
+    fn near_zero_weight_nurbs_valid() {
+        let nurbs = fixture_near_zero_weight_nurbs();
+        let bspline = nurbs.non_rationalized();
+        assert_eq!(bspline.degree(), 3);
+        assert_eq!(bspline.control_points().len(), 4);
+        // Verify near-zero weight on third control point (index 3 = weight).
+        let w2 = bspline.control_points()[2][3];
+        assert!(w2.abs() < 1e-11, "weight should be near-zero, w = {w2}");
+    }
+
+    #[test]
+    fn collapsed_control_polygon_surface_valid() {
+        let surface = fixture_collapsed_control_polygon_surface();
+        assert_eq!(surface.degrees(), (3, 3));
+        assert_eq!(surface.control_points().len(), 4);
+        assert_eq!(surface.control_points()[0].len(), 4);
+        // Verify column 0 (v=0) has all points at (0,0,0).
+        surface.control_points().iter().for_each(|row| {
+            let p = &row[0];
+            let dist = (p.x.powi(2) + p.y.powi(2) + p.z.powi(2)).sqrt();
+            assert!(dist < 1e-14, "column-0 point should be at origin, dist = {dist}");
         });
     }
 }

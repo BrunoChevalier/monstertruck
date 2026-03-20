@@ -82,3 +82,61 @@ fn glyph_nested_contours_valid() {
         assert_eq!(c.control_points().len(), 2);
     });
 }
+
+// FIXTURE-01: Pathological rail/section combinations
+
+#[test]
+fn inflection_rail_smoke() {
+    let curve = test_fixtures::fixture_inflection_rail();
+    assert_eq!(curve.degree(), 3);
+    assert_eq!(curve.control_points().len(), 4);
+}
+
+#[test]
+fn converging_rails_smoke() {
+    let (rail1, rail2) = test_fixtures::fixture_converging_rails();
+    assert_eq!(rail1.degree(), 3);
+    assert_eq!(rail2.degree(), 3);
+    assert_eq!(rail1.control_points().len(), 4);
+    assert_eq!(rail2.control_points().len(), 4);
+}
+
+#[test]
+fn degenerate_section_smoke() {
+    let curve = test_fixtures::fixture_degenerate_section();
+    assert_eq!(curve.degree(), 3);
+    assert_eq!(curve.control_points().len(), 4);
+}
+
+#[test]
+fn cusped_rail_smoke() {
+    let curve = test_fixtures::fixture_cusped_rail();
+    assert_eq!(curve.degree(), 3);
+    assert_eq!(curve.control_points().len(), 4);
+}
+
+// FIXTURE-02: Near-degenerate NURBS cases
+
+#[test]
+fn near_zero_jacobian_surface_smoke() {
+    let surface = test_fixtures::fixture_near_zero_jacobian_surface();
+    assert_eq!(surface.degrees(), (2, 2));
+    assert_eq!(surface.control_points().len(), 3);
+    assert_eq!(surface.control_points()[0].len(), 3);
+}
+
+#[test]
+fn near_zero_weight_nurbs_smoke() {
+    let nurbs = test_fixtures::fixture_near_zero_weight_nurbs();
+    let bspline = nurbs.non_rationalized();
+    assert_eq!(bspline.degree(), 3);
+    assert_eq!(bspline.control_points().len(), 4);
+}
+
+#[test]
+fn collapsed_control_polygon_surface_smoke() {
+    let surface = test_fixtures::fixture_collapsed_control_polygon_surface();
+    assert_eq!(surface.degrees(), (3, 3));
+    assert_eq!(surface.control_points().len(), 4);
+    assert_eq!(surface.control_points()[0].len(), 4);
+}
