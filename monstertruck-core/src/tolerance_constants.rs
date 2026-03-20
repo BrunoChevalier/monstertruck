@@ -52,6 +52,20 @@ pub const TESSELLATION_TOLERANCE: f64 = 0.01;
 /// Default: `0.01` (1% of arc length)
 pub const PERIODIC_CLOSURE_RATIO: f64 = 0.01;
 
+/// UV-space closure threshold for boundary piece loop detection.
+///
+/// When constructing a [`PolyBoundary`], each [`PolyBoundaryPiece`] is classified
+/// as closed or open based on whether its first and last UV-space points are
+/// within this distance. A piece is closed when
+/// `start.uv.distance(end.uv) < UV_CLOSURE_TOLERANCE`.
+///
+/// Derived as `TESSELLATION_TOLERANCE / 10.0` to be one order of magnitude
+/// tighter than the geometric tessellation tolerance, since UV-space distances
+/// are typically smaller than 3D distances.
+///
+/// Default: `0.001` (= [`TESSELLATION_TOLERANCE`] / 10.0)
+pub const UV_CLOSURE_TOLERANCE: f64 = TESSELLATION_TOLERANCE / 10.0;
+
 /// Angle tolerance in radians for G1 tangent continuity classification.
 ///
 /// Two adjacent surfaces are G1-continuous along a shared edge if the

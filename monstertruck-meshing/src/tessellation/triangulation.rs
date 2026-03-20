@@ -7,6 +7,7 @@ use array_macro::array;
 use handles::FixedVertexHandle;
 use itertools::Itertools;
 use monstertruck_core::tolerance::TOLERANCE;
+use monstertruck_core::tolerance_constants::UV_CLOSURE_TOLERANCE;
 use rustc_hash::FxHashMap as HashMap;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -455,7 +456,7 @@ impl PolyBoundary {
     ) -> Self {
         let (mut closed, mut open) = (Vec::new(), Vec::new());
         pieces.into_iter().for_each(|PolyBoundaryPiece(mut vec)| {
-            match vec[0].uv.distance(vec[vec.len() - 1].uv) < 1.0e-3 {
+            match vec[0].uv.distance(vec[vec.len() - 1].uv) < UV_CLOSURE_TOLERANCE {
                 true => {
                     vec.pop();
                     closed.push(vec)

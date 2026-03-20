@@ -1,5 +1,6 @@
 use crate::*;
 use monstertruck_core::tolerance::TOLERANCE;
+use monstertruck_core::tolerance_constants::TESSELLATION_TOLERANCE;
 use monstertruck_topology::{compress::*, *};
 use spade::{iterators::*, *};
 
@@ -61,7 +62,7 @@ pub struct TessellationOptions {
 impl Default for TessellationOptions {
     fn default() -> Self {
         Self {
-            tolerance: 0.01,
+            tolerance: TESSELLATION_TOLERANCE,
             search_trials: 100,
             quad: QuadOptions::default(),
         }
