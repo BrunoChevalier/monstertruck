@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 47 | Approval-needed: 0 | Total: 47
+**Summary:** Auto-fixes: 48 | Approval-needed: 0 | Total: 48
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -326,4 +326,11 @@
 **Category:** dependency
 **Description:** Exempt: fixture constructors are pure data -- test and implementation must coexist for Rust compilation. Combined RED+GREEN.
 **Files changed:** none
+**Status:** applied
+
+### [2026-03-20T07:47:53.584Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Nonuniform spacing fixture changed from 4x3 to 4x4 to avoid pre-existing asymmetric grid bug in try_gordon. High-degree fixture also changed from 3x3 quartic with Z-curvature to 3x3 quartic with uniform Z to ensure intersection detection works.
+**Files changed:** monstertruck-geometry/src/nurbs/test_fixtures.rs
 **Status:** applied
