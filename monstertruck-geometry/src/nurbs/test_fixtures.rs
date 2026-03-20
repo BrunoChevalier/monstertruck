@@ -573,4 +573,85 @@ mod tests {
             assert!(dist < 1e-14, "column-0 point should be at origin, dist = {dist}");
         });
     }
+
+    // FIXTURE-03: Gordon-specific network fixtures
+
+    #[test]
+    fn gordon_near_miss_grid_valid() {
+        let (u_curves, v_curves, grid_points) = fixture_gordon_near_miss_grid();
+        assert_eq!(u_curves.len(), 3);
+        assert_eq!(v_curves.len(), 3);
+        assert_eq!(grid_points.len(), 3);
+        grid_points
+            .iter()
+            .for_each(|row| assert_eq!(row.len(), 3));
+        // All curves should be linear (degree 1).
+        u_curves
+            .iter()
+            .chain(v_curves.iter())
+            .for_each(|c| assert_eq!(c.degree(), 1));
+    }
+
+    #[test]
+    fn gordon_near_miss_grid_perturbation_within_snap_tolerance() {
+        use monstertruck_core::tolerance_constants::SNAP_TOLERANCE;
+        let (u_curves, v_curves, grid_points) = fixture_gordon_near_miss_grid();
+        // Each grid point should be offset from the exact intersection by less than SNAP_TOLERANCE.
+        let y_values = [0.0, 0.5, 1.0];
+        let x_values = [0.0, 0.5, 1.0];
+        (0..3).for_each(|i| {
+            (0..3).for_each(|j| {
+                let exact = Point3::new(x_values[j], y_values[i], 0.0);
+                let perturbed = &grid_points[i][j];
+                let dist = ((perturbed.x - exact.x).powi(2)
+                    + (perturbed.y - exact.y).powi(2)
+                    + (perturbed.z - exact.z).powi(2))
+                .sqrt();
+                assert!(
+                    dist < SNAP_TOLERANCE,
+                    "grid point [{i}][{j}] offset {dist} exceeds SNAP_TOLERANCE"
+                );
+                assert!(dist > 0.0, "grid point [{i}][{j}] should be perturbed");
+            });
+        });
+    }
+
+    #[test]
+    fn gordon_nonuniform_spacing_valid() {
+        let (u_curves, v_curves) = fixture_gordon_nonuniform_spacing();
+        assert_eq!(u_curves.len(), 4);
+        assert_eq!(v_curves.len(), 3);
+        // All curves should be linear.
+        u_curves
+            .iter()
+            .chain(v_curves.iter())
+            .for_each(|c| assert_eq!(c.degree(), 1));
+    }
+
+    #[test]
+    fn gordon_high_degree_family_valid() {
+        let (u_curves, v_curves) = fixture_gordon_high_degree_family();
+        assert_eq!(u_curves.len(), 3);
+        assert_eq!(v_curves.len(), 3);
+        // All curves should be degree 4 (quartic).
+        u_curves
+            .iter()
+            .chain(v_curves.iter())
+            .for_each(|c| {
+                assert_eq!(c.degree(), 4, "expected degree 4, got {}", c.degree());
+                assert_eq!(c.control_points().len(), 5);
+            });
+    }
+
+    #[test]
+    fn gordon_curved_network_valid() {
+        let (u_curves, v_curves) = fixture_gordon_curved_network();
+        assert_eq!(u_curves.len(), 2);
+        assert_eq!(v_curves.len(), 2);
+        // All curves should be cubic.
+        u_curves.iter().chain(v_curves.iter()).for_each(|c| {
+            assert_eq!(c.degree(), 3);
+            assert_eq!(c.control_points().len(), 4);
+        });
+    }
 }
