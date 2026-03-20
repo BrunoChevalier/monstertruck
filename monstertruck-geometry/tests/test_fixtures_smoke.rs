@@ -140,3 +140,56 @@ fn collapsed_control_polygon_surface_smoke() {
     assert_eq!(surface.control_points().len(), 4);
     assert_eq!(surface.control_points()[0].len(), 4);
 }
+
+// FIXTURE-03: Gordon-specific network fixtures
+
+#[test]
+fn gordon_near_miss_grid_smoke() {
+    let (u_curves, v_curves, grid_points) = test_fixtures::fixture_gordon_near_miss_grid();
+    assert_eq!(u_curves.len(), 3);
+    assert_eq!(v_curves.len(), 3);
+    assert_eq!(grid_points.len(), 3);
+    grid_points
+        .iter()
+        .for_each(|row| assert_eq!(row.len(), 3));
+    u_curves
+        .iter()
+        .chain(v_curves.iter())
+        .for_each(|c| assert_eq!(c.degree(), 1));
+}
+
+#[test]
+fn gordon_nonuniform_spacing_smoke() {
+    let (u_curves, v_curves) = test_fixtures::fixture_gordon_nonuniform_spacing();
+    assert_eq!(u_curves.len(), 4);
+    assert_eq!(v_curves.len(), 3);
+    u_curves
+        .iter()
+        .chain(v_curves.iter())
+        .for_each(|c| assert_eq!(c.degree(), 1));
+}
+
+#[test]
+fn gordon_high_degree_family_smoke() {
+    let (u_curves, v_curves) = test_fixtures::fixture_gordon_high_degree_family();
+    assert_eq!(u_curves.len(), 3);
+    assert_eq!(v_curves.len(), 3);
+    u_curves
+        .iter()
+        .chain(v_curves.iter())
+        .for_each(|c| {
+            assert_eq!(c.degree(), 4);
+            assert_eq!(c.control_points().len(), 5);
+        });
+}
+
+#[test]
+fn gordon_curved_network_smoke() {
+    let (u_curves, v_curves) = test_fixtures::fixture_gordon_curved_network();
+    assert_eq!(u_curves.len(), 2);
+    assert_eq!(v_curves.len(), 2);
+    u_curves.iter().chain(v_curves.iter()).for_each(|c| {
+        assert_eq!(c.degree(), 3);
+        assert_eq!(c.control_points().len(), 4);
+    });
+}
