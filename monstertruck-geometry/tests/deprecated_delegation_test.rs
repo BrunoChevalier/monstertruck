@@ -20,8 +20,7 @@ fn deprecated_skin_matches_try_skin_two_curves() {
         vec![Vector2::new(0.0, 1.0), Vector2::new(1.0, 1.0)],
     );
     let deprecated_surface = BsplineSurface::skin(vec![c0.clone(), c1.clone()]);
-    let try_surface =
-        BsplineSurface::try_skin(vec![c0, c1], &SkinOptions::default()).unwrap();
+    let try_surface = BsplineSurface::try_skin(vec![c0, c1], &SkinOptions::default()).unwrap();
 
     // Both surfaces must evaluate identically at sample points.
     for &u in &[0.0, 0.25, 0.5, 0.75, 1.0] {
@@ -58,10 +57,8 @@ fn deprecated_skin_matches_try_skin_three_curves() {
             Vector2::new(1.0, 2.0),
         ],
     );
-    let deprecated_surface =
-        BsplineSurface::skin(vec![c0.clone(), c1.clone(), c2.clone()]);
-    let try_surface =
-        BsplineSurface::try_skin(vec![c0, c1, c2], &SkinOptions::default()).unwrap();
+    let deprecated_surface = BsplineSurface::skin(vec![c0.clone(), c1.clone(), c2.clone()]);
+    let try_surface = BsplineSurface::try_skin(vec![c0, c1, c2], &SkinOptions::default()).unwrap();
 
     for &u in &[0.0, 0.25, 0.5, 0.75, 1.0] {
         for &v in &[0.0, 0.25, 0.5, 0.75, 1.0] {
@@ -130,12 +127,10 @@ fn deprecated_sweep_rail_matches_try_sweep_rail() {
         vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
     );
 
-    let deprecated_surface =
-        BsplineSurface::sweep_rail(profile.clone(), &rail, 3);
+    let deprecated_surface = BsplineSurface::sweep_rail(profile.clone(), &rail, 3);
     let mut opts = SweepRailOptions::default();
     opts.n_sections = 3;
-    let try_surface =
-        BsplineSurface::try_sweep_rail(profile, &rail, &opts).unwrap();
+    let try_surface = BsplineSurface::try_sweep_rail(profile, &rail, &opts).unwrap();
 
     for &u in &[0.0, 0.25, 0.5, 0.75, 1.0] {
         for &v in &[0.0, 0.25, 0.5, 0.75, 1.0] {
@@ -162,12 +157,10 @@ fn deprecated_birail1_matches_try_birail1() {
         vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
     );
 
-    let deprecated_surface =
-        BsplineSurface::birail1(profile.clone(), &rail1, &rail2, 3);
+    let deprecated_surface = BsplineSurface::birail1(profile.clone(), &rail1, &rail2, 3);
     let mut opts = Birail1Options::default();
     opts.n_sections = 3;
-    let try_surface =
-        BsplineSurface::try_birail1(profile, &rail1, &rail2, &opts).unwrap();
+    let try_surface = BsplineSurface::try_birail1(profile, &rail1, &rail2, &opts).unwrap();
 
     for &u in &[0.0, 0.25, 0.5, 0.75, 1.0] {
         for &v in &[0.0, 0.25, 0.5, 0.75, 1.0] {
@@ -198,19 +191,12 @@ fn deprecated_birail2_matches_try_birail2() {
         vec![Point3::new(0.0, 0.0, 4.0), Point3::new(2.0, 0.0, 4.0)],
     );
 
-    let deprecated_surface = BsplineSurface::birail2(
-        profile1.clone(),
-        profile2.clone(),
-        &rail1,
-        &rail2,
-        3,
-    );
+    let deprecated_surface =
+        BsplineSurface::birail2(profile1.clone(), profile2.clone(), &rail1, &rail2, 3);
     let mut opts = Birail2Options::default();
     opts.n_sections = 3;
-    let try_surface = BsplineSurface::try_birail2(
-        profile1, profile2, &rail1, &rail2, &opts,
-    )
-    .unwrap();
+    let try_surface =
+        BsplineSurface::try_birail2(profile1, profile2, &rail1, &rail2, &opts).unwrap();
 
     for &u in &[0.0, 0.25, 0.5, 0.75, 1.0] {
         for &v in &[0.0, 0.25, 0.5, 0.75, 1.0] {
