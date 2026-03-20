@@ -86,3 +86,7 @@ No changes to the polynomial solver module. Phase 18 added `try_gordon_from_netw
 ## Status Update (Phase 19 -- Tessellation Robustness)
 
 No changes to the polynomial solver module. Phase 19 centralized tessellation tolerance constants and added fallback UV interpolation in `monstertruck-meshing`. The math layer was unaffected.
+
+## Status Update (Phase 20 -- Fixture Corpus & Migration Documentation, v0.5.1 Final)
+
+No changes to the polynomial solver module. Phase 20 expanded the pathological geometry fixture corpus (7 surface construction fixtures, 6 Gordon network fixtures), added migration doc comments on all 7 `try_*` surface constructor functions, and created a crate-level migration guide. The math layer was unaffected. This ADR remains Accepted with no anticipated changes. Milestone v0.5.1 is complete.

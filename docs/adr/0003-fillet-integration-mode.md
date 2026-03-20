@@ -78,3 +78,7 @@ No changes to fillet integration mode logic. Phase 18 added `try_gordon_from_net
 ## Status Update (Phase 19 -- Tessellation Robustness)
 
 No changes to fillet integration mode logic. Phase 19 centralized tessellation tolerance constants and added fallback UV interpolation in `monstertruck-meshing`. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 20 -- Fixture Corpus & Migration Documentation, v0.5.1 Final)
+
+No changes to fillet integration mode logic. Phase 20 expanded the pathological geometry fixture corpus, added migration doc comments on `try_*` surface constructor functions, and created a crate-level migration guide. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted. Milestone v0.5.1 is complete.

@@ -85,3 +85,7 @@ No changes to fillet topology surgery. Phase 18 added `try_gordon_from_network` 
 ## Status Update (Phase 19 -- Tessellation Robustness)
 
 No changes to fillet topology surgery. Phase 19 centralized tessellation tolerance constants (`UV_CLOSURE_TOLERANCE`, `TESSELLATION_TOLERANCE`) and added fallback UV interpolation in `monstertruck-meshing` to prevent face drops. The fillet surgery code was unaffected.
+
+## Status Update (Phase 20 -- Fixture Corpus & Migration Documentation, v0.5.1 Final)
+
+No changes to fillet topology surgery. Phase 20 expanded the pathological geometry fixture corpus with surface construction and Gordon network fixtures, added migration doc comments on `try_*` functions, and created a crate-level migration guide. The fillet surgery code was unaffected. This ADR remains Accepted. Milestone v0.5.1 is complete.

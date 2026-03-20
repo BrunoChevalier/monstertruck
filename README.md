@@ -124,12 +124,17 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 19 -- Tessellation Robustness)
+### Milestone v0.5.1 Summary (Phases 16--20)
 
-- **Centralized tessellation tolerances** -- Replaced hardcoded tessellation magic constants with centralized tolerance expressions. Added `UV_CLOSURE_TOLERANCE` to `monstertruck-core::tolerance_constants`. `TessellationOptions::default()` now derives its value from `TESSELLATION_TOLERANCE`.
-- **Fallback UV interpolation** -- `PolyBoundaryPiece::try_new_with_fallback` in `monstertruck-meshing` falls back to UV interpolation when parameter search fails, preventing face drops during tessellation. Fallback activations are logged via `log::warn!`. Regression test verifies previously-dropped faces now tessellate successfully.
+Milestone v0.5.1 focused on API hardening, robustness infrastructure, and migration documentation for the surface construction pipeline.
 
-### Earlier Changes (Phase 18 -- Gordon Surface from Network)
+- **Tolerance centralization (Phase 16)** -- Consolidated 6 tolerance constants into `monstertruck-core::tolerance_constants`. Marked all surface option structs `#[non_exhaustive]`. Deduplicated deprecated constructors by delegating to `try_*` counterparts.
+- **Curve-curve intersection (Phase 17)** -- New `monstertruck-geometry::nurbs::curve_intersect` module with `find_intersections` and `find_self_intersections` APIs using subdivision + Newton-Raphson refinement.
+- **Gordon surface from network (Phase 18)** -- `try_gordon_from_network` auto-computes grid points from curve families. `try_gordon_verified` validates caller-supplied grid points with snap-distance control via `GordonOptions.grid_tolerance`.
+- **Tessellation robustness (Phase 19)** -- Centralized tessellation tolerances. `PolyBoundaryPiece::try_new_with_fallback` prevents face drops via UV interpolation fallback.
+- **Fixture corpus and migration documentation (Phase 20)** -- Expanded test corpus with 7 pathological geometry fixtures (inflection rails, converging rails, degenerate sections, near-zero Jacobian/weight, collapsed control points, weight spikes) and 6 Gordon-specific network fixtures (near-miss grid points, nonuniform spacing, high-degree curves). Added migration doc comments on all 7 `try_*` surface constructor functions with before/after examples and a crate-level migration guide with quick reference table. 25+ new integration and smoke tests.
+
+### Earlier Changes (Phase 15 -- Font Stress Testing & Performance)
 
 - **`try_gordon_from_network`** -- New constructor on `BsplineSurface` that auto-computes intersection grid points from u/v curve families using the curve intersection engine, eliminating the need for callers to supply grid points manually.
 - **`try_gordon_verified`** -- Validated Gordon surface constructor that checks caller-supplied grid points against the input curves, snapping near-miss points within `GordonOptions.grid_tolerance`.
@@ -147,53 +152,43 @@ The `monstertruck-meshing` crate includes boundary-aware vertex stitching during
 - **`#[non_exhaustive]` option structs** -- All 5 surface constructor option structs (`GordonOptions`, `SkinOptions`, `SweepRailOptions`, `Birail1Options`, `Birail2Options`) in `monstertruck-geometry` are now marked `#[non_exhaustive]`, allowing future field additions without breaking downstream crate builds.
 - **Deprecated constructor deduplication** -- The 5 deprecated surface constructors (`gordon`, `skin`, `sweep_rail`, `birail1`, `birail2`) now delegate to their `try_*` counterparts, removing ~225 lines of duplicated logic.
 
-### Earlier Changes (Phase 15 -- Font Stress Testing & Performance)
+### Earlier Changes (Phases 9--15)
 
-- **Font stress corpus** -- 11 pathological font geometry fixtures and 16 regression tests covering degenerate glyph outlines, with a failure mode catalog documenting expected behavior for each case.
-- **Performance benchmarks** -- Criterion benchmark suite measuring profile pipeline throughput at 1/10/100/1000 characters, with a baseline template for tracking regressions.
+<details>
+<summary>Click to expand earlier changelog</summary>
 
-### Earlier Changes (Phase 14 -- Profile Solid Pipeline)
+#### Phase 15 -- Font Stress Testing & Performance
+- Font stress corpus with 11 pathological geometry fixtures and 16 regression tests.
+- Criterion benchmark suite for profile pipeline throughput.
 
-- **Profile revolve & sweep** -- New `revolve_from_planar_profile` and `sweep_from_planar_profile` functions in `monstertruck-modeling` construct solids directly from planar profile wires.
-- **Mixed profiles** -- `mixed_profile_face` combines font glyph wires with custom sketch loops into a single face for extrusion and sweep workflows.
-- **Solid validation** -- `validate_solid` with `ValidationReport` performs Euler-Poincare and tessellation checks on constructed solids.
+#### Phase 14 -- Profile Solid Pipeline
+- `revolve_from_planar_profile` and `sweep_from_planar_profile` in `monstertruck-modeling`.
+- `mixed_profile_face` for combining font glyph wires with sketch loops.
+- `validate_solid` with `ValidationReport` for Euler-Poincare and tessellation checks.
 
-### Earlier Changes (Phase 13 -- v0.5.0 API Polish & Surface Operations)
+#### Phase 13 -- v0.5.0 API Polish & Surface Operations
+- Typed option structs (`SweepRailOptions`, `Birail1Options`, `Birail2Options`, `GordonOptions`, `SkinOptions`) and `CurveNetworkDiagnostic` error reporting.
+- Fallible `try_*` surface constructors returning `Result` instead of panicking.
+- Patch split/extract: `split_at_u`, `split_at_v`, `sub_patch` on `BsplineSurface` and `NurbsSurface`.
 
-- **Typed option structs** -- New `SweepRailOptions`, `Birail1Options`, `Birail2Options`, `GordonOptions`, `SkinOptions` structs and `CurveNetworkDiagnostic` error reporting for surface constructors in `monstertruck-geometry`.
-- **Fallible surface constructors** -- `BsplineSurface` gains `try_*` methods that return `Result` instead of panicking, with error variants in `monstertruck-geometry::errors`.
-- **Patch split/extract** -- `split_at_u`, `split_at_v`, and `sub_patch` methods on `BsplineSurface` and `NurbsSurface` for patch subdivision workflows.
-- **Option-struct builders in modeling** -- `try_sweep_rail_with_options`, `try_birail_with_options`, `try_gordon_with_options` and related functions in `monstertruck-modeling::builder` with full error chain from geometry to modeling layer.
+#### Phase 12 -- v0.4.0 Milestone Completion
+- 11 end-to-end font pipeline integration tests.
+- Ayam port plan finalized with deferred items annotated.
 
-### Earlier Changes (Phase 12 -- v0.4.0 Milestone Completion)
+#### Phase 11 -- Surface Constructors
+- `sweep_multi_rail` and `sweep_periodic` surface constructors.
+- 5 typed builder wrappers in `monstertruck-modeling::builder`.
 
-- **End-to-end font pipeline tests** -- 11 integration tests in `monstertruck-modeling/tests/font_pipeline.rs` exercise the full font outline to B-rep solid pipeline using a bundled DejaVuSans.ttf fixture. Tests cover glyph hole preservation (O, B, 8), wire topology validation (closure, edge count), solid extrusion with geometric consistency checks, multi-character `text_profile` layout (spacing, horizontal advance), Y-flip option, and space-character handling.
-- **Ayam port plan finalized** -- `AYAM_PORT_PLAN.md` updated with 11 items checked off, deferred items annotated with rationale and version targets (v0.5.0+), and a new status summary section documenting all completed work and architecture notes.
+#### Phase 10 -- NURBS Fixture Corpus & Surface Healing
+- 10 reusable NURBS fixtures covering degenerate surfaces.
+- `heal_surface_shell` for detecting and repairing degenerate NURBS surfaces.
 
-### Earlier Changes (Phase 11 -- Surface Constructors)
+#### Phase 9 -- Boolean Repair & Tolerance Foundation
+- Centralized tolerance policy in `monstertruck-core::tolerance`.
+- Boolean face classification hardening, 3-stage shell healing, diagnostic logging.
+- Boolean shell welding fix and `Matrix4::from_translation` correction.
 
-- **Multi-rail sweep** -- `BsplineSurface::sweep_multi_rail` in `monstertruck-geometry` sweeps a profile along 2+ rails with affine fitting.
-- **Periodic sweep** -- `BsplineSurface::sweep_periodic` sweeps a profile along a rail with tangent-aligned framing, duplicating the first section as the last to guarantee C0 seam continuity.
-- **Typed builder wrappers** -- 5 builder functions in `monstertruck-modeling::builder` (`try_sweep_rail`, `try_birail`, `try_gordon`, `try_sweep_multi_rail`, `try_sweep_periodic`) wrap geometry constructors with `Result` error handling and topology assembly.
-- **Integration tests** -- 6 geometry-level tests and 13 modeling-level integration tests covering all wrappers, error paths, seam continuity, vertex positions, and Euler-Poincare consistency.
-
-### Earlier Changes (Phase 10 -- NURBS Fixture Corpus & Surface Healing)
-
-- **NURBS fixture corpus** -- 10 reusable NURBS fixtures (`monstertruck-geometry/src/nurbs/test_fixtures.rs`) covering degenerate surfaces (collapsed edges, zero-area patches, self-intersecting control nets, near-singular parameterizations) and topology builders (`monstertruck-solid/tests/fixture_helpers.rs`) for constructing shells from fixture surfaces.
-- **Surface healing hooks** -- New `heal_surface_shell` in `monstertruck-solid::healing::surface_healing` detects and repairs degenerate NURBS surfaces produced by `sweep_rail`, `birail`, and `gordon` constructors, applying knot-insertion and control-point perturbation before downstream topology assembly.
-- **Integration tests** -- 7 integration tests exercise 4+ degenerate fixtures through the healing pipeline, asserting that healed surfaces produce valid closed shells with correct Euler-Poincare invariants.
-
-### Earlier Changes (Phase 9 -- Boolean Repair & Tolerance Foundation)
-
-- **Tolerance policy** -- `monstertruck-core::tolerance` now has comprehensive documentation of the numeric tolerance policy (TOLERANCE, TOLERANCE2, Tolerance trait, OperationTolerance). The hardcoded `1.0e-6` in fillet `edge_select` was replaced with the canonical `TOLERANCE` constant. Regression tests pin tolerance values.
-- **Boolean face classification hardening** -- `faces_classification::integrate_by_component` uses majority-edge scoring with `FxHashSet` and no longer panics on empty boundary components. Unknown-face classification falls back to a conservative default instead of returning an error.
-- **3-stage shell healing** -- Boolean `heal_shell_if_needed` now uses a 3-stage fallback (healed, unhealed, original) and never returns `None` for non-empty shells.
-- **Diagnostic logging** -- Coincident-face detection (`MT_BOOL_DEBUG_COINCIDENT`), healing diagnostics (`MT_BOOL_DEBUG_HEAL`), and dropped-boundary logging (`MT_BOOL_DEBUG_COMPONENTS`) are available as opt-in environment variables.
-- **Tolerance documentation in boolean pipeline** -- Doc comments in `integrate/mod.rs` and `loops_store/mod.rs` explain tolerance multipliers (operation tolerance floor, triangulation tolerance, snap tolerance 10x, vertex merge 100x).
-- **Topology validation tests** -- New tests for AND, OR, difference, and chained boolean operations with closed-shell and singular-vertex assertions.
-- **Explicit tolerance imports in meshing** -- `monstertruck-meshing` now imports tolerance constants from `monstertruck-core` instead of using local magic numbers, aligning tessellation with the project-wide tolerance policy.
-- **Boolean shell welding fix** -- `weld_compressed_shell` corrected to handle degenerate weld cases; coincident face detection no longer self-compares faces, eliminating false positives.
-- **Matrix4 translation fix** -- `Matrix4::from_translation` in `monstertruck-math` corrected column placement of translation components.
+</details>
 
 ### Earlier Changes (Phase 8)
 
