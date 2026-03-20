@@ -166,3 +166,53 @@ fn robust_closed() {
         .remove_unused_attrs();
     assert_eq!(mesh.shell_condition(), ShellCondition::Closed);
 }
+
+#[test]
+fn fallback_recovers_faces_robust_vs_regular() {
+    // Use the curved-edge cube from `robust_closed` -- `triangulation()` drops
+    // all faces (returns `None` surfaces) but `robust_triangulation()` recovers them.
+    let cube: Solid = {
+        let v = builder::vertex(Point3::origin());
+        let e = builder::extrude(&v, Vector3::unit_x());
+        let f = builder::extrude(&e, Vector3::unit_y());
+        builder::extrude(&f, Vector3::unit_z())
+    };
+
+    let o = Point3::new(0.5, 0.5, 0.5);
+    cube.edge_iter().for_each(|edge| {
+        let curve = edge.curve();
+        if let Curve::Line(line) = curve {
+            let m = line.subs(0.5);
+            let p = m + 0.2 * (o - m);
+            let bsp = BsplineCurve::new(KnotVector::bezier_knot(2), vec![line.0, p, line.1]);
+            edge.set_curve(bsp.into());
+        }
+    });
+
+    // Regular triangulation drops all faces on this model.
+    let regular = cube.triangulation(0.01);
+    let regular_meshed_count = regular
+        .face_iter()
+        .filter(|face| face.surface().is_some())
+        .count();
+
+    // Robust triangulation should recover faces via `search_nearest_parameter`
+    // and now also via the UV interpolation fallback.
+    let robust = cube.robust_triangulation(0.01);
+    let robust_meshed_count = robust
+        .face_iter()
+        .filter(|face| face.surface().is_some())
+        .count();
+
+    // Robust must recover strictly more faces than regular on this fixture.
+    assert!(
+        robust_meshed_count > regular_meshed_count,
+        "robust_triangulation should recover more faces: robust={robust_meshed_count}, regular={regular_meshed_count}"
+    );
+
+    // Verify the robust mesh is actually closed (all faces recovered).
+    let mut mesh = robust.to_polygon();
+    mesh.put_together_same_attrs(TOLERANCE * 2.0)
+        .remove_unused_attrs();
+    assert_eq!(mesh.shell_condition(), ShellCondition::Closed);
+}

@@ -400,38 +400,9 @@ impl PolyBoundaryPiece {
                 .collect();
 
             let n = uv_results.len();
-            for i in none_indices {
-                // Find nearest preceding success (wrapping around).
-                let mut prev_anchor = None;
-                for offset in 1..n {
-                    let j = (i + n - offset) % n;
-                    if let Some(uv) = uv_results[j] {
-                        prev_anchor = Some((uv, offset));
-                        break;
-                    }
-                }
-                // Find nearest following success (wrapping around).
-                let mut next_anchor = None;
-                for offset in 1..n {
-                    let j = (i + offset) % n;
-                    if let Some(uv) = uv_results[j] {
-                        next_anchor = Some((uv, offset));
-                        break;
-                    }
-                }
-                // Interpolate UV -- fallback to nearest if only one neighbor exists.
-                let interpolated_uv = match (prev_anchor, next_anchor) {
-                    (Some(((pu, pv), pd)), Some(((nu, nv), nd))) => {
-                        let t = pd as f64 / (pd + nd) as f64;
-                        (pu + t * (nu - pu), pv + t * (nv - pv))
-                    }
-                    (Some(((pu, pv), _)), None) => (pu, pv),
-                    (None, Some(((nu, nv), _))) => (nu, nv),
-                    // SAFETY: checked all-None case above.
-                    (None, None) => unreachable!("checked all-None case above"),
-                };
-                uv_results[i] = Some(interpolated_uv);
-            }
+            none_indices.into_iter().for_each(|i| {
+                uv_results[i] = Some(interpolate_uv_from_neighbors(&uv_results, i, n));
+            });
         }
 
         // Build surface points, handling singularity crossings as before.
@@ -478,6 +449,35 @@ impl PolyBoundaryPiece {
             }
         }
         Some(Self(vec))
+    }
+}
+
+/// Interpolates UV coordinates for a failed boundary point at index `i`
+/// by finding the nearest preceding and following successful UVs in
+/// `uv_results` (wrapping around the boundary loop of length `n`) and
+/// linearly interpolating based on index distance.
+fn interpolate_uv_from_neighbors(
+    uv_results: &[Option<(f64, f64)>],
+    i: usize,
+    n: usize,
+) -> (f64, f64) {
+    let find_anchor = |direction: isize| -> Option<((f64, f64), usize)> {
+        (1..n).find_map(|offset| {
+            let j = ((i as isize + direction * offset as isize).rem_euclid(n as isize)) as usize;
+            uv_results[j].map(|uv| (uv, offset))
+        })
+    };
+    let prev_anchor = find_anchor(-1);
+    let next_anchor = find_anchor(1);
+    match (prev_anchor, next_anchor) {
+        (Some(((pu, pv), pd)), Some(((nu, nv), nd))) => {
+            let t = pd as f64 / (pd + nd) as f64;
+            (pu + t * (nu - pu), pv + t * (nv - pv))
+        }
+        (Some(((pu, pv), _)), None) => (pu, pv),
+        (None, Some(((nu, nv), _))) => (nu, nv),
+        // SAFETY: caller guarantees at least one `Some` entry exists.
+        (None, None) => unreachable!("at least one UV must be available for interpolation"),
     }
 }
 
