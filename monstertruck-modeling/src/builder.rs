@@ -22,7 +22,7 @@ type Shell<C, S> = monstertruck_topology::Shell<Point3, C, S>;
 /// use monstertruck_modeling::*;
 ///
 /// // put a vertex
-/// let vertex = builder::vertex((1.0, 2.0, 3.0));
+/// let vertex = builder::vertex(Point3::new(1.0, 2.0, 3.0));
 /// # assert_eq!(vertex.point(), Point3::new(1.0, 2.0, 3.0));
 /// ```
 #[inline(always)]
@@ -37,14 +37,14 @@ pub fn vertex<P: Into<Point3>>(p: P) -> Vertex {
 ///
 /// // put vertices of a unit cube
 /// let vertices = builder::vertices([
-///     (0.0, 0.0, 0.0),
-///     (1.0, 0.0, 0.0),
-///     (0.0, 1.0, 0.0),
-///     (0.0, 0.0, 1.0),
-///     (0.0, 1.0, 1.0),
-///     (1.0, 0.0, 1.0),
-///     (1.0, 1.0, 0.0),
-///     (1.0, 1.0, 1.0),
+///     Point3::new(0.0, 0.0, 0.0),
+///     Point3::new(1.0, 0.0, 0.0),
+///     Point3::new(0.0, 1.0, 0.0),
+///     Point3::new(0.0, 0.0, 1.0),
+///     Point3::new(0.0, 1.0, 1.0),
+///     Point3::new(1.0, 0.0, 1.0),
+///     Point3::new(1.0, 1.0, 0.0),
+///     Point3::new(1.0, 1.0, 1.0),
 /// ]);
 /// # assert_eq!(vertices[3].point(), Point3::new(0.0, 0.0, 1.0));
 /// ```
@@ -882,14 +882,10 @@ pub fn try_gordon_verified(
 /// );
 /// let rail1 = BsplineCurve::new(
 ///     KnotVector::bezier_knot(1),
-///     vec![Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 1.0, 5.0)],
-/// );
-/// let rail2 = BsplineCurve::new(
-///     KnotVector::bezier_knot(1),
 ///     vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 5.0)],
 /// );
 /// let face: Face = builder::try_sweep_multi_rail(
-///     &profile, &[rail0, rail1, rail2], 5,
+///     &profile, &[rail0, rail1], 5,
 /// ).unwrap();
 /// assert_eq!(face.boundaries()[0].len(), 4);
 /// ```

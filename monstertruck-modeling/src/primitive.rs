@@ -83,7 +83,7 @@ where
 ///         let der = arc.der(t);
 ///         assert_near!(p.distance(origin), 5.0);
 ///         assert!(der.dot(axis).so_small());
-///         assert!((p - origin).cross(der).dot(axis) > 0.0);
+///         assert!((p - origin).cross(&der).dot(axis) > 0.0);
 ///     }
 /// }
 /// ```
