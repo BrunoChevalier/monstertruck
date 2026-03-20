@@ -1453,3 +1453,74 @@ fn par_bench() {
     });
     println!("{}ms", instant.elapsed().as_millis());
 }
+
+#[test]
+fn try_new_fallback_partial_failure() {
+    use monstertruck_geometry::prelude::*;
+
+    // Build a simple flat BSplineSurface in xy-plane.
+    let knots = KnotVector::bezier_knot(1);
+    let ctrl = vec![
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0)],
+        vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+    ];
+    let surface = BsplineSurface::new((knots.clone(), knots), ctrl);
+
+    // Create boundary points forming a square.
+    let pts = vec![
+        Point3::new(0.1, 0.1, 0.0),
+        Point3::new(0.9, 0.1, 0.0),
+        Point3::new(0.9, 0.9, 0.0),
+        Point3::new(0.1, 0.9, 0.0),
+    ];
+    let poly = PolylineCurve(pts);
+
+    // SP closure that fails for the third point (index 2).
+    let call_count = std::sync::atomic::AtomicUsize::new(0);
+    let sp = |surface: &BsplineSurface<Point3>,
+              pt: Point3,
+              hint: Option<(f64, f64)>|
+     -> Option<(f64, f64)> {
+        let idx = call_count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        if idx == 2 {
+            None
+        } else {
+            by_search_parameter(surface, pt, hint)
+        }
+    };
+
+    let result = PolyBoundaryPiece::try_new(&surface, std::iter::once(poly), sp);
+    assert!(
+        result.is_some(),
+        "should recover from partial failure via UV interpolation"
+    );
+    let piece = result.unwrap();
+    assert!(!piece.0.is_empty());
+}
+
+#[test]
+fn try_new_all_failures_returns_none() {
+    use monstertruck_geometry::prelude::*;
+
+    let knots = KnotVector::bezier_knot(1);
+    let ctrl = vec![
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0)],
+        vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+    ];
+    let surface = BsplineSurface::new((knots.clone(), knots), ctrl);
+
+    let pts = vec![
+        Point3::new(0.1, 0.1, 0.0),
+        Point3::new(0.9, 0.1, 0.0),
+    ];
+    let poly = PolylineCurve(pts);
+
+    // SP that always fails.
+    let sp = |_: &BsplineSurface<Point3>,
+              _: Point3,
+              _: Option<(f64, f64)>|
+     -> Option<(f64, f64)> { None };
+
+    let result = PolyBoundaryPiece::try_new(&surface, std::iter::once(poly), sp);
+    assert!(result.is_none(), "should return None when all lookups fail");
+}
