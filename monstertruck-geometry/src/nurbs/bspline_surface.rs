@@ -2288,6 +2288,169 @@ impl BsplineSurface<Point3> {
 
         Ok(BsplineSurface::skin(sections))
     }
+
+    /// Constructs a Gordon surface by auto-computing intersection grid points
+    /// from the curve network.
+    ///
+    /// Intersects each u-curve with each v-curve using the curve intersection
+    /// engine **before** compatibility normalization, ensuring numerical
+    /// accuracy on the original curve parameterizations.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::CurveNetworkIncompatible`] with:
+    /// - [`CurveNetworkDiagnostic::InsufficientCurves`] if either family is empty.
+    /// - [`CurveNetworkDiagnostic::IntersectionCountMismatch`] if any curve pair
+    ///   has zero or multiple intersections.
+    /// - Any error from the underlying [`try_gordon`](BsplineSurface::try_gordon) call.
+    pub fn try_gordon_from_network(
+        u_curves: Vec<BsplineCurve<Point3>>,
+        v_curves: Vec<BsplineCurve<Point3>>,
+        options: &GordonOptions,
+    ) -> Result<BsplineSurface<Point3>> {
+        if u_curves.is_empty() {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::InsufficientCurves {
+                    required: 1,
+                    got: 0,
+                },
+            ));
+        }
+        if v_curves.is_empty() {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::InsufficientCurves {
+                    required: 1,
+                    got: 0,
+                },
+            ));
+        }
+
+        // Intersect each u-curve with each v-curve before any compatibility
+        // normalization to preserve numerical accuracy on original parameterizations.
+        let points: Vec<Vec<Point3>> = u_curves
+            .iter()
+            .enumerate()
+            .map(|(i, u_curve)| {
+                v_curves
+                    .iter()
+                    .enumerate()
+                    .map(|(j, v_curve)| {
+                        let hits = curve_intersect::find_intersections(u_curve, v_curve);
+                        if hits.len() != 1 {
+                            Err(Error::CurveNetworkIncompatible(
+                                CurveNetworkDiagnostic::IntersectionCountMismatch {
+                                    u_curve_index: i,
+                                    v_curve_index: j,
+                                    found: hits.len(),
+                                    expected: 1,
+                                },
+                            ))
+                        } else {
+                            // SAFETY: Length checked to be exactly 1 above.
+                            Ok(hits[0].point)
+                        }
+                    })
+                    .collect::<Result<Vec<_>>>()
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        Self::try_gordon(u_curves, v_curves, &points, options)
+    }
+
+    /// Constructs a Gordon surface from caller-supplied grid points after
+    /// validating that each point lies on both corresponding curves.
+    ///
+    /// Points within `options.grid_tolerance` of both curves are snapped to
+    /// the average of the nearest curve positions for numerical consistency.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::CurveNetworkIncompatible`] with:
+    /// - [`CurveNetworkDiagnostic::GridDimensionMismatch`] if points dimensions
+    ///   don't match curve counts.
+    /// - [`CurveNetworkDiagnostic::GridPointNotOnCurve`] if any point exceeds the
+    ///   tolerance on either curve.
+    /// - Any error from the underlying [`try_gordon`](BsplineSurface::try_gordon) call.
+    pub fn try_gordon_verified(
+        u_curves: Vec<BsplineCurve<Point3>>,
+        v_curves: Vec<BsplineCurve<Point3>>,
+        points: &[Vec<Point3>],
+        options: &GordonOptions,
+    ) -> Result<BsplineSurface<Point3>> {
+        let n = u_curves.len();
+        let m = v_curves.len();
+
+        if points.len() != n || points.iter().any(|row| row.len() != m) {
+            return Err(Error::CurveNetworkIncompatible(
+                CurveNetworkDiagnostic::GridDimensionMismatch {
+                    expected_rows: n,
+                    expected_cols: m,
+                    actual_rows: points.len(),
+                    actual_cols: points.first().map_or(0, |r| r.len()),
+                },
+            ));
+        }
+
+        let tol = options.grid_tolerance;
+
+        // Validate and snap each grid point.
+        let snapped_points: Vec<Vec<Point3>> = (0..n)
+            .map(|i| {
+                (0..m)
+                    .map(|j| {
+                        let pt = points[i][j];
+
+                        // Find nearest parameter on u_curves[i].
+                        let u_t = u_curves[i]
+                            .search_nearest_parameter(pt, None, 100)
+                            .ok_or(Error::CurveNetworkIncompatible(
+                                CurveNetworkDiagnostic::GridPointNotOnCurve {
+                                    row: i,
+                                    col: j,
+                                    u_distance: f64::INFINITY,
+                                    v_distance: f64::INFINITY,
+                                    tolerance: tol,
+                                },
+                            ))?;
+                        let u_nearest: Point3 = u_curves[i].subs(u_t);
+                        let u_distance = pt.distance(u_nearest);
+
+                        // Find nearest parameter on v_curves[j].
+                        let v_t = v_curves[j]
+                            .search_nearest_parameter(pt, None, 100)
+                            .ok_or(Error::CurveNetworkIncompatible(
+                                CurveNetworkDiagnostic::GridPointNotOnCurve {
+                                    row: i,
+                                    col: j,
+                                    u_distance: f64::INFINITY,
+                                    v_distance: f64::INFINITY,
+                                    tolerance: tol,
+                                },
+                            ))?;
+                        let v_nearest: Point3 = v_curves[j].subs(v_t);
+                        let v_distance = pt.distance(v_nearest);
+
+                        if u_distance > tol || v_distance > tol {
+                            Err(Error::CurveNetworkIncompatible(
+                                CurveNetworkDiagnostic::GridPointNotOnCurve {
+                                    row: i,
+                                    col: j,
+                                    u_distance,
+                                    v_distance,
+                                    tolerance: tol,
+                                },
+                            ))
+                        } else {
+                            // Snap to the average of both nearest curve points.
+                            Ok(u_nearest + (v_nearest - u_nearest) * 0.5)
+                        }
+                    })
+                    .collect::<Result<Vec<_>>>()
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        Self::try_gordon(u_curves, v_curves, &snapped_points, options)
+    }
 }
 
 /// Computes a least-squares affine fit mapping reference points to target points.

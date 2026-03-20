@@ -81,18 +81,29 @@ impl Default for Birail2Options {
 
 /// Options for Gordon surface construction.
 ///
-/// Currently a marker struct. Future versions may add tolerance fields
-/// for controlling intersection point matching.
-///
 /// # Examples
 ///
 /// ```
 /// use monstertruck_geometry::nurbs::surface_options::GordonOptions;
 /// let opts = GordonOptions::default();
+/// assert!(opts.grid_tolerance > 0.0);
 /// ```
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
-pub struct GordonOptions {}
+pub struct GordonOptions {
+    /// Tolerance for grid point validation in [`crate::nurbs::BsplineSurface::try_gordon_verified`].
+    /// Points within this distance of the expected curve position are snapped.
+    /// Defaults to [`SNAP_TOLERANCE`](monstertruck_core::tolerance_constants::SNAP_TOLERANCE).
+    pub grid_tolerance: f64,
+}
+
+impl Default for GordonOptions {
+    fn default() -> Self {
+        Self {
+            grid_tolerance: monstertruck_core::tolerance_constants::SNAP_TOLERANCE,
+        }
+    }
+}
 
 /// Options for skin surface construction.
 ///

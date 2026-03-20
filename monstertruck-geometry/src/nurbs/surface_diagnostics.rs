@@ -60,6 +60,30 @@ pub enum CurveNetworkDiagnostic {
         /// Description of the degenerate condition.
         description: String,
     },
+    /// Intersection count mismatch between curve families.
+    IntersectionCountMismatch {
+        /// Index of the u-curve.
+        u_curve_index: usize,
+        /// Index of the v-curve.
+        v_curve_index: usize,
+        /// Number of intersections found.
+        found: usize,
+        /// Number expected (1 for a well-formed Gordon network).
+        expected: usize,
+    },
+    /// A caller-supplied grid point does not lie on both corresponding curves.
+    GridPointNotOnCurve {
+        /// Row index (u-curve index) of the failing point.
+        row: usize,
+        /// Column index (v-curve index) of the failing point.
+        col: usize,
+        /// Distance from the point to the nearest position on the u-curve.
+        u_distance: f64,
+        /// Distance from the point to the nearest position on the v-curve.
+        v_distance: f64,
+        /// Tolerance that was exceeded.
+        tolerance: f64,
+    },
 }
 
 impl fmt::Display for CurveNetworkDiagnostic {
@@ -110,6 +134,25 @@ impl fmt::Display for CurveNetworkDiagnostic {
             Self::DegenerateGeometry { description } => {
                 write!(f, "degenerate geometry: {description}")
             }
+            Self::IntersectionCountMismatch {
+                u_curve_index,
+                v_curve_index,
+                found,
+                expected,
+            } => write!(
+                f,
+                "intersection count mismatch at u[{u_curve_index}] x v[{v_curve_index}]: found {found}, expected {expected}"
+            ),
+            Self::GridPointNotOnCurve {
+                row,
+                col,
+                u_distance,
+                v_distance,
+                tolerance,
+            } => write!(
+                f,
+                "grid point [{row}][{col}] not on curves: u-distance={u_distance:.6}, v-distance={v_distance:.6}, tolerance={tolerance:.6}"
+            ),
         }
     }
 }

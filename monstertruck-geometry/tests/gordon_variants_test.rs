@@ -1,6 +1,5 @@
 use monstertruck_core::tolerance_constants::SNAP_TOLERANCE;
 use monstertruck_geometry::errors::Error;
-use monstertruck_geometry::nurbs::curve_intersect;
 use monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic;
 use monstertruck_geometry::nurbs::surface_options::GordonOptions;
 use monstertruck_geometry::prelude::*;
