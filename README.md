@@ -124,7 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 18 -- Gordon Surface from Network)
+### Recent Changes (Phase 19 -- Tessellation Robustness)
+
+- **Centralized tessellation tolerances** -- Replaced hardcoded tessellation magic constants with centralized tolerance expressions. Added `UV_CLOSURE_TOLERANCE` to `monstertruck-core::tolerance_constants`. `TessellationOptions::default()` now derives its value from `TESSELLATION_TOLERANCE`.
+- **Fallback UV interpolation** -- `PolyBoundaryPiece::try_new_with_fallback` in `monstertruck-meshing` falls back to UV interpolation when parameter search fails, preventing face drops during tessellation. Fallback activations are logged via `log::warn!`. Regression test verifies previously-dropped faces now tessellate successfully.
+
+### Earlier Changes (Phase 18 -- Gordon Surface from Network)
 
 - **`try_gordon_from_network`** -- New constructor on `BsplineSurface` that auto-computes intersection grid points from u/v curve families using the curve intersection engine, eliminating the need for callers to supply grid points manually.
 - **`try_gordon_verified`** -- Validated Gordon surface constructor that checks caller-supplied grid points against the input curves, snapping near-miss points within `GordonOptions.grid_tolerance`.

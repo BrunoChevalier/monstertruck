@@ -82,3 +82,7 @@ No changes to the polynomial solver module. Phase 17 added a curve-curve interse
 ## Status Update (Phase 18 -- Gordon Surface from Network)
 
 No changes to the polynomial solver module. Phase 18 added `try_gordon_from_network` and `try_gordon_verified` Gordon surface constructors that leverage the curve intersection engine from Phase 17. The math layer was unaffected.
+
+## Status Update (Phase 19 -- Tessellation Robustness)
+
+No changes to the polynomial solver module. Phase 19 centralized tessellation tolerance constants and added fallback UV interpolation in `monstertruck-meshing`. The math layer was unaffected.

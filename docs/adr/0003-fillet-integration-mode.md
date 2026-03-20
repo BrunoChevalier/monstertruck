@@ -74,3 +74,7 @@ No changes to fillet integration mode logic. Phase 17 added a curve-curve inters
 ## Status Update (Phase 18 -- Gordon Surface from Network)
 
 No changes to fillet integration mode logic. Phase 18 added `try_gordon_from_network` and `try_gordon_verified` Gordon surface constructors and builder wrappers. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 19 -- Tessellation Robustness)
+
+No changes to fillet integration mode logic. Phase 19 centralized tessellation tolerance constants and added fallback UV interpolation in `monstertruck-meshing`. The fillet integration mode and continuity annotations from this ADR are unaffected.

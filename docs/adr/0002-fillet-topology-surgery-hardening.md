@@ -81,3 +81,7 @@ No changes to fillet topology surgery. Phase 17 added a curve-curve intersection
 ## Status Update (Phase 18 -- Gordon Surface from Network)
 
 No changes to fillet topology surgery. Phase 18 added `try_gordon_from_network` and `try_gordon_verified` Gordon surface constructors and builder wrappers. The fillet surgery code was unaffected.
+
+## Status Update (Phase 19 -- Tessellation Robustness)
+
+No changes to fillet topology surgery. Phase 19 centralized tessellation tolerance constants (`UV_CLOSURE_TOLERANCE`, `TESSELLATION_TOLERANCE`) and added fallback UV interpolation in `monstertruck-meshing` to prevent face drops. The fillet surgery code was unaffected.
