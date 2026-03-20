@@ -70,3 +70,7 @@ No changes to fillet integration mode logic. Phase 16 centralized tolerance cons
 ## Status Update (Phase 17 -- Curve-Curve Intersection)
 
 No changes to fillet integration mode logic. Phase 17 added a curve-curve intersection module in `monstertruck-geometry`. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 18 -- Gordon Surface from Network)
+
+No changes to fillet integration mode logic. Phase 18 added `try_gordon_from_network` and `try_gordon_verified` Gordon surface constructors and builder wrappers. The fillet integration mode and continuity annotations from this ADR are unaffected.

@@ -77,3 +77,7 @@ Phase 16 centralized tolerance constants (including `SNAP_TOLERANCE` and `VERTEX
 ## Status Update (Phase 17 -- Curve-Curve Intersection)
 
 No changes to fillet topology surgery. Phase 17 added a curve-curve intersection module in `monstertruck-geometry`. The new module uses `SNAP_TOLERANCE` from the centralized constants established in Phase 16 but does not interact with the fillet pipeline. The fillet surgery code was unaffected.
+
+## Status Update (Phase 18 -- Gordon Surface from Network)
+
+No changes to fillet topology surgery. Phase 18 added `try_gordon_from_network` and `try_gordon_verified` Gordon surface constructors and builder wrappers. The fillet surgery code was unaffected.

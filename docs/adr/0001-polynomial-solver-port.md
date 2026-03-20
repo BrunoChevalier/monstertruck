@@ -78,3 +78,7 @@ No changes to the polynomial solver module. Phase 16 centralized tolerance const
 ## Status Update (Phase 17 -- Curve-Curve Intersection)
 
 No changes to the polynomial solver module. Phase 17 added a curve-curve intersection module (`monstertruck-geometry::nurbs::curve_intersect`) using subdivision + Newton-Raphson refinement. The intersection algorithm does not use the polynomial solvers; the math layer was unaffected.
+
+## Status Update (Phase 18 -- Gordon Surface from Network)
+
+No changes to the polynomial solver module. Phase 18 added `try_gordon_from_network` and `try_gordon_verified` Gordon surface constructors that leverage the curve intersection engine from Phase 17. The math layer was unaffected.

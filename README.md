@@ -124,7 +124,15 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Recent Changes (Phase 17 -- Curve-Curve Intersection)
+### Recent Changes (Phase 18 -- Gordon Surface from Network)
+
+- **`try_gordon_from_network`** -- New constructor on `BsplineSurface` that auto-computes intersection grid points from u/v curve families using the curve intersection engine, eliminating the need for callers to supply grid points manually.
+- **`try_gordon_verified`** -- Validated Gordon surface constructor that checks caller-supplied grid points against the input curves, snapping near-miss points within `GordonOptions.grid_tolerance`.
+- **`GordonOptions.grid_tolerance`** -- New field controlling the snap distance for grid point validation.
+- **New diagnostics** -- `CurveNetworkDiagnostic::IntersectionCountMismatch` and `GridPointNotOnCurve` variants for detailed error reporting.
+- **Builder wrappers** -- `builder::try_gordon_from_network` and `builder::try_gordon_verified` in `monstertruck-modeling` with topology assembly. 19 tests total covering crossing networks, near-miss snapping, nonuniform spacing, and error cases.
+
+### Earlier Changes (Phase 17 -- Curve-Curve Intersection)
 
 - **Curve intersection module** -- New `monstertruck-geometry::nurbs::curve_intersect` module implementing curve-curve and self-intersection detection via subdivision + Newton-Raphson refinement. Public API: `find_intersections(curve_a, curve_b)` and `find_self_intersections(curve)`, returning `CurveIntersection` results with parameter values (`t0`, `t1`) and intersection `point`. Uses `SNAP_TOLERANCE` from centralized constants. 12 tests cover crossing, tangent, multiple intersections, self-intersection, parallel curves, and degenerate cases.
 
