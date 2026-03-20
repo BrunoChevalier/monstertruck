@@ -1,5 +1,6 @@
 use monstertruck_modeling::errors::Error;
 use monstertruck_modeling::*;
+use monstertruck_geometry::nurbs::surface_options::GordonOptions;
 
 /// Verify that the new error variants exist and display correct messages.
 #[test]
@@ -243,5 +244,87 @@ fn test_try_sweep_periodic_insufficient_sections() {
             required: 3,
             got: 2,
         },
+    );
+}
+
+// --- Gordon variant builder wrappers ---
+
+#[test]
+fn gordon_from_network_builder_success() {
+    let u0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    let u1 = line_bspline(Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0));
+    let v0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0));
+    let v1 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0));
+    let face =
+        builder::try_gordon_from_network(vec![u0, u1], vec![v0, v1], &GordonOptions::default())
+            .unwrap();
+    let boundaries = face.boundaries();
+    assert_eq!(boundaries.len(), 1);
+    assert_eq!(boundaries[0].len(), 4);
+}
+
+#[test]
+fn gordon_verified_builder_success() {
+    let u0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    let u1 = line_bspline(Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0));
+    let v0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0));
+    let v1 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0));
+    let points = vec![
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+        vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+    ];
+    let face = builder::try_gordon_verified(
+        vec![u0, u1],
+        vec![v0, v1],
+        &points,
+        &GordonOptions::default(),
+    )
+    .unwrap();
+    let boundaries = face.boundaries();
+    assert_eq!(boundaries.len(), 1);
+    assert_eq!(boundaries[0].len(), 4);
+}
+
+#[test]
+fn gordon_from_network_error_propagates() {
+    // Parallel non-intersecting curves.
+    let u0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    let v0 = line_bspline(Point3::new(2.0, 0.0, 0.0), Point3::new(3.0, 0.0, 0.0));
+    let result =
+        builder::try_gordon_from_network(vec![u0], vec![v0], &GordonOptions::default());
+    assert!(
+        matches!(result, Err(Error::FromGeometry(_))),
+        "Expected FromGeometry error, got {:?}",
+        result,
+    );
+}
+
+#[test]
+fn gordon_verified_error_propagates() {
+    let u0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    let u1 = line_bspline(Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0));
+    let v0 = line_bspline(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0));
+    let v1 = line_bspline(Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0));
+    // Deliberately wrong grid point.
+    let points = vec![
+        vec![
+            Point3::new(0.5, 0.5, 0.5),
+            Point3::new(1.0, 0.0, 0.0),
+        ],
+        vec![
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+        ],
+    ];
+    let result = builder::try_gordon_verified(
+        vec![u0, u1],
+        vec![v0, v1],
+        &points,
+        &GordonOptions::default(),
+    );
+    assert!(
+        matches!(result, Err(Error::FromGeometry(_))),
+        "Expected FromGeometry error, got {:?}",
+        result,
     );
 }
