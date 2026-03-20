@@ -7,6 +7,8 @@
 //! Each fixture function returns a well-formed [`BsplineCurve`] or
 //! [`BsplineSurface`] that exercises a specific numerical edge case.
 
+use monstertruck_core::tolerance_constants::SNAP_TOLERANCE;
+
 use super::*;
 
 // ---------------------------------------------------------------------------
@@ -390,6 +392,194 @@ pub fn fixture_collapsed_control_polygon_surface() -> BsplineSurface<Point3> {
         ],
     ];
     BsplineSurface::new((knot_u, knot_v), control_points)
+}
+
+// ---------------------------------------------------------------------------
+// Gordon-specific network fixtures (FIXTURE-03)
+// ---------------------------------------------------------------------------
+
+/// A 3x3 network of linear curves forming a planar grid, with grid points
+/// perturbed from exact intersections by half of [`SNAP_TOLERANCE`].
+///
+/// Returns `(u_curves, v_curves, perturbed_grid_points)`. The perturbation
+/// tests the snapping behavior of
+/// [`BsplineSurface::try_gordon_verified`](crate::nurbs::BsplineSurface::try_gordon_verified).
+pub fn fixture_gordon_near_miss_grid(
+) -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>, Vec<Vec<Point3>>) {
+    let eps = SNAP_TOLERANCE * 0.5;
+    let y_values = [0.0, 0.5, 1.0];
+    let x_values = [0.0, 0.5, 1.0];
+
+    // U-curves: horizontal lines at each y-value, from x=0 to x=1.
+    let u_curves = y_values
+        .iter()
+        .map(|&y| {
+            BsplineCurve::new(
+                KnotVector::bezier_knot(1),
+                vec![Point3::new(0.0, y, 0.0), Point3::new(1.0, y, 0.0)],
+            )
+        })
+        .collect();
+
+    // V-curves: vertical lines at each x-value, from y=0 to y=1.
+    let v_curves = x_values
+        .iter()
+        .map(|&x| {
+            BsplineCurve::new(
+                KnotVector::bezier_knot(1),
+                vec![Point3::new(x, 0.0, 0.0), Point3::new(x, 1.0, 0.0)],
+            )
+        })
+        .collect();
+
+    // Grid points offset from exact intersections by (eps, eps, 0).
+    let grid_points = y_values
+        .iter()
+        .map(|&y| {
+            x_values
+                .iter()
+                .map(|&x| Point3::new(x + eps, y + eps, 0.0))
+                .collect()
+        })
+        .collect();
+
+    (u_curves, v_curves, grid_points)
+}
+
+/// A 4x3 network (4 u-curves, 3 v-curves) with nonuniform spacing.
+///
+/// U-curves at y = 0.0, 0.1, 0.7, 1.0 (clustered near y=0).
+/// V-curves at x = 0.0, 0.5, 1.0. All linear curves on a planar grid.
+/// Tests [`BsplineSurface::try_gordon_from_network`](crate::nurbs::BsplineSurface::try_gordon_from_network)
+/// with asymmetric curve distributions.
+pub fn fixture_gordon_nonuniform_spacing(
+) -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>) {
+    let y_values = [0.0, 0.1, 0.7, 1.0];
+    let x_values = [0.0, 0.5, 1.0];
+
+    let u_curves = y_values
+        .iter()
+        .map(|&y| {
+            BsplineCurve::new(
+                KnotVector::bezier_knot(1),
+                vec![Point3::new(0.0, y, 0.0), Point3::new(1.0, y, 0.0)],
+            )
+        })
+        .collect();
+
+    let v_curves = x_values
+        .iter()
+        .map(|&x| {
+            BsplineCurve::new(
+                KnotVector::bezier_knot(1),
+                vec![Point3::new(x, 0.0, 0.0), Point3::new(x, 1.0, 0.0)],
+            )
+        })
+        .collect();
+
+    (u_curves, v_curves)
+}
+
+/// A 3x3 network where all curves are degree 4 (quartic).
+///
+/// U-curves go along X at different Y values with 5 control points each.
+/// V-curves go along Y at different X values, also degree 4. Uses
+/// [`KnotVector::bezier_knot(4)`] for each curve. Tests Gordon surface
+/// construction with high-degree input curves that require compatibility
+/// normalization.
+pub fn fixture_gordon_high_degree_family(
+) -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>) {
+    let y_values = [0.0, 0.5, 1.0];
+    let x_values = [0.0, 0.5, 1.0];
+    let knot = KnotVector::bezier_knot(4);
+
+    // U-curves: degree-4 curves along X for each y-value.
+    // 5 control points evenly spaced along X with slight Z curvature.
+    let u_curves = y_values
+        .iter()
+        .map(|&y| {
+            let pts = (0..5)
+                .map(|k| {
+                    let x = k as f64 / 4.0;
+                    // Small Z bulge at the middle to provide some curvature.
+                    let z = 0.1 * (x * (1.0 - x));
+                    Point3::new(x, y, z)
+                })
+                .collect();
+            BsplineCurve::new(knot.clone(), pts)
+        })
+        .collect();
+
+    // V-curves: degree-4 curves along Y for each x-value.
+    let v_curves = x_values
+        .iter()
+        .map(|&x| {
+            let pts = (0..5)
+                .map(|k| {
+                    let y = k as f64 / 4.0;
+                    let z = 0.1 * (x * (1.0 - x));
+                    Point3::new(x, y, z)
+                })
+                .collect();
+            BsplineCurve::new(knot.clone(), pts)
+        })
+        .collect();
+
+    (u_curves, v_curves)
+}
+
+/// A 2x2 network of cubic curves that are genuinely curved (not linear),
+/// forming a curved patch.
+///
+/// U-curves are parabolic arcs at y=0 and y=1 (with control points creating
+/// a bulge in Z). V-curves are parabolic arcs at x=0 and x=1. Tests Gordon
+/// surface construction with non-trivial curve geometry.
+pub fn fixture_gordon_curved_network(
+) -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>) {
+    let knot = KnotVector::bezier_knot(3);
+
+    // U-curves: cubic arcs along X at y=0 and y=1.
+    // Control points create a Z-bulge (parabolic arc shape).
+    let u0 = BsplineCurve::new(
+        knot.clone(),
+        vec![
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.33, 0.0, 0.3),
+            Point3::new(0.67, 0.0, 0.3),
+            Point3::new(1.0, 0.0, 0.0),
+        ],
+    );
+    let u1 = BsplineCurve::new(
+        knot.clone(),
+        vec![
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(0.33, 1.0, 0.3),
+            Point3::new(0.67, 1.0, 0.3),
+            Point3::new(1.0, 1.0, 0.0),
+        ],
+    );
+
+    // V-curves: cubic arcs along Y at x=0 and x=1.
+    let v0 = BsplineCurve::new(
+        knot.clone(),
+        vec![
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.33, 0.2),
+            Point3::new(0.0, 0.67, 0.2),
+            Point3::new(0.0, 1.0, 0.0),
+        ],
+    );
+    let v1 = BsplineCurve::new(
+        knot,
+        vec![
+            Point3::new(1.0, 0.0, 0.0),
+            Point3::new(1.0, 0.33, 0.2),
+            Point3::new(1.0, 0.67, 0.2),
+            Point3::new(1.0, 1.0, 0.0),
+        ],
+    );
+
+    (vec![u0, u1], vec![v0, v1])
 }
 
 #[cfg(test)]
