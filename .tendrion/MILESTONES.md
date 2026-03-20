@@ -2,13 +2,17 @@
 
 ## Current Milestone
 
+No active milestone. Run `/td:new-milestone` to start one.
+
+## History
+
+### v0.5.1
 **Name:** v0.5.1
 **Started:** 2026-03-19
 **Goal:** Complete remaining AYAM_PORT_PLAN.md open points: intersection-grid Gordon variants, trim tessellation robustness, shared tolerance constants, fixture corpus expansion, and migration guidance documentation.
-**Phases:** 16-TBD
-**Status:** In Progress
-
-## History
+**Phases:** 16-20
+**Status:** Complete
+**Completed:** 2026-03-20
 
 ### v0.5.0
 **Started:** 2026-03-19
@@ -39,4 +43,4 @@
 **Completed:** 2026-03-16
 
 ---
-*Last updated: 2026-03-19*
+*Last updated: 2026-03-20*

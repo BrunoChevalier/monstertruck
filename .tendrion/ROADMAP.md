@@ -115,57 +115,19 @@
 **Plans**: Archived — see `.tendrion/milestones/v0.5.0-ROADMAP.md`
 
 ### Phase 16: Tolerance Foundation and API Safety
-**Goal**: All tolerance constants are centralized in monstertruck-core and surface constructor option structs are safe for future extension
-**Depends on**: Phase 15
-**Requirements**: TOLAPI-01, TOLAPI-02, TOLAPI-03
-**Success Criteria** (what must be TRUE):
-  1. A `tolerance_constants` module in monstertruck-core exports SNAP_TOLERANCE, VERTEX_MERGE_TOLERANCE, TESSELLATION_TOLERANCE, PERIODIC_CLOSURE_RATIO, G1_ANGLE_TOLERANCE, and G2_CURVATURE_TOLERANCE with defaults that preserve existing behavior
-  2. All surface constructor option structs (GordonOptions, SkinOptions, SweepRailOptions, Birail1Options, Birail2Options) have `#[non_exhaustive]` and downstream code still compiles
-  3. The deprecated `gordon()` function delegates to `try_gordon()` with no independent implementation logic
-  4. All existing tests pass without behavioral changes from tolerance centralization
-**Plans**: TBD
+**Plans**: Archived — see `.tendrion/milestones/v0.5.1-ROADMAP.md`
 
 ### Phase 17: Curve Intersection Engine
-**Goal**: A reusable curve-curve intersection module exists in monstertruck-geometry that downstream Gordon and trim code can call
-**Depends on**: Phase 16
-**Requirements**: CURVINT-01
-**Success Criteria** (what must be TRUE):
-  1. `monstertruck-geometry/src/nurbs/curve_intersect.rs` exports a public function that returns intersection parameters for two NURBS/B-spline curves
-  2. Intersection results are accurate within SNAP_TOLERANCE from centralized constants
-  3. The module handles degenerate cases (parallel curves, tangent intersections, self-intersections) without panics
-**Plans**: TBD
+**Plans**: Archived — see `.tendrion/milestones/v0.5.1-ROADMAP.md`
 
 ### Phase 18: Gordon Surface Variants
-**Goal**: Users can construct Gordon surfaces either by supplying a curve network (auto-intersection) or by providing pre-computed grid points with validation
-**Depends on**: Phase 17
-**Requirements**: GORDON-01, GORDON-02
-**Success Criteria** (what must be TRUE):
-  1. `try_gordon_from_network` computes intersection grid points from curve families using the curve intersection engine before compatibility normalization
-  2. `try_gordon_verified` validates that caller-supplied grid points lie on both curve families within tolerance and snaps near-miss points
-  3. Both variants produce surfaces equivalent to manual `try_gordon` calls with correctly computed grid points
-  4. Gordon-specific network fixtures (near-miss grid points, nonuniform spacing) exercise both new variants
-**Plans**: TBD
+**Plans**: Archived — see `.tendrion/milestones/v0.5.1-ROADMAP.md`
 
 ### Phase 19: Trim Tessellation Robustness
-**Goal**: Trimmed face tessellation recovers from parameter search failures instead of silently dropping faces, and tessellation thresholds derive from centralized constants
-**Depends on**: Phase 16
-**Requirements**: TRIM-01, TRIM-02
-**Success Criteria** (what must be TRUE):
-  1. `PolyBoundaryPiece::try_new` falls back to UV interpolation from neighbors when parameter search fails, instead of returning None
-  2. The hardcoded `1.0e-3` closure threshold and other tessellation magic constants are replaced with expressions derived from centralized tolerance constants
-  3. Previously-dropped trimmed faces now tessellate successfully on regression fixtures
-**Plans**: TBD
+**Plans**: Archived — see `.tendrion/milestones/v0.5.1-ROADMAP.md`
 
 ### Phase 20: Fixture Corpus and Migration Documentation
-**Goal**: Comprehensive test fixtures cover pathological geometry cases across all surface types and migration docs guide users from deprecated to new APIs
-**Depends on**: Phase 18, Phase 19
-**Requirements**: FIXTURE-01, FIXTURE-02, FIXTURE-03, DOC-01
-**Success Criteria** (what must be TRUE):
-  1. Fixture corpus includes problematic rail/section combinations (inflection rails, converging rails, degenerate sections) with integration tests exercising surface constructors
-  2. Fixture corpus includes near-degenerate NURBS cases (near-zero Jacobian, near-zero weight, collapsed control points) with tests verifying graceful handling
-  3. Gordon-specific network fixtures (near-miss grid points, nonuniform spacing, high-degree curve families) are present and exercised by `try_gordon_from_network` and `try_gordon_verified`
-  4. Doc comments on `try_*` functions and crate-level docs include before/after migration examples showing manual vs. automatic workflows
-**Plans**: TBD
+**Plans**: Archived — see `.tendrion/milestones/v0.5.1-ROADMAP.md`
 
 ## Progress
 
