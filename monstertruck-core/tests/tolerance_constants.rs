@@ -1,7 +1,7 @@
 use monstertruck_core::tolerance::TOLERANCE;
 use monstertruck_core::tolerance_constants::{
     G1_ANGLE_TOLERANCE, G2_CURVATURE_TOLERANCE, PERIODIC_CLOSURE_RATIO, SNAP_TOLERANCE,
-    TESSELLATION_TOLERANCE, VERTEX_MERGE_TOLERANCE,
+    TESSELLATION_TOLERANCE, UV_CLOSURE_TOLERANCE, VERTEX_MERGE_TOLERANCE,
 };
 
 #[test]
@@ -42,4 +42,14 @@ fn snap_tolerance_numeric_value() {
 #[test]
 fn vertex_merge_tolerance_numeric_value() {
     assert!((VERTEX_MERGE_TOLERANCE - 1.0e-4).abs() < 1.0e-14);
+}
+
+#[test]
+fn uv_closure_tolerance_value() {
+    // UV_CLOSURE_TOLERANCE should be TESSELLATION_TOLERANCE / 10.
+    assert!((UV_CLOSURE_TOLERANCE - TESSELLATION_TOLERANCE / 10.0).abs() < f64::EPSILON);
+    // Must be positive.
+    assert!(UV_CLOSURE_TOLERANCE > 0.0);
+    // Must be smaller than TESSELLATION_TOLERANCE.
+    assert!(UV_CLOSURE_TOLERANCE < TESSELLATION_TOLERANCE);
 }
