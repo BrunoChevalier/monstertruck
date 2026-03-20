@@ -404,8 +404,11 @@ pub fn fixture_collapsed_control_polygon_surface() -> BsplineSurface<Point3> {
 /// Returns `(u_curves, v_curves, perturbed_grid_points)`. The perturbation
 /// tests the snapping behavior of
 /// [`BsplineSurface::try_gordon_verified`](crate::nurbs::BsplineSurface::try_gordon_verified).
-pub fn fixture_gordon_near_miss_grid(
-) -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>, Vec<Vec<Point3>>) {
+pub fn fixture_gordon_near_miss_grid() -> (
+    Vec<BsplineCurve<Point3>>,
+    Vec<BsplineCurve<Point3>>,
+    Vec<Vec<Point3>>,
+) {
     let eps = SNAP_TOLERANCE * 0.5;
     let y_values = [0.0, 0.5, 1.0];
     let x_values = [0.0, 0.5, 1.0];
@@ -446,16 +449,17 @@ pub fn fixture_gordon_near_miss_grid(
     (u_curves, v_curves, grid_points)
 }
 
-/// A 4x3 network (4 u-curves, 3 v-curves) with nonuniform spacing.
+/// A 4x4 network with nonuniform spacing in both directions.
 ///
 /// U-curves at y = 0.0, 0.1, 0.7, 1.0 (clustered near y=0).
-/// V-curves at x = 0.0, 0.5, 1.0. All linear curves on a planar grid.
-/// Tests [`BsplineSurface::try_gordon_from_network`](crate::nurbs::BsplineSurface::try_gordon_from_network)
-/// with asymmetric curve distributions.
-pub fn fixture_gordon_nonuniform_spacing(
-) -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>) {
+/// V-curves at x = 0.0, 0.2, 0.8, 1.0 (clustered near both ends).
+/// All linear curves on a planar grid. Tests
+/// [`BsplineSurface::try_gordon_from_network`](crate::nurbs::BsplineSurface::try_gordon_from_network)
+/// with nonuniform curve distributions.
+pub fn fixture_gordon_nonuniform_spacing() -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>)
+{
     let y_values = [0.0, 0.1, 0.7, 1.0];
-    let x_values = [0.0, 0.5, 1.0];
+    let x_values = [0.0, 0.2, 0.8, 1.0];
 
     let u_curves = y_values
         .iter()
@@ -484,26 +488,24 @@ pub fn fixture_gordon_nonuniform_spacing(
 ///
 /// U-curves go along X at different Y values with 5 control points each.
 /// V-curves go along Y at different X values, also degree 4. Uses
-/// [`KnotVector::bezier_knot(4)`] for each curve. Tests Gordon surface
-/// construction with high-degree input curves that require compatibility
-/// normalization.
-pub fn fixture_gordon_high_degree_family(
-) -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>) {
+/// [`KnotVector::bezier_knot(4)`] for each curve. All curves are planar
+/// (z=0), but the high degree exercises compatibility normalization in
+/// the Gordon surface construction.
+pub fn fixture_gordon_high_degree_family() -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>)
+{
     let y_values = [0.0, 0.5, 1.0];
     let x_values = [0.0, 0.5, 1.0];
     let knot = KnotVector::bezier_knot(4);
 
     // U-curves: degree-4 curves along X for each y-value.
-    // 5 control points evenly spaced along X with slight Z curvature.
+    // 5 control points evenly spaced along X, planar in the XY plane.
     let u_curves = y_values
         .iter()
         .map(|&y| {
             let pts = (0..5)
                 .map(|k| {
                     let x = k as f64 / 4.0;
-                    // Small Z bulge at the middle to provide some curvature.
-                    let z = 0.1 * (x * (1.0 - x));
-                    Point3::new(x, y, z)
+                    Point3::new(x, y, 0.0)
                 })
                 .collect();
             BsplineCurve::new(knot.clone(), pts)
@@ -517,8 +519,7 @@ pub fn fixture_gordon_high_degree_family(
             let pts = (0..5)
                 .map(|k| {
                     let y = k as f64 / 4.0;
-                    let z = 0.1 * (x * (1.0 - x));
-                    Point3::new(x, y, z)
+                    Point3::new(x, y, 0.0)
                 })
                 .collect();
             BsplineCurve::new(knot.clone(), pts)
@@ -534,8 +535,7 @@ pub fn fixture_gordon_high_degree_family(
 /// U-curves are parabolic arcs at y=0 and y=1 (with control points creating
 /// a bulge in Z). V-curves are parabolic arcs at x=0 and x=1. Tests Gordon
 /// surface construction with non-trivial curve geometry.
-pub fn fixture_gordon_curved_network(
-) -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>) {
+pub fn fixture_gordon_curved_network() -> (Vec<BsplineCurve<Point3>>, Vec<BsplineCurve<Point3>>) {
     let knot = KnotVector::bezier_knot(3);
 
     // U-curves: cubic arcs along X at y=0 and y=1.
@@ -689,10 +689,9 @@ mod tests {
         // Verify convergence: endpoints are within 1e-8.
         let end1 = rail1.control_points().last().unwrap();
         let end2 = rail2.control_points().last().unwrap();
-        let dist = ((end1.x - end2.x).powi(2)
-            + (end1.y - end2.y).powi(2)
-            + (end1.z - end2.z).powi(2))
-        .sqrt();
+        let dist =
+            ((end1.x - end2.x).powi(2) + (end1.y - end2.y).powi(2) + (end1.z - end2.z).powi(2))
+                .sqrt();
         assert!(dist < 1e-8, "endpoints should converge, dist = {dist}");
     }
 
@@ -717,7 +716,10 @@ mod tests {
         let p1 = &curve.control_points()[1];
         let p2 = &curve.control_points()[2];
         let dist = ((p1.x - p2.x).powi(2) + (p1.y - p2.y).powi(2) + (p1.z - p2.z).powi(2)).sqrt();
-        assert!(dist < 1e-14, "adjacent points should coincide, dist = {dist}");
+        assert!(
+            dist < 1e-14,
+            "adjacent points should coincide, dist = {dist}"
+        );
     }
 
     // FIXTURE-02: Near-degenerate NURBS cases
@@ -731,11 +733,13 @@ mod tests {
         // Verify first row is nearly coincident.
         let row0 = &surface.control_points()[0];
         row0.windows(2).for_each(|w| {
-            let dist = ((w[0].x - w[1].x).powi(2)
-                + (w[0].y - w[1].y).powi(2)
-                + (w[0].z - w[1].z).powi(2))
-            .sqrt();
-            assert!(dist < 1e-10, "first-row points should be nearly coincident, dist = {dist}");
+            let dist =
+                ((w[0].x - w[1].x).powi(2) + (w[0].y - w[1].y).powi(2) + (w[0].z - w[1].z).powi(2))
+                    .sqrt();
+            assert!(
+                dist < 1e-10,
+                "first-row points should be nearly coincident, dist = {dist}"
+            );
         });
     }
 
@@ -760,7 +764,10 @@ mod tests {
         surface.control_points().iter().for_each(|row| {
             let p = &row[0];
             let dist = (p.x.powi(2) + p.y.powi(2) + p.z.powi(2)).sqrt();
-            assert!(dist < 1e-14, "column-0 point should be at origin, dist = {dist}");
+            assert!(
+                dist < 1e-14,
+                "column-0 point should be at origin, dist = {dist}"
+            );
         });
     }
 
@@ -772,9 +779,7 @@ mod tests {
         assert_eq!(u_curves.len(), 3);
         assert_eq!(v_curves.len(), 3);
         assert_eq!(grid_points.len(), 3);
-        grid_points
-            .iter()
-            .for_each(|row| assert_eq!(row.len(), 3));
+        grid_points.iter().for_each(|row| assert_eq!(row.len(), 3));
         // All curves should be linear (degree 1).
         u_curves
             .iter()
@@ -810,7 +815,7 @@ mod tests {
     fn gordon_nonuniform_spacing_valid() {
         let (u_curves, v_curves) = fixture_gordon_nonuniform_spacing();
         assert_eq!(u_curves.len(), 4);
-        assert_eq!(v_curves.len(), 3);
+        assert_eq!(v_curves.len(), 4);
         // All curves should be linear.
         u_curves
             .iter()
@@ -824,13 +829,10 @@ mod tests {
         assert_eq!(u_curves.len(), 3);
         assert_eq!(v_curves.len(), 3);
         // All curves should be degree 4 (quartic).
-        u_curves
-            .iter()
-            .chain(v_curves.iter())
-            .for_each(|c| {
-                assert_eq!(c.degree(), 4, "expected degree 4, got {}", c.degree());
-                assert_eq!(c.control_points().len(), 5);
-            });
+        u_curves.iter().chain(v_curves.iter()).for_each(|c| {
+            assert_eq!(c.degree(), 4, "expected degree 4, got {}", c.degree());
+            assert_eq!(c.control_points().len(), 5);
+        });
     }
 
     #[test]

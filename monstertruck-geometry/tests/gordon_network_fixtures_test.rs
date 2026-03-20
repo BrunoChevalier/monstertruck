@@ -6,7 +6,6 @@
 //! and
 //! [`try_gordon_verified`](monstertruck_geometry::nurbs::BsplineSurface::try_gordon_verified).
 
-use monstertruck_core::tolerance_constants::SNAP_TOLERANCE;
 use monstertruck_geometry::errors::Error;
 use monstertruck_geometry::nurbs::surface_diagnostics::CurveNetworkDiagnostic;
 use monstertruck_geometry::nurbs::surface_options::GordonOptions;
@@ -16,8 +15,12 @@ use monstertruck_geometry::prelude::*;
 #[test]
 fn gordon_near_miss_grid_snaps_successfully() {
     let (u_curves, v_curves, grid_points) = test_fixtures::fixture_gordon_near_miss_grid();
-    let result =
-        BsplineSurface::try_gordon_verified(u_curves, v_curves, &grid_points, &GordonOptions::default());
+    let result = BsplineSurface::try_gordon_verified(
+        u_curves,
+        v_curves,
+        &grid_points,
+        &GordonOptions::default(),
+    );
     assert!(
         result.is_ok(),
         "Near-miss grid points within SNAP_TOLERANCE should snap, got {:?}",
