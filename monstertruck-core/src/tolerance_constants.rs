@@ -15,6 +15,8 @@
 //!   closure. Historically `0.01`.
 //! - `G1_ANGLE_TOLERANCE`: Angle in radians for G1 tangent continuity
 //!   classification (~1 degree). Historically `0.0175`.
+//! - `UV_CLOSURE_TOLERANCE`: UV-space closure threshold for boundary piece loop
+//!   detection. Derived as `TESSELLATION_TOLERANCE / 10.0` = `0.001`.
 //! - `G2_CURVATURE_TOLERANCE`: Relative tolerance for mean curvature matching
 //!   in G2 continuity classification (10%). Historically `0.10`.
 

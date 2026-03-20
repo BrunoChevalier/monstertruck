@@ -49,7 +49,7 @@ fn uv_closure_tolerance_value() {
     // UV_CLOSURE_TOLERANCE should be TESSELLATION_TOLERANCE / 10.
     assert!((UV_CLOSURE_TOLERANCE - TESSELLATION_TOLERANCE / 10.0).abs() < f64::EPSILON);
     // Must be positive.
-    assert!(UV_CLOSURE_TOLERANCE > 0.0);
+    const { assert!(UV_CLOSURE_TOLERANCE > 0.0) }
     // Must be smaller than TESSELLATION_TOLERANCE.
-    assert!(UV_CLOSURE_TOLERANCE < TESSELLATION_TOLERANCE);
+    const { assert!(UV_CLOSURE_TOLERANCE < TESSELLATION_TOLERANCE) }
 }
