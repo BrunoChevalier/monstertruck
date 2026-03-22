@@ -90,3 +90,7 @@ No changes to the polynomial solver module. Phase 19 centralized tessellation to
 ## Status Update (Phase 20 -- Fixture Corpus & Migration Documentation, v0.5.1 Final)
 
 No changes to the polynomial solver module. Phase 20 expanded the pathological geometry fixture corpus (7 surface construction fixtures, 6 Gordon network fixtures), added migration doc comments on all 7 `try_*` surface constructor functions, and created a crate-level migration guide. The math layer was unaffected. This ADR remains Accepted with no anticipated changes. Milestone v0.5.1 is complete.
+
+## Status Update (Phase 21 -- Fillet Edge Identity Fix)
+
+No changes to the polynomial solver module. Phase 21 fixed edge identity preservation in fillet topology surgery (`monstertruck-solid`). The math layer was unaffected.

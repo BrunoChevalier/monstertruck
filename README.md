@@ -124,6 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Phase 21 -- Fillet Edge Identity Fix
+
+- **Edge identity preservation** -- `ensure_cuttable_edge` in `monstertruck-solid::fillet::topology` now uses `set_curve()` instead of `Edge::new()` when converting `IntersectionCurve` edges to NURBS approximations. This preserves the `Edge` arc identity through fillet conversion, preventing dangling references in the topology graph.
+- **Widened endpoint tolerance** -- Endpoint matching in `monstertruck-solid::fillet::convert` was widened from `TOLERANCE` (1e-6) to `SNAP_TOLERANCE` (1e-5) for boolean-origin edges, accommodating the approximation error introduced by NURBS conversion of intersection curves.
+- **Integration tests** -- 2 new tests verify edge identity preservation after conversion and endpoint tolerance matching for boolean-origin edges.
+
 ### Milestone v0.5.1 Summary (Phases 16--20)
 
 Milestone v0.5.1 focused on API hardening, robustness infrastructure, and migration documentation for the surface construction pipeline.

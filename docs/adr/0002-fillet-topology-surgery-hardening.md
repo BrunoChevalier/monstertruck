@@ -89,3 +89,7 @@ No changes to fillet topology surgery. Phase 19 centralized tessellation toleran
 ## Status Update (Phase 20 -- Fixture Corpus & Migration Documentation, v0.5.1 Final)
 
 No changes to fillet topology surgery. Phase 20 expanded the pathological geometry fixture corpus with surface construction and Gordon network fixtures, added migration doc comments on `try_*` functions, and created a crate-level migration guide. The fillet surgery code was unaffected. This ADR remains Accepted. Milestone v0.5.1 is complete.
+
+## Status Update (Phase 21 -- Edge Identity Preservation)
+
+Phase 21 directly refined the topology surgery established by this ADR. The `ensure_cuttable_edge()` function in `monstertruck-solid::fillet::topology` was changed from `Edge::new()` to `set_curve()` when converting `IntersectionCurve` edges to NURBS approximations. The previous approach created a new `Edge` arc, breaking identity references held elsewhere in the topology graph. Using `set_curve()` mutates the curve in-place, preserving the original `Edge` arc identity. Additionally, endpoint matching tolerance in `fillet::convert` was widened from `TOLERANCE` (1e-6) to `SNAP_TOLERANCE` (1e-5) for boolean-origin edges, accommodating approximation error from the NURBS conversion. Two integration tests verify these fixes.
