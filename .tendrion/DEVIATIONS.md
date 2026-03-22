@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 48 | Approval-needed: 0 | Total: 48
+**Summary:** Auto-fixes: 49 | Approval-needed: 0 | Total: 49
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -333,4 +333,11 @@
 **Category:** bug
 **Description:** Nonuniform spacing fixture changed from 4x3 to 4x4 to avoid pre-existing asymmetric grid bug in try_gordon. High-degree fixture also changed from 3x3 quartic with Z-curvature to 3x3 quartic with uniform Z to ensure intersection detection works.
 **Files changed:** monstertruck-geometry/src/nurbs/test_fixtures.rs
+**Status:** applied
+
+### [2026-03-22T19:26:24.898Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** 6 pre-existing test failures in monstertruck-solid (test_unit_circle, generic_fillet_unsupported, generic_fillet_identity, generic_fillet_mixed_surfaces, generic_fillet_modeling_types, generic_fillet_multi_chain) -- not caused by this plan's changes
+**Files changed:** none
 **Status:** applied
