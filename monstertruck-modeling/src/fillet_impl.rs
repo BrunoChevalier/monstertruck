@@ -66,3 +66,37 @@ fn sample_to_nurbs(
     let bsp = BsplineCurve::new(knot_vec, pts);
     NurbsCurve::from(bsp)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use monstertruck_core::assert_near;
+
+    /// Verifies that `sample_to_nurbs` produces a degree-3 curve
+    /// and that the resulting curve interpolates the sampled points.
+    #[test]
+    fn sample_to_nurbs_produces_degree_3() {
+        // A quarter circle in the XY plane: (cos(t), sin(t), 0) for t in [0, PI/2].
+        let range = (0.0, std::f64::consts::FRAC_PI_2);
+        let evaluate = |t: f64| Point3::new(t.cos(), t.sin(), 0.0);
+        let n = 24;
+
+        let nurbs = sample_to_nurbs(range, evaluate, n);
+
+        // Must be degree 3.
+        assert_eq!(nurbs.degree(), 3);
+
+        // Must interpolate the endpoints.
+        assert_near!(nurbs.subs(0.0), Point3::new(1.0, 0.0, 0.0));
+        assert_near!(nurbs.subs(1.0), Point3::new(0.0, 1.0, 0.0));
+
+        // Must approximate the midpoint well.
+        let mid_t = std::f64::consts::FRAC_PI_4;
+        let expected_mid = Point3::new(mid_t.cos(), mid_t.sin(), 0.0);
+        let actual_mid = nurbs.subs(0.5);
+        assert!(
+            actual_mid.distance(expected_mid) < 0.01,
+            "midpoint error too large: {actual_mid:?} vs {expected_mid:?}",
+        );
+    }
+}
