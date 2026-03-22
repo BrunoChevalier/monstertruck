@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 50 | Approval-needed: 0 | Total: 50
+**Summary:** Auto-fixes: 52 | Approval-needed: 0 | Total: 52
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -346,5 +346,19 @@
 **Type:** auto-fix
 **Category:** bug
 **Description:** 6 pre-existing test failures in monstertruck-solid (generic_fillet_identity, generic_fillet_mixed_surfaces, generic_fillet_modeling_types, generic_fillet_multi_chain, generic_fillet_unsupported, test_unit_circle) -- confirmed they fail on master without any changes
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-22T20:27:50.451Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing test failures in fillet::geometry::test_unit_circle and fillet::tests::generic_fillet_identity -- not caused by this plan
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-22T20:46:18.388Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** 6 pre-existing test failures in monstertruck-solid (generic_fillet_identity, generic_fillet_modeling_types, generic_fillet_mixed_surfaces, generic_fillet_multi_chain, generic_fillet_unsupported, test_unit_circle) -- not caused by plan 22-3 changes
 **Files changed:** none
 **Status:** applied
