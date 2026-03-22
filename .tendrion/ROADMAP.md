@@ -33,7 +33,7 @@
 - [x] **Phase 20: Fixture Corpus and Migration Documentation** - Expand test fixtures across all surface types and add migration guidance docs
 - [x] **Phase 21: Edge Identity and Topology Repair** - Fix edge identity preservation in ensure_cuttable_edge and widen conversion tolerance for boolean-origin edges
 - [x] **Phase 22: Conversion Fidelity** - Degree-3 cubic interpolation, endpoint snapping, and exact RevolutedCurve conversion to eliminate geometric loss
-- [ ] **Phase 23: Error Propagation and Test Hardening** - Replace silent fillet rollback with explicit errors and fix proptest tolerance
+- [x] **Phase 23: Error Propagation and Test Hardening** - Replace silent fillet rollback with explicit errors and fix proptest tolerance
 
 ## Phase Details
 
@@ -192,7 +192,7 @@
 | 20. Fixture Corpus and Migration Documentation | v0.5.1 | 3/3 | ✓ Complete | 2026-03-20 |
 | 21. Edge Identity and Topology Repair | v0.5.2 | 1/1 | ✓ Complete | 2026-03-22 |
 | 22. Conversion Fidelity | v0.5.2 | 3/3 | ✓ Complete | 2026-03-22 |
-| 23. Error Propagation and Test Hardening | v0.5.2 | 0/TBD | Not started | - |
+| 23. Error Propagation and Test Hardening | v0.5.2 | 1/1 | ✓ Complete | 2026-03-22 |
 
 ---
 
