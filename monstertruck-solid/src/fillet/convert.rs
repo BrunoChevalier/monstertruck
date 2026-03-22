@@ -1,4 +1,5 @@
 use monstertruck_core::tolerance::Tolerance;
+use monstertruck_core::tolerance_constants::SNAP_TOLERANCE;
 use monstertruck_geometry::prelude::*;
 use monstertruck_traits::{BoundedCurve, ParametricCurve, ParametricSurface};
 
@@ -153,8 +154,10 @@ pub(super) fn convert_shell_in<C: FilletableCurve, S: FilletableSurface>(
                 .find(|ie| {
                     let f = ie.absolute_front().point();
                     let b = ie.absolute_back().point();
-                    (f.near(ext_front) && b.near(ext_back))
-                        || (f.near(ext_back) && b.near(ext_front))
+                    (f.abs_diff_eq(ext_front, SNAP_TOLERANCE)
+                        && b.abs_diff_eq(ext_back, SNAP_TOLERANCE))
+                        || (f.abs_diff_eq(ext_back, SNAP_TOLERANCE)
+                            && b.abs_diff_eq(ext_front, SNAP_TOLERANCE))
                 })
                 .map(|ie| ie.id())
                 .ok_or(FilletError::EdgeNotFound)

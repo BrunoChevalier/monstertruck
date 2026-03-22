@@ -34,14 +34,9 @@ pub(super) fn take_ori<T>(ori: bool, (a, b): (T, T)) -> T {
 pub(super) fn ensure_cuttable_edge(edge: &Edge) -> Edge {
     if matches!(edge.curve(), Curve::IntersectionCurve(_)) {
         let nurbs = edge.curve().to_nurbs_curve();
-        Edge::new(
-            edge.absolute_front(),
-            edge.absolute_back(),
-            Curve::NurbsCurve(nurbs),
-        )
-    } else {
-        edge.clone()
+        edge.set_curve(Curve::NurbsCurve(nurbs));
     }
+    edge.clone()
 }
 
 pub(super) fn cut_face_by_bezier(
