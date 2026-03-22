@@ -3569,3 +3569,129 @@ fn keep_separate_face_unchanged_behavior() {
         "KeepSeparateFace and default should produce identical topology"
     );
 }
+
+/// `ensure_cuttable_edge` must preserve edge identity when converting
+/// an `IntersectionCurve` edge to a `NurbsCurve` edge. After conversion,
+/// `is_same()` between the original and converted edge must return `true`
+/// so that `cut_face_by_bezier` can locate the edge in the face boundary.
+#[test]
+fn ensure_cuttable_edge_preserves_identity() {
+    use super::topology::ensure_cuttable_edge;
+    use super::types::Curve;
+
+    let pts = [
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(1.0, 1.0, 0.0),
+    ];
+    let v = Vertex::news(&pts);
+
+    // Build a minimal IntersectionCurve edge.
+    let s0: NurbsSurface<Vector4> = NurbsSurface::from(BsplineSurface::new(
+        (KnotVector::bezier_knot(1), KnotVector::bezier_knot(1)),
+        vec![
+            vec![
+                Point3::new(-1.0, -1.0, 0.0),
+                Point3::new(-1.0, 2.0, 0.0),
+            ],
+            vec![
+                Point3::new(2.0, -1.0, 0.0),
+                Point3::new(2.0, 2.0, 0.0),
+            ],
+        ],
+    ));
+    let s1: NurbsSurface<Vector4> = NurbsSurface::from(BsplineSurface::new(
+        (KnotVector::bezier_knot(1), KnotVector::bezier_knot(1)),
+        vec![
+            vec![
+                Point3::new(-1.0, -1.0, -1.0),
+                Point3::new(-1.0, 2.0, 1.0),
+            ],
+            vec![
+                Point3::new(2.0, -1.0, -1.0),
+                Point3::new(2.0, 2.0, 1.0),
+            ],
+        ],
+    ));
+    let leader = ParameterCurve::new(
+        Line(Point2::new(0.0, 0.0), Point2::new(1.0, 1.0)),
+        s0.clone(),
+    );
+    let ic = IntersectionCurve::new(Box::new(s0), Box::new(s1), leader);
+    let edge = Edge::new(&v[0], &v[1], Curve::IntersectionCurve(ic));
+
+    // Verify the edge starts as IntersectionCurve.
+    assert!(
+        matches!(edge.curve(), Curve::IntersectionCurve(_)),
+        "precondition: edge must have IntersectionCurve geometry"
+    );
+
+    let converted = ensure_cuttable_edge(&edge);
+
+    // The converted edge must have NurbsCurve geometry.
+    assert!(
+        matches!(converted.curve(), Curve::NurbsCurve(_)),
+        "converted edge must have NurbsCurve geometry"
+    );
+
+    // CRITICAL: identity must be preserved so that boundary replacement
+    // in cut_face_by_bezier can locate the edge via is_same().
+    assert!(
+        edge.is_same(&converted),
+        "ensure_cuttable_edge must preserve edge identity (same EdgeId)"
+    );
+}
+
+/// `convert_shell_in` must match edges whose endpoints differ by up to
+/// `SNAP_TOLERANCE` (~1e-5). Boolean-origin edges have inherent endpoint
+/// noise at this magnitude due to `IntersectionCurve` approximation.
+#[test]
+fn convert_shell_in_tolerant_endpoint_matching() {
+    use monstertruck_core::tolerance::TOLERANCE;
+    use monstertruck_core::tolerance_constants::SNAP_TOLERANCE;
+    use monstertruck_modeling::builder;
+
+    // Build a simple cube shell.
+    let v = builder::vertex(Point3::origin());
+    let e = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&e, Vector3::unit_y());
+    let solid: monstertruck_modeling::Solid = builder::extrude(&f, Vector3::unit_z());
+    let shell = solid.into_boundaries().into_iter().next().unwrap();
+
+    // Pick an edge from the shell.
+    let target_edge = shell.edge_iter().next().unwrap().clone();
+    let front_pt = target_edge.absolute_front().point();
+    let back_pt = target_edge.absolute_back().point();
+
+    // Create a perturbed edge whose endpoints differ by 5e-6 (between
+    // TOLERANCE=1e-6 and SNAP_TOLERANCE=1e-5). This simulates the noise
+    // from boolean IntersectionCurve edges.
+    let offset = 5e-6;
+    assert!(
+        offset > TOLERANCE && offset < SNAP_TOLERANCE,
+        "offset must be between TOLERANCE and SNAP_TOLERANCE"
+    );
+    let perturbed_front = front_pt + Vector3::new(offset, 0.0, 0.0);
+    let perturbed_back = back_pt + Vector3::new(0.0, offset, 0.0);
+
+    // Build a fake external edge with the perturbed endpoints and a
+    // matching curve (simple line).
+    let pv0 = monstertruck_topology::Vertex::new(perturbed_front);
+    let pv1 = monstertruck_topology::Vertex::new(perturbed_back);
+    let line_nurbs: NurbsCurve<Vector4> = NurbsCurve::from(BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![perturbed_front, perturbed_back],
+    ));
+    let perturbed_edge = monstertruck_topology::Edge::new(
+        &pv0,
+        &pv1,
+        monstertruck_modeling::Curve::NurbsCurve(line_nurbs),
+    );
+
+    // convert_shell_in should find the edge despite the perturbation.
+    let result = super::convert::convert_shell_in(&shell, &[perturbed_edge]);
+    assert!(
+        result.is_ok(),
+        "convert_shell_in should match edges within SNAP_TOLERANCE, got error: {:?}",
+        result.err()
+    );
+}

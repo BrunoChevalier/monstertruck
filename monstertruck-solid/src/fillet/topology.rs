@@ -31,7 +31,7 @@ pub(super) fn take_ori<T>(ori: bool, (a, b): (T, T)) -> T {
 /// This allows `search_closest_parameter` and `not_strictly_cut_with_parameter`
 /// to operate reliably on edges produced by boolean operations, where the
 /// raw IntersectionCurve can cause Newton iteration to diverge.
-fn ensure_cuttable_edge(edge: &Edge) -> Edge {
+pub(super) fn ensure_cuttable_edge(edge: &Edge) -> Edge {
     if matches!(edge.curve(), Curve::IntersectionCurve(_)) {
         let nurbs = edge.curve().to_nurbs_curve();
         Edge::new(
