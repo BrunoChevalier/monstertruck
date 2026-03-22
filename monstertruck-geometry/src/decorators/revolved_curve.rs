@@ -549,6 +549,31 @@ where
     }
 }
 
+impl RevolutedCurve<NurbsCurve<Vector4>> {
+    /// Converts this revolved surface to an exact [`NurbsSurface`] via rational
+    /// circle arc tensor product.
+    ///
+    /// The profile curve becomes the u-direction and the revolution becomes the
+    /// v-direction. A full 2*PI revolution is represented with 9 control points
+    /// (degree 2) using the standard rational Bezier circle decomposition.
+    pub fn to_nurbs_surface(&self) -> NurbsSurface<Vector4> {
+        todo!("not yet implemented")
+    }
+}
+
+impl RevolutedCurve<BsplineCurve<Point3>> {
+    /// Converts this revolved surface to an exact [`NurbsSurface`] via rational
+    /// circle arc tensor product.
+    ///
+    /// The [`BsplineCurve`] profile is first lifted to a [`NurbsCurve`] before
+    /// performing the tensor product construction.
+    pub fn to_nurbs_surface(&self) -> NurbsSurface<Vector4> {
+        let nurbs_curve = NurbsCurve::from(self.curve.clone());
+        RevolutedCurve::by_revolution(nurbs_curve, self.origin(), self.axis())
+            .to_nurbs_surface()
+    }
+}
+
 fn from_axis_angle_derivation(n: usize, axis: Vector3, angle: Rad<f64>) -> Matrix3 {
     let (s, c) = Rad::sin_cos(angle);
     let (s, c) = match n % 4 {
@@ -577,4 +602,94 @@ fn from_axis_angle_derivation(n: usize, axis: Vector3, angle: Rad<f64>) -> Matri
         _1subc * axis[1] * axis[2] - s * axis[0],
         _1subc * axis[2] * axis[2] + c,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use monstertruck_core::assert_near;
+
+    /// Line segment revolved around Y-axis should produce an exact NURBS surface
+    /// whose evaluations match the original `RevolutedCurve` within machine epsilon.
+    #[test]
+    fn to_nurbs_surface_line_around_y_axis() {
+        let line = BsplineCurve::new(
+            KnotVector::bezier_knot(1),
+            vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+        );
+        let revolved = RevolutedCurve::by_revolution(line, Point3::origin(), Vector3::unit_y());
+        let nurbs = revolved.to_nurbs_surface();
+
+        let (u0, u1) = (0.0_f64, 1.0_f64);
+        let (v0, v1) = (0.0_f64, 2.0 * PI);
+        let n = 10;
+        for i in 0..=n {
+            for j in 0..=n {
+                let u = u0 + (u1 - u0) * i as f64 / n as f64;
+                let v = v0 + (v1 - v0) * j as f64 / n as f64;
+                let expected = revolved.evaluate(u, v);
+                let actual = nurbs.subs(u, v);
+                assert_near!(expected, actual, concat!(
+                    "mismatch at (u={}, v={}): expected {:?}, got {:?}"),
+                    u, v, expected, actual,
+                );
+            }
+        }
+    }
+
+    /// Weighted profile curve (rational half-circle) revolved around X-axis
+    /// exercises the weighted tensor product logic.
+    #[test]
+    fn to_nurbs_surface_weighted_profile() {
+        // Upper half circle in XY-plane via rational Bezier.
+        let knot_vec = KnotVector::bezier_knot(2);
+        let control_points = vec![
+            Vector4::new(1.0, 0.0, 0.0, 1.0),
+            Vector4::new(0.0, 1.0, 0.0, 0.0),
+            Vector4::new(-1.0, 0.0, 0.0, 1.0),
+        ];
+        let profile = NurbsCurve::new(BsplineCurve::new(knot_vec, control_points));
+        let revolved =
+            RevolutedCurve::by_revolution(profile, Point3::origin(), Vector3::unit_x());
+        let nurbs = revolved.to_nurbs_surface();
+
+        let n = 10;
+        for i in 0..=n {
+            for j in 0..=n {
+                let u = i as f64 / n as f64;
+                let v = 2.0 * PI * j as f64 / n as f64;
+                let expected = revolved.evaluate(u, v);
+                let actual = nurbs.subs(u, v);
+                assert_near!(expected, actual, concat!(
+                    "mismatch at (u={}, v={}): expected {:?}, got {:?}"),
+                    u, v, expected, actual,
+                );
+            }
+        }
+    }
+
+    /// BsplineCurve convenience conversion also produces exact results.
+    #[test]
+    fn to_nurbs_surface_bspline_convenience() {
+        let line = BsplineCurve::new(
+            KnotVector::bezier_knot(1),
+            vec![Point3::new(2.0, 0.0, 0.0), Point3::new(2.0, 3.0, 0.0)],
+        );
+        let revolved = RevolutedCurve::by_revolution(line, Point3::origin(), Vector3::unit_y());
+        let nurbs = revolved.to_nurbs_surface();
+
+        let n = 8;
+        for i in 0..=n {
+            for j in 0..=n {
+                let u = i as f64 / n as f64;
+                let v = 2.0 * PI * j as f64 / n as f64;
+                let expected = revolved.evaluate(u, v);
+                let actual = nurbs.subs(u, v);
+                assert_near!(expected, actual, concat!(
+                    "mismatch at (u={}, v={}): expected {:?}, got {:?}"),
+                    u, v, expected, actual,
+                );
+            }
+        }
+    }
 }

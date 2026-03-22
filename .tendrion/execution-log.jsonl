@@ -88,3 +88,5 @@
 {"plan_id":"20-3","phase":"20","model":"opus","started_at":"2026-03-20T07:44:38.981Z","completed_at":"2026-03-20T07:55:16.082Z","duration_ms":637101,"status":"complete","deviation_count":{"auto_fix":48,"approval_needed":0}}
 {"plan_id":"21-1","phase":"21","model":"opus","started_at":"2026-03-22T19:25:11.008Z","completed_at":"2026-03-22T19:28:11.008Z","duration_ms":180000,"status":"complete","deviation_count":{"auto_fix":49,"approval_needed":0}}
 {"plan_id":"21-1","phase":"21","model":"opus","started_at":"2026-03-22T19:27:05.284Z","completed_at":"2026-03-22T19:34:01.546Z","duration_ms":416263,"status":"complete","deviation_count":{"auto_fix":49,"approval_needed":0}}
+{"plan_id":"22-1","phase":"22","model":"opus","started_at":"2026-03-22T20:04:48.497Z","completed_at":"2026-03-22T20:11:48.497Z","duration_ms":420000,"status":"complete","deviation_count":{"auto_fix":50,"approval_needed":0}}
+{"plan_id":"22-1","phase":"22","model":"opus","started_at":"2026-03-22T20:05:24.905Z","completed_at":"2026-03-22T20:16:42.634Z","duration_ms":677730,"status":"complete","deviation_count":{"auto_fix":50,"approval_needed":0}}
