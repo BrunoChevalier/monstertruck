@@ -10,7 +10,26 @@ impl TryFrom<Surface> for NurbsSurface<Vector4> {
             Surface::Plane(plane) => Ok(NurbsSurface::from(BsplineSurface::from(plane))),
             Surface::BsplineSurface(bsp) => Ok(NurbsSurface::from(bsp)),
             Surface::NurbsSurface(ns) => Ok(ns),
-            Surface::RevolutedCurve(_) | Surface::TSplineSurface(_) => Err(()),
+            Surface::RevolutedCurve(proc) => {
+                // Convert the inner Curve to NurbsCurve, build a typed
+                // RevolutedCurve<NurbsCurve>, and use the exact tensor product
+                // conversion. Then apply the Processor's transform and orientation.
+                let entity = proc.entity();
+                let nurbs_curve: NurbsCurve<Vector4> =
+                    entity.entity_curve().clone().try_into().map_err(|_| ())?;
+                let typed_rev = RevolutedCurve::by_revolution(
+                    nurbs_curve,
+                    entity.origin(),
+                    entity.axis(),
+                );
+                let mut result = typed_rev.to_nurbs_surface();
+                result.transform_by(*proc.transform());
+                if !proc.orientation() {
+                    result.invert();
+                }
+                Ok(result)
+            }
+            Surface::TSplineSurface(_) => Err(()),
         }
     }
 }
