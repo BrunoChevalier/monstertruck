@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 22 of 23 (Conversion Fidelity)
-**Plan:** 1 of 3
+**Plan:** 2 of 3
 **Progress:**
 
 
