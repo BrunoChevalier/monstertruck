@@ -70,7 +70,7 @@ impl<T> FilletableCurve for T where
 {
 }
 
-fn sample_curve_to_nurbs(
+pub(super) fn sample_curve_to_nurbs(
     range: (f64, f64),
     evaluate: impl Fn(f64) -> Point3,
     sample_count: usize,

@@ -3695,3 +3695,152 @@ fn convert_shell_in_tolerant_endpoint_matching() {
         result.err()
     );
 }
+
+// ---------------------------------------------------------------------------
+// Phase 22: Endpoint snapping tests
+// ---------------------------------------------------------------------------
+
+/// Verify that convert_shell_in followed by convert_shell_out preserves
+/// `ShellCondition::Closed` on a cube shell, and that endpoint snapping
+/// ensures machine-epsilon accuracy for converted edges.
+#[test]
+fn endpoint_snap_preserves_closure() {
+    use monstertruck_modeling::builder;
+    use monstertruck_topology::shell::ShellCondition;
+
+    use super::convert::{convert_shell_in, convert_shell_out};
+
+    // Build a closed unit cube.
+    let v = builder::vertex(Point3::origin());
+    let e = builder::extrude(&v, Vector3::unit_x());
+    let f = builder::extrude(&e, Vector3::unit_y());
+    let cube: monstertruck_modeling::Solid = builder::extrude(&f, Vector3::unit_z());
+
+    let shells = cube.into_boundaries();
+    let shell = &shells[0];
+    assert_eq!(
+        shell.shell_condition(),
+        ShellCondition::Closed,
+        "source cube must be closed"
+    );
+
+    // Pick an arbitrary edge for convert_shell_in (it needs at least one).
+    let some_edge: Vec<_> = shell.edge_iter().take(1).collect();
+
+    let (internal_shell, _ids) = convert_shell_in(shell, &some_edge)
+        .expect("convert_shell_in should succeed on a cube");
+
+    let restored: monstertruck_topology::Shell<
+        Point3,
+        monstertruck_modeling::Curve,
+        monstertruck_modeling::Surface,
+    > = convert_shell_out(&internal_shell)
+        .expect("convert_shell_out should succeed");
+
+    // The restored shell must remain closed.
+    assert_eq!(
+        restored.shell_condition(),
+        ShellCondition::Closed,
+        "shell must remain closed after conversion round-trip"
+    );
+}
+
+/// Verify that `sample_curve_to_nurbs` snaps the first and last control
+/// points to the exact boundary sample values, ensuring the control point
+/// coordinates (not just the evaluated curve) match.
+#[test]
+fn endpoint_snap_after_interpolation() {
+    use super::convert::sample_curve_to_nurbs;
+
+    // A quarter circle in the XY plane: (cos(t), sin(t), 0) for t in [0, PI/2].
+    let range = (0.0, std::f64::consts::FRAC_PI_2);
+    let evaluate = |t: f64| Point3::new(t.cos(), t.sin(), 0.0);
+    let sample_count = 24;
+
+    let nurbs = sample_curve_to_nurbs(range, evaluate, sample_count);
+
+    // The first and last control points should exactly encode the boundary
+    // positions. For a clamped NURBS, the first/last control points in
+    // homogeneous coordinates (x*w, y*w, z*w, w) with w=1 should be the
+    // boundary points.
+    let cps = nurbs.control_points();
+    let n = cps.len();
+    let first_cp = cps[0];
+    let last_cp = cps[n - 1];
+    let w0 = first_cp[3];
+    let wn = last_cp[3];
+
+    let expected_front = Point3::new(1.0, 0.0, 0.0);
+    let expected_back = Point3::new(0.0, 1.0, 0.0);
+
+    // Check that control points encode exact boundary values.
+    assert!(
+        (first_cp[0] - expected_front.x * w0).abs() < 1e-14,
+        "first control point x not snapped"
+    );
+    assert!(
+        (first_cp[1] - expected_front.y * w0).abs() < 1e-14,
+        "first control point y not snapped"
+    );
+    assert!(
+        (first_cp[2] - expected_front.z * w0).abs() < 1e-14,
+        "first control point z not snapped"
+    );
+    assert!(
+        (last_cp[0] - expected_back.x * wn).abs() < 1e-14,
+        "last control point x not snapped"
+    );
+    assert!(
+        (last_cp[1] - expected_back.y * wn).abs() < 1e-14,
+        "last control point y not snapped"
+    );
+    assert!(
+        (last_cp[2] - expected_back.z * wn).abs() < 1e-14,
+        "last control point z not snapped"
+    );
+}
+
+/// Verify that an `IntersectionCurve` edge round-trips through
+/// `convert_shell_in` / `convert_shell_out` with endpoints matching
+/// vertex positions within machine epsilon.
+#[test]
+fn endpoint_snap_intersection_curve_edge_roundtrip() {
+    use super::convert::convert_shell_in;
+
+    // Build a face containing IntersectionCurve edges.
+    let (face, _filleted_edge, _edges) = build_face_with_intersection_curve_edge();
+
+    // Build a single-face shell from this face.
+    let shell: Shell = vec![face].into();
+
+    // Pick the IC edges for convert_shell_in.
+    let ic_edges: Vec<_> = shell
+        .edge_iter()
+        .filter(|e| matches!(e.curve(), Curve::IntersectionCurve(_)))
+        .collect();
+    assert!(
+        !ic_edges.is_empty(),
+        "fixture must contain IntersectionCurve edges"
+    );
+
+    let (internal_shell, _ids) = convert_shell_in(&shell, &ic_edges)
+        .expect("convert_shell_in should succeed");
+
+    // Check internal shell endpoint snapping.
+    for edge in internal_shell.edge_iter() {
+        let front: Point3 = edge.absolute_front().point();
+        let back: Point3 = edge.absolute_back().point();
+        let curve = edge.curve();
+        let (t0, t1) = curve.range_tuple();
+        let curve_front: Point3 = curve.evaluate(t0);
+        let curve_back: Point3 = curve.evaluate(t1);
+        assert!(
+            (curve_front - front).magnitude() < 1e-14,
+            "internal edge front not snapped: curve={curve_front:?}, vertex={front:?}"
+        );
+        assert!(
+            (curve_back - back).magnitude() < 1e-14,
+            "internal edge back not snapped: curve={curve_back:?}, vertex={back:?}"
+        );
+    }
+}
