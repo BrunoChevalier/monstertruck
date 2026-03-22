@@ -26,7 +26,11 @@ fn exec_pcurve_derivation(
     let d1 = pcurve1.der_n(n, t);
     let diff = (d0 - d1).norm();
     let mag = d0.norm().max(d1.norm());
-    let ok = if mag < 1.0 { diff < TOLERANCE2 } else { diff / mag < TOLERANCE };
+    let ok = if mag < 1.0 {
+        diff < TOLERANCE2
+    } else {
+        diff / mag < TOLERANCE
+    };
     prop_assert!(ok, "der_n mismatch: left={d0:?}, right={d1:?}");
 
     let ders0 = (0..=n).map(|i| pcurve0.der_n(i, t)).collect::<Vec<_>>();
@@ -39,7 +43,11 @@ fn exec_pcurve_derivation(
     iter.try_for_each(|(v0, v1)| {
         let diff = (v0 - v1).norm();
         let mag = v0.norm().max(v1.norm());
-        let ok = if mag < 1.0 { diff < TOLERANCE2 } else { diff / mag < TOLERANCE };
+        let ok = if mag < 1.0 {
+            diff < TOLERANCE2
+        } else {
+            diff / mag < TOLERANCE
+        };
         prop_assert!(ok, "ders mismatch: left={v0:?}, right={v1:?}");
         Ok(())
     })?;

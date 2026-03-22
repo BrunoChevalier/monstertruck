@@ -654,8 +654,7 @@ impl RevolutedCurve<BsplineCurve<Point3>> {
     /// performing the tensor product construction.
     pub fn to_nurbs_surface(&self) -> NurbsSurface<Vector4> {
         let nurbs_curve = NurbsCurve::from(self.curve.clone());
-        RevolutedCurve::by_revolution(nurbs_curve, self.origin(), self.axis())
-            .to_nurbs_surface()
+        RevolutedCurve::by_revolution(nurbs_curve, self.origin(), self.axis()).to_nurbs_surface()
     }
 }
 
@@ -715,9 +714,14 @@ mod tests {
             for &v in &exact_vs {
                 let expected = revolved.evaluate(u, v);
                 let actual = nurbs.subs(u, v);
-                assert_near!(expected, actual, concat!(
-                    "mismatch at knot (u={}, v={}): expected {:?}, got {:?}"),
-                    u, v, expected, actual,
+                assert_near!(
+                    expected,
+                    actual,
+                    concat!("mismatch at knot (u={}, v={}): expected {:?}, got {:?}"),
+                    u,
+                    v,
+                    expected,
+                    actual,
                 );
             }
         }
@@ -748,8 +752,7 @@ mod tests {
             Vector4::new(-1.0, 0.0, 0.0, 1.0),
         ];
         let profile = NurbsCurve::new(BsplineCurve::new(knot_vec, control_points));
-        let revolved =
-            RevolutedCurve::by_revolution(profile, Point3::origin(), Vector3::unit_x());
+        let revolved = RevolutedCurve::by_revolution(profile, Point3::origin(), Vector3::unit_x());
         let nurbs = revolved.to_nurbs_surface();
 
         // At v-direction knot breakpoints the parameterization is exact.
@@ -760,9 +763,14 @@ mod tests {
             for &v in &exact_vs {
                 let expected = revolved.evaluate(u, v);
                 let actual = nurbs.subs(u, v);
-                assert_near!(expected, actual, concat!(
-                    "mismatch at knot (u={}, v={}): expected {:?}, got {:?}"),
-                    u, v, expected, actual,
+                assert_near!(
+                    expected,
+                    actual,
+                    concat!("mismatch at knot (u={}, v={}): expected {:?}, got {:?}"),
+                    u,
+                    v,
+                    expected,
+                    actual,
                 );
             }
         }
@@ -814,9 +822,14 @@ mod tests {
             for &v in &exact_vs {
                 let expected = revolved.evaluate(u, v);
                 let actual = nurbs.subs(u, v);
-                assert_near!(expected, actual, concat!(
-                    "mismatch at knot (u={}, v={}): expected {:?}, got {:?}"),
-                    u, v, expected, actual,
+                assert_near!(
+                    expected,
+                    actual,
+                    concat!("mismatch at knot (u={}, v={}): expected {:?}, got {:?}"),
+                    u,
+                    v,
+                    expected,
+                    actual,
                 );
             }
         }

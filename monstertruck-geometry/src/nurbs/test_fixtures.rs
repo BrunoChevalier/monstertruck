@@ -404,6 +404,7 @@ pub fn fixture_collapsed_control_polygon_surface() -> BsplineSurface<Point3> {
 /// Returns `(u_curves, v_curves, perturbed_grid_points)`. The perturbation
 /// tests the snapping behavior of
 /// [`BsplineSurface::try_gordon_verified`](crate::nurbs::BsplineSurface::try_gordon_verified).
+#[allow(clippy::type_complexity)]
 pub fn fixture_gordon_near_miss_grid() -> (
     Vec<BsplineCurve<Point3>>,
     Vec<BsplineCurve<Point3>>,

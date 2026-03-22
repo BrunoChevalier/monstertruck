@@ -390,8 +390,8 @@ impl<'a> GpuTessellator<'a> {
         });
 
         // Dispatch compute shader.
-        let workgroup_x = (grid_u + 7) / 8;
-        let workgroup_y = (grid_v + 7) / 8;
+        let workgroup_x = grid_u.div_ceil(8);
+        let workgroup_y = grid_v.div_ceil(8);
 
         let mut encoder = self
             .device

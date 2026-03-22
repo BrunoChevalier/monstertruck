@@ -108,11 +108,11 @@ where
     fn add(self, rhs: Self) -> PolynomialCurve<P> {
         if self.0.len() < rhs.0.len() {
             let mut vec = rhs.0.clone();
-            vec.iter_mut().zip(&self.0).for_each(|(x, &y)| *x = *x + y);
+            vec.iter_mut().zip(&self.0).for_each(|(x, &y)| *x += y);
             PolynomialCurve(vec)
         } else {
             let mut vec = self.0.clone();
-            vec.iter_mut().zip(&rhs.0).for_each(|(x, &y)| *x = *x + y);
+            vec.iter_mut().zip(&rhs.0).for_each(|(x, &y)| *x += y);
             PolynomialCurve(vec)
         }
     }

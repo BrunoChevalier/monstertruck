@@ -17,11 +17,8 @@ impl TryFrom<Surface> for NurbsSurface<Vector4> {
                 let entity = proc.entity();
                 let nurbs_curve: NurbsCurve<Vector4> =
                     entity.entity_curve().clone().try_into().map_err(|_| ())?;
-                let typed_rev = RevolutedCurve::by_revolution(
-                    nurbs_curve,
-                    entity.origin(),
-                    entity.axis(),
-                );
+                let typed_rev =
+                    RevolutedCurve::by_revolution(nurbs_curve, entity.origin(), entity.axis());
                 let mut result = typed_rev.to_nurbs_surface();
                 result.transform_by(*proc.transform());
                 if !proc.orientation() {
@@ -146,7 +143,10 @@ mod tests {
         let surface = Surface::RevolutedCurve(Processor::new(revolved));
 
         let result = NurbsSurface::<Vector4>::try_from(surface);
-        assert!(result.is_ok(), "TryFrom<Surface> should succeed for RevolutedCurve");
+        assert!(
+            result.is_ok(),
+            "TryFrom<Surface> should succeed for RevolutedCurve"
+        );
 
         // The converted surface should produce geometrically correct points.
         // SAFETY: just asserted `is_ok()`.

@@ -3049,7 +3049,7 @@ fn build_face_with_intersection_curve_edge() -> (Face, Edge, [Edge; 4]) {
         Point3::new(1.0, 1.0, 0.0),
         Point3::new(0.0, 1.0, 0.0),
     ];
-    let v = Vertex::news(&pts);
+    let v = Vertex::news(pts);
 
     let line_nurbs = |i: usize, j: usize| -> NurbsCurve<Vector4> {
         NurbsCurve::from(BsplineCurve::new(
@@ -3418,7 +3418,7 @@ fn integrate_visual_single_edge_annotated() {
 
     // Annotations should be at least G1 for a rolling-ball fillet
     // against planar faces (which produce tangent-continuous junctions).
-    for (_edge_id, annotation) in &result.annotations {
+    for annotation in result.annotations.values() {
         assert!(
             *annotation == ContinuityAnnotation::G1 || *annotation == ContinuityAnnotation::G2,
             "expected G1 or G2, got {:?}",
@@ -3511,11 +3511,11 @@ fn integrate_visual_vs_keep_separate_measurable_difference() {
 
     // Both should tessellate successfully.
     assert!(
-        poly_keep.positions().len() > 0,
+        !poly_keep.positions().is_empty(),
         "KeepSeparateFace tessellation should produce vertices"
     );
     assert!(
-        poly_integrate.positions().len() > 0,
+        !poly_integrate.positions().is_empty(),
         "IntegrateVisual tessellation should produce vertices"
     );
 }
@@ -3576,37 +3576,22 @@ fn ensure_cuttable_edge_preserves_identity() {
     use super::topology::ensure_cuttable_edge;
     use super::types::Curve;
 
-    let pts = [
-        Point3::new(0.0, 0.0, 0.0),
-        Point3::new(1.0, 1.0, 0.0),
-    ];
-    let v = Vertex::news(&pts);
+    let pts = [Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0)];
+    let v = Vertex::news(pts);
 
     // Build a minimal IntersectionCurve edge.
     let s0: NurbsSurface<Vector4> = NurbsSurface::from(BsplineSurface::new(
         (KnotVector::bezier_knot(1), KnotVector::bezier_knot(1)),
         vec![
-            vec![
-                Point3::new(-1.0, -1.0, 0.0),
-                Point3::new(-1.0, 2.0, 0.0),
-            ],
-            vec![
-                Point3::new(2.0, -1.0, 0.0),
-                Point3::new(2.0, 2.0, 0.0),
-            ],
+            vec![Point3::new(-1.0, -1.0, 0.0), Point3::new(-1.0, 2.0, 0.0)],
+            vec![Point3::new(2.0, -1.0, 0.0), Point3::new(2.0, 2.0, 0.0)],
         ],
     ));
     let s1: NurbsSurface<Vector4> = NurbsSurface::from(BsplineSurface::new(
         (KnotVector::bezier_knot(1), KnotVector::bezier_knot(1)),
         vec![
-            vec![
-                Point3::new(-1.0, -1.0, -1.0),
-                Point3::new(-1.0, 2.0, 1.0),
-            ],
-            vec![
-                Point3::new(2.0, -1.0, -1.0),
-                Point3::new(2.0, 2.0, 1.0),
-            ],
+            vec![Point3::new(-1.0, -1.0, -1.0), Point3::new(-1.0, 2.0, 1.0)],
+            vec![Point3::new(2.0, -1.0, -1.0), Point3::new(2.0, 2.0, 1.0)],
         ],
     ));
     let leader = ParameterCurve::new(
@@ -3724,15 +3709,14 @@ fn endpoint_snap_preserves_closure() {
     // Pick an arbitrary edge for convert_shell_in (it needs at least one).
     let some_edge: Vec<_> = shell.edge_iter().take(1).collect();
 
-    let (internal_shell, _ids) = convert_shell_in(shell, &some_edge)
-        .expect("convert_shell_in should succeed on a cube");
+    let (internal_shell, _ids) =
+        convert_shell_in(shell, &some_edge).expect("convert_shell_in should succeed on a cube");
 
     let restored: monstertruck_topology::Shell<
         Point3,
         monstertruck_modeling::Curve,
         monstertruck_modeling::Surface,
-    > = convert_shell_out(&internal_shell)
-        .expect("convert_shell_out should succeed");
+    > = convert_shell_out(&internal_shell).expect("convert_shell_out should succeed");
 
     // The restored shell must remain closed.
     assert_eq!(
@@ -3820,8 +3804,8 @@ fn endpoint_snap_intersection_curve_edge_roundtrip() {
         "fixture must contain IntersectionCurve edges"
     );
 
-    let (internal_shell, _ids) = convert_shell_in(&shell, &ic_edges)
-        .expect("convert_shell_in should succeed");
+    let (internal_shell, _ids) =
+        convert_shell_in(&shell, &ic_edges).expect("convert_shell_in should succeed");
 
     // Check internal shell endpoint snapping.
     for edge in internal_shell.edge_iter() {

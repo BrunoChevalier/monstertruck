@@ -1,7 +1,7 @@
 #![cfg(feature = "polynomial")]
 
 use algo::surface;
-use monstertruck_core::{cgmath64::*, tolerance::*, *};
+use monstertruck_core::{tolerance::*, *};
 use monstertruck_traits::{polynomial::*, *};
 
 #[test]

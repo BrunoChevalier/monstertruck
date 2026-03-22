@@ -7,12 +7,20 @@ use monstertruck_modeling::{Curve as ModelingCurve, Surface as ModelingSurface};
 /// Prevents NaN propagation into STEP output when projecting 3D axes to 2D.
 fn safe_normalize<V: InnerSpace<Scalar = f64>>(v: V) -> V {
     let mag = v.magnitude();
-    if mag > f64::EPSILON { v / mag } else { V::zero() }
+    if mag > f64::EPSILON {
+        v / mag
+    } else {
+        V::zero()
+    }
 }
 
 /// Safely divide a vector by a scalar, returning zero if the scalar is near-zero.
 fn safe_div<V: InnerSpace<Scalar = f64>>(v: V, s: f64) -> V {
-    if s.abs() > f64::EPSILON { v / s } else { V::zero() }
+    if s.abs() > f64::EPSILON {
+        v / s
+    } else {
+        V::zero()
+    }
 }
 
 impl DisplayByStep for Point2 {
@@ -231,7 +239,8 @@ impl DisplayByStep for Processor<TrimmedCurve<UnitCircle<Point2>>, Matrix3> {
         let ref_direction_idx = idx + 3;
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
-        let ref_direction = VectorAsDirection(safe_div(Vector2::new(transform[0][0], transform[0][1]), r0));
+        let ref_direction =
+            VectorAsDirection(safe_div(Vector2::new(transform[0][0], transform[0][1]), r0));
         let location = transform[2].to_point();
         if r0.near(&r1) {
             let r = FloatDisplay(r0);
@@ -259,10 +268,17 @@ impl DisplayByStep for Processor<TrimmedCurve<UnitCircle<Point3>>, Matrix4> {
         let axis_idx = idx + 3;
         let ref_direction_idx = idx + 4;
         let location = transform[3].to_point();
-        let axis = VectorAsDirection(safe_normalize(Vector3::new(transform[2][0], transform[2][1], transform[2][2])));
+        let axis = VectorAsDirection(safe_normalize(Vector3::new(
+            transform[2][0],
+            transform[2][1],
+            transform[2][2],
+        )));
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
-        let ref_direction = VectorAsDirection(safe_div(Vector3::new(transform[0][0], transform[0][1], transform[0][2]), r0));
+        let ref_direction = VectorAsDirection(safe_div(
+            Vector3::new(transform[0][0], transform[0][1], transform[0][2]),
+            r0,
+        ));
         if r0.near(&r1) {
             let r = FloatDisplay(r0);
             f.write_fmt(format_args!("#{idx} = CIRCLE('', #{position_idx}, {r});\n"))?;
@@ -312,13 +328,18 @@ impl DisplayByStep for Processor<TrimmedCurve<UnitHyperbola<Point3>>, Matrix4> {
         let axis_idx = idx + 3;
         let ref_direction_idx = idx + 4;
         let location = StepDisplay::new(transform[3].to_point(), location_idx);
-        let axis_raw =
-            VectorAsDirection(safe_normalize(Vector3::new(transform[2][0], transform[2][1], transform[2][2])));
+        let axis_raw = VectorAsDirection(safe_normalize(Vector3::new(
+            transform[2][0],
+            transform[2][1],
+            transform[2][2],
+        )));
         let axis = StepDisplay::new(axis_raw, axis_idx);
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
-        let ref_direction_raw =
-            VectorAsDirection(safe_div(Vector3::new(transform[0][0], transform[0][1], transform[0][2]), r0));
+        let ref_direction_raw = VectorAsDirection(safe_div(
+            Vector3::new(transform[0][0], transform[0][1], transform[0][2]),
+            r0,
+        ));
         let ref_direction = StepDisplay::new(ref_direction_raw, ref_direction_idx);
         let (r0, r1) = (FloatDisplay(r0), FloatDisplay(r1));
         f.write_fmt(format_args!(
@@ -360,14 +381,19 @@ impl DisplayByStep for Processor<TrimmedCurve<UnitParabola<Point3>>, Matrix4> {
         let axis_idx = idx + 3;
         let ref_direction_idx = idx + 4;
         let location = StepDisplay::new(transform[3].to_point(), location_idx);
-        let axis_raw =
-            VectorAsDirection(safe_normalize(Vector3::new(transform[2][0], transform[2][1], transform[2][2])));
+        let axis_raw = VectorAsDirection(safe_normalize(Vector3::new(
+            transform[2][0],
+            transform[2][1],
+            transform[2][2],
+        )));
         let axis = StepDisplay::new(axis_raw, axis_idx);
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
         let focal_dist = FloatDisplay(r1 * r1 / r0);
-        let ref_direction_raw =
-            VectorAsDirection(safe_div(Vector3::new(transform[0][0], transform[0][1], transform[0][2]), r0));
+        let ref_direction_raw = VectorAsDirection(safe_div(
+            Vector3::new(transform[0][0], transform[0][1], transform[0][2]),
+            r0,
+        ));
         let ref_direction = StepDisplay::new(ref_direction_raw, ref_direction_idx);
         f.write_fmt(format_args!(
             "#{idx} = PARABOLA('', #{position_idx}, {focal_dist});
@@ -528,14 +554,21 @@ impl DisplayByStep for Processor<Sphere, Matrix4> {
         let axis_idx = idx + 3;
         let ref_direction_idx = idx + 4;
         let location = transform[3].to_point() + sphere.center().to_vec();
-        let axis = VectorAsDirection(safe_normalize(Vector3::new(transform[2][0], transform[2][1], transform[2][2])));
+        let axis = VectorAsDirection(safe_normalize(Vector3::new(
+            transform[2][0],
+            transform[2][1],
+            transform[2][2],
+        )));
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
         if !r0.near(&r1) {
             f.write_str("The transform of sphere includes non-uniform scale.")?;
             return ERR;
         }
-        let ref_direction = VectorAsDirection(safe_div(Vector3::new(transform[0][0], transform[0][1], transform[0][2]), r0));
+        let ref_direction = VectorAsDirection(safe_div(
+            Vector3::new(transform[0][0], transform[0][1], transform[0][2]),
+            r0,
+        ));
         let r = FloatDisplay(r0 * sphere.radius());
         f.write_fmt(format_args!(
             "#{idx} = SPHERICAL_SURFACE('', #{position_idx}, {r});
@@ -565,14 +598,21 @@ impl DisplayByStep for Processor<Torus, Matrix4> {
         let axis_idx = idx + 3;
         let ref_direction_idx = idx + 4;
         let location = transform[3].to_point() + torus.center().to_vec();
-        let axis = VectorAsDirection(safe_normalize(Vector3::new(transform[2][0], transform[2][1], transform[2][2])));
+        let axis = VectorAsDirection(safe_normalize(Vector3::new(
+            transform[2][0],
+            transform[2][1],
+            transform[2][2],
+        )));
         let r0 = transform[0].magnitude();
         let r1 = transform[1].magnitude();
         if !r0.near(&r1) {
             f.write_str("The transform of torus includes non-uniform scale.")?;
             return ERR;
         }
-        let ref_direction = VectorAsDirection(safe_div(Vector3::new(transform[0][0], transform[0][1], transform[0][2]), r0));
+        let ref_direction = VectorAsDirection(safe_div(
+            Vector3::new(transform[0][0], transform[0][1], transform[0][2]),
+            r0,
+        ));
         let greater = FloatDisplay(r0 * torus.large_radius());
         let lesser = FloatDisplay(r0 * torus.small_radius());
         f.write_fmt(format_args!(
