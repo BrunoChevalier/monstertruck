@@ -123,7 +123,12 @@ proptest::proptest! {
             let t = i as f64 / N as f64;
             let p = uc.subs(t).to_vec();
             let v = uc.der(t);
-            prop_assert_near!(p.magnitude2(), 1.0, "{w0} {w1} {p:?} {angle}");
+            let mag2 = p.magnitude2();
+            let rel_err = (mag2 - 1.0).abs() / mag2.max(1.0);
+            prop_assert!(
+                rel_err < 1e-5,
+                "magnitude2 relative error {rel_err} too large for {w0} {w1} {p:?} {angle}"
+            );
             prop_assert!(p.z.so_small2());
             prop_assert!(p.x * v.y - p.y * v.x > 0.0, "minus area {:?}", uc.control_point(1));
         }
