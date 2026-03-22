@@ -113,4 +113,37 @@ mod tests {
             "midpoint error too large: {actual_mid:?} vs {expected_mid:?}",
         );
     }
+
+    /// `TryFrom<Surface>` for `NurbsSurface<Vector4>` must succeed for
+    /// `Surface::RevolutedCurve`, producing a geometrically exact NURBS surface.
+    #[test]
+    fn try_from_surface_revolved_curve_succeeds() {
+        use crate::{Curve, Surface};
+        let line = Curve::BsplineCurve(BsplineCurve::new(
+            KnotVector::bezier_knot(1),
+            vec![Point3::new(1.0, 0.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+        ));
+        let revolved = RevolutedCurve::by_revolution(line, Point3::origin(), Vector3::unit_y());
+        let surface = Surface::RevolutedCurve(Processor::new(revolved));
+
+        let result = NurbsSurface::<Vector4>::try_from(surface);
+        assert!(result.is_ok(), "TryFrom<Surface> should succeed for RevolutedCurve");
+
+        // The converted surface should produce geometrically correct points.
+        // SAFETY: just asserted `is_ok()`.
+        let nurbs = result.unwrap();
+        let n = 5;
+        for i in 0..=n {
+            for j in 0..=n {
+                let u = i as f64 / n as f64;
+                let v = 2.0 * std::f64::consts::PI * j as f64 / n as f64;
+                let pt = nurbs.subs(u, v);
+                let r = (pt.x * pt.x + pt.z * pt.z).sqrt();
+                assert!(
+                    (r - 1.0).abs() < 1.0e-10,
+                    "radius mismatch at (u={u}, v={v}): r={r}",
+                );
+            }
+        }
+    }
 }
