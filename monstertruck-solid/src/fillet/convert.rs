@@ -114,6 +114,41 @@ fn sample_surface_to_nurbs<S: ParametricSurface<Point = Point3>>(
 ) -> Option<NurbsSurface<Vector4>> {
     let (u_range, v_range) = surface.try_range_tuple();
     let ((u0, u1), (v0, v1)) = u_range.zip(v_range)?;
+
+    if let Some(result) = try_degree3_surface(surface, sample_count, (u0, u1), (v0, v1)) {
+        Some(result)
+    } else {
+        // Degree-1 fallback.
+        let control_points: Vec<Vec<Point3>> = (0..=sample_count)
+            .map(|iu| {
+                let u = u0 + (u1 - u0) * (iu as f64) / (sample_count as f64);
+                (0..=sample_count)
+                    .map(|iv| {
+                        let v = v0 + (v1 - v0) * (iv as f64) / (sample_count as f64);
+                        surface.evaluate(u, v)
+                    })
+                    .collect()
+            })
+            .collect();
+        let u_knot = KnotVector::uniform_knot(1, sample_count);
+        let v_knot = KnotVector::uniform_knot(1, sample_count);
+        Some(NurbsSurface::from(BsplineSurface::new(
+            (u_knot, v_knot),
+            control_points,
+        )))
+    }
+}
+
+/// Attempts degree-3 tensor product interpolation for a surface.
+/// Returns `None` if any interpolation step fails.
+fn try_degree3_surface<S: ParametricSurface<Point = Point3>>(
+    surface: &S,
+    sample_count: usize,
+    u_range: (f64, f64),
+    v_range: (f64, f64),
+) -> Option<NurbsSurface<Vector4>> {
+    let (u0, u1) = u_range;
+    let (v0, v1) = v_range;
     let n_points = sample_count + 1;
     let u_knot = KnotVector::uniform_knot(3, n_points - 3);
     let v_knot = KnotVector::uniform_knot(3, n_points - 3);
@@ -162,7 +197,7 @@ fn sample_surface_to_nurbs<S: ParametricSurface<Point = Point3>>(
         .collect::<std::result::Result<_, _>>()
         .ok()?;
 
-    // Transpose from [V][U] to [U][V] for BsplineSurface.
+    // Transpose from [V][U] to [U][V] for [`BsplineSurface`].
     let control_points: Vec<Vec<Point3>> = (0..n_points)
         .map(|i| (0..n_points).map(|j| col_cps[j][i]).collect())
         .collect();
