@@ -1,4 +1,3 @@
-use monstertruck_core::tolerance::Tolerance;
 use monstertruck_core::tolerance_constants::SNAP_TOLERANCE;
 use monstertruck_geometry::prelude::*;
 use monstertruck_traits::{BoundedCurve, ParametricCurve, ParametricSurface};

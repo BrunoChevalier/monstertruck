@@ -23,14 +23,15 @@ pub(super) fn take_ori<T>(ori: bool, (a, b): (T, T)) -> T {
     }
 }
 
-/// If `edge` has an `IntersectionCurve` geometry, return a new edge with
-/// the curve converted to a NURBS approximation via
-/// [`FilletableCurve::to_nurbs_curve`]. Otherwise return a clone of the
-/// original edge.
+/// If `edge` has an [`IntersectionCurve`] geometry, convert its curve
+/// in-place to a NURBS approximation via [`FilletableCurve::to_nurbs_curve`]
+/// and return a clone. The in-place mutation via [`Edge::set_curve`]
+/// preserves the [`EdgeId`], so `is_same()` remains true for all clones
+/// of the original edge (including those stored in face boundaries).
 ///
-/// This allows `search_closest_parameter` and `not_strictly_cut_with_parameter`
+/// This allows [`search_closest_parameter`] and `not_strictly_cut_with_parameter`
 /// to operate reliably on edges produced by boolean operations, where the
-/// raw IntersectionCurve can cause Newton iteration to diverge.
+/// raw `IntersectionCurve` can cause Newton iteration to diverge.
 pub(super) fn ensure_cuttable_edge(edge: &Edge) -> Edge {
     if matches!(edge.curve(), Curve::IntersectionCurve(_)) {
         let nurbs = edge.curve().to_nurbs_curve();
