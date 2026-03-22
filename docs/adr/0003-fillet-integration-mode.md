@@ -90,3 +90,7 @@ No changes to fillet integration mode logic. Phase 21 fixed edge identity preser
 ## Status Update (Phase 22 -- Conversion Fidelity Improvements)
 
 No changes to fillet integration mode logic. Phase 22 upgraded curve/surface sampling to cubic interpolation, added exact `RevolutedCurve` conversion, and introduced endpoint snapping in shell conversion. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 23 -- Error Propagation & Test Hardening, v0.5.2 Final)
+
+No changes to fillet integration mode logic. Phase 23 replaced silent rollback in `fillet_edges_generic` with explicit `Err(FilletError::ShellNotClosed)` error propagation and hardened fillet test expectations. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted. Milestone v0.5.2 is complete.

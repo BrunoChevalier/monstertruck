@@ -124,17 +124,13 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
-### Phase 22 -- Conversion Fidelity Improvements
+### Milestone v0.5.2 Summary (Phases 21--23) -- Fillet Conversion Pipeline Fix
 
-- **Cubic interpolation for sampling** -- `sample_curve_to_nurbs` and `sample_surface_to_nurbs` upgraded from degree-1 (linear) to degree-3 (cubic) interpolation, producing smoother NURBS approximations. Fillet output paths (`From<ParameterCurveLinear>`, `From<FilletIntersectionCurve>`) also upgraded to degree-3.
-- **Exact RevolutedCurve conversion** -- `RevolutedCurve` to `NurbsSurface` conversion now uses rational circle arc tensor product for exact representation, eliminating the sampling fallback for this surface type.
-- **Endpoint snapping** -- `convert_shell_in` and `convert_shell_out` now snap endpoints to preserve vertex-edge positional coincidence after NURBS conversion.
+Milestone v0.5.2 hardened the fillet conversion pipeline end-to-end: preserving edge identity through NURBS conversion (Phase 21), improving conversion fidelity with cubic interpolation and exact revolved surface support (Phase 22), and replacing silent error swallowing with explicit error propagation (Phase 23).
 
-### Phase 21 -- Fillet Edge Identity Fix
-
-- **Edge identity preservation** -- `ensure_cuttable_edge` in `monstertruck-solid::fillet::topology` now uses `set_curve()` instead of `Edge::new()` when converting `IntersectionCurve` edges to NURBS approximations. This preserves the `Edge` arc identity through fillet conversion, preventing dangling references in the topology graph.
-- **Widened endpoint tolerance** -- Endpoint matching in `monstertruck-solid::fillet::convert` was widened from `TOLERANCE` (1e-6) to `SNAP_TOLERANCE` (1e-5) for boolean-origin edges, accommodating the approximation error introduced by NURBS conversion of intersection curves.
-- **Integration tests** -- 2 new tests verify edge identity preservation after conversion and endpoint tolerance matching for boolean-origin edges.
+- **Edge identity preservation (Phase 21)** -- `ensure_cuttable_edge` now uses `set_curve()` instead of `Edge::new()` when converting `IntersectionCurve` edges to NURBS, preserving arc identity. Endpoint matching tolerance widened from `TOLERANCE` (1e-6) to `SNAP_TOLERANCE` (1e-5) for boolean-origin edges.
+- **Conversion fidelity (Phase 22)** -- `sample_curve_to_nurbs`, `sample_surface_to_nurbs`, and fillet output paths upgraded from degree-1 to degree-3 cubic interpolation. Exact `RevolutedCurve` to `NurbsSurface` conversion via rational circle arc tensor product. Endpoint snapping in `convert_shell_in`/`convert_shell_out` preserves vertex-edge coincidence.
+- **Explicit error propagation (Phase 23)** -- `FilletError::ShellNotClosed` variant replaces silent rollback in `fillet_edges_generic`. Tests updated to expect `Err(ShellNotClosed)` instead of silent no-ops. `generic_fillet_unsupported` corrected to expect `NonManifoldEdge` (adjacency check fires before geometry conversion on single-face shells).
 
 ### Milestone v0.5.1 Summary (Phases 16--20)
 

@@ -98,3 +98,7 @@ No changes to the polynomial solver module. Phase 21 fixed edge identity preserv
 ## Status Update (Phase 22 -- Conversion Fidelity Improvements)
 
 No changes to the polynomial solver module. Phase 22 upgraded curve/surface sampling to cubic interpolation, added exact `RevolutedCurve` conversion, and introduced endpoint snapping in shell conversion. The math layer was unaffected.
+
+## Status Update (Phase 23 -- Error Propagation & Test Hardening, v0.5.2 Final)
+
+No changes to the polynomial solver module. Phase 23 added `FilletError::ShellNotClosed` for explicit error propagation in `fillet_edges_generic` and hardened fillet test expectations. The math layer was unaffected. This ADR remains Accepted. Milestone v0.5.2 is complete.
