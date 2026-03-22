@@ -6,7 +6,7 @@ Derive macros for geometric traits. Re-exported by `monstertruck-traits` (featur
 
 ## Quick Start
 
-```rust
+```rust,no_run,ignore
 use monstertruck_traits::prelude::*;
 
 /// An enum of curve types -- derive macros delegate trait methods

@@ -41,7 +41,7 @@ pub struct UnitParabola<P>(std::marker::PhantomData<P>);
 /// // The v-axis of the plane is the vector from pt0 to pt2.
 /// assert_near!(plane.v_axis(), pt2 - pt0);
 /// // The normal is the normalized u-axis × v-axis
-/// assert_near!(plane.normal(), (pt1 - pt0).cross(pt2 - pt0).normalize());
+/// assert_near!(plane.normal(), (pt1 - pt0).cross(&(pt2 - pt0)).normalize());
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, SelfSameGeometry)]
 pub struct Plane {

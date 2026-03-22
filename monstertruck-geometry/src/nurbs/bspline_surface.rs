@@ -1550,7 +1550,7 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// # Examples
     ///
     /// ```
-    /// use truck_geometry::prelude::*;
+    /// use monstertruck_geometry::prelude::*;
     ///
     /// let c0 = BsplineCurve::new(
     ///     KnotVector::bezier_knot(2),
@@ -1564,6 +1564,7 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     ///     KnotVector::bezier_knot(2),
     ///     vec![Vector2::new(0.0, 2.0), Vector2::new(0.5, 1.0), Vector2::new(1.0, 2.0)],
     /// );
+    /// #[allow(deprecated)]
     /// let surface = BsplineSurface::skin(vec![c0, c1, c2]);
     /// // At v=0, v=0.5, v=1 the surface reproduces the three section curves.
     /// // Endpoints are exact.
@@ -1681,7 +1682,7 @@ impl BsplineSurface<Point3> {
     /// # Examples
     ///
     /// ```
-    /// use truck_geometry::prelude::*;
+    /// use monstertruck_geometry::prelude::*;
     ///
     /// // Sweep a small circle profile along a straight rail (should approximate extrusion).
     /// let rail = BsplineCurve::new(
@@ -1692,6 +1693,7 @@ impl BsplineSurface<Point3> {
     ///     KnotVector::bezier_knot(1),
     ///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
     /// );
+    /// #[allow(deprecated)]
     /// let surface = BsplineSurface::sweep_rail(profile, &rail, 3);
     /// // At v=0 (rail start), the surface reproduces the profile.
     /// assert_near2!(surface.subs(0.0, 0.0), Point3::new(-1.0, 0.0, 0.0));
@@ -1730,7 +1732,7 @@ impl BsplineSurface<Point3> {
     /// # Examples
     ///
     /// ```
-    /// use truck_geometry::prelude::*;
+    /// use monstertruck_geometry::prelude::*;
     ///
     /// // Two parallel straight rails separated along x.
     /// let rail1 = BsplineCurve::new(
@@ -1746,6 +1748,7 @@ impl BsplineSurface<Point3> {
     ///     KnotVector::bezier_knot(1),
     ///     vec![Point3::new(-1.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
     /// );
+    /// #[allow(deprecated)]
     /// let surface = BsplineSurface::birail1(profile, &rail1, &rail2, 3);
     /// // At v=0 (rail start), corners match.
     /// assert_near2!(surface.subs(0.0, 0.0), Point3::new(-1.0, 0.0, 0.0));
@@ -1785,7 +1788,7 @@ impl BsplineSurface<Point3> {
     /// # Examples
     ///
     /// ```
-    /// use truck_geometry::prelude::*;
+    /// use monstertruck_geometry::prelude::*;
     ///
     /// // Two parallel straight rails.
     /// let rail1 = BsplineCurve::new(
@@ -1805,6 +1808,7 @@ impl BsplineSurface<Point3> {
     ///     KnotVector::bezier_knot(1),
     ///     vec![Point3::new(0.0, 0.0, 4.0), Point3::new(2.0, 0.0, 4.0)],
     /// );
+    /// #[allow(deprecated)]
     /// let surface = BsplineSurface::birail2(profile1, profile2, &rail1, &rail2, 3);
     /// // Corners.
     /// assert_near2!(surface.subs(0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
@@ -2661,7 +2665,7 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// # Examples
     ///
     /// ```
-    /// use truck_geometry::prelude::*;
+    /// use monstertruck_geometry::prelude::*;
     ///
     /// // Two u-curves and two v-curves forming a bilinear patch.
     /// let u0 = BsplineCurve::new(
@@ -2684,6 +2688,7 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     ///     vec![Vector2::new(0.0, 0.0), Vector2::new(1.0, 0.0)],
     ///     vec![Vector2::new(0.0, 1.0), Vector2::new(1.0, 1.0)],
     /// ];
+    /// #[allow(deprecated)]
     /// let gordon = BsplineSurface::gordon(
     ///     vec![u0, u1],
     ///     vec![v0, v1],

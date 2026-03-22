@@ -2,7 +2,7 @@
 
 use monstertruck_modeling::*;
 
-/// Build a simple box shell using extrude, fillet selected edges, verify result.
+/// Build a closed box shell, fillet one edge, verify the shell gains faces.
 #[test]
 fn fillet_box_edge() {
     let p = [
@@ -57,11 +57,14 @@ fn fillet_box_edge() {
         Face::new(vec![wire], Surface::Plane(plane))
     };
 
+    // Build a closed box shell (all 6 faces).
     let mut shell: Shell = [
-        plane_face(0, 1, 2, 3),
-        plane_face(1, 0, 4, 5),
-        plane_face(2, 1, 5, 6),
-        plane_face(3, 2, 6, 7),
+        plane_face(0, 1, 2, 3), // top
+        plane_face(5, 4, 7, 6), // bottom (reversed winding)
+        plane_face(1, 0, 4, 5), // front
+        plane_face(2, 1, 5, 6), // right
+        plane_face(3, 2, 6, 7), // back
+        plane_face(0, 3, 7, 4), // left
     ]
     .into();
 
@@ -73,5 +76,10 @@ fn fillet_box_edge() {
     };
     fillet_edges(&mut shell, &[edge[5].clone()], Some(&params)).unwrap();
 
-    assert!(shell.len() > initial_face_count);
+    assert!(
+        shell.len() > initial_face_count,
+        "expected fillet to add faces: got {} (was {})",
+        shell.len(),
+        initial_face_count
+    );
 }
