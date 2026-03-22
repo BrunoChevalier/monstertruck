@@ -22,3 +22,5 @@ test_commands:
   - cargo test
   - cargo nextest run
   - cargo doc
+chain:
+  max_iterations: 500
