@@ -25,7 +25,7 @@ impl TryFrom<Curve> for NurbsCurve<Vector4> {
             Curve::NurbsCurve(nc) => Ok(nc),
             Curve::IntersectionCurve(ic) => {
                 let range = ic.range_tuple();
-                Ok(sample_to_nurbs(range, |t| ic.subs(t), 16))
+                Ok(sample_to_nurbs(range, |t| ic.subs(t), 24))
             }
         }
     }
@@ -35,36 +35,50 @@ impl TryFrom<Curve> for NurbsCurve<Vector4> {
 impl From<ParameterCurveLinear> for Curve {
     fn from(c: ParameterCurveLinear) -> Self {
         let range = c.range_tuple();
-        Curve::NurbsCurve(sample_to_nurbs(range, |t| c.subs(t), 16))
+        Curve::NurbsCurve(sample_to_nurbs(range, |t| c.subs(t), 24))
     }
 }
 
 impl From<FilletIntersectionCurve> for Curve {
     fn from(c: FilletIntersectionCurve) -> Self {
         let range = c.range_tuple();
-        Curve::NurbsCurve(sample_to_nurbs(range, |t| c.subs(t), 16))
+        Curve::NurbsCurve(sample_to_nurbs(range, |t| c.subs(t), 24))
     }
 }
 
-/// Sample a parametric curve into a degree-1 NURBS polyline approximation.
+/// Sample a parametric curve into a degree-3 NURBS cubic interpolation.
 fn sample_to_nurbs(
     range: (f64, f64),
     subs: impl Fn(f64) -> Point3,
     n: usize,
 ) -> NurbsCurve<Vector4> {
     let (t0, t1) = range;
-    let pts: Vec<Point3> = (0..=n)
-        .map(|i| subs(t0 + (t1 - t0) * (i as f64) / (n as f64)))
+    let n_points = n + 1;
+    let knot = KnotVector::uniform_knot(3, n_points - 3);
+    let param_points: Vec<(f64, Point3)> = (0..n_points)
+        .map(|i| {
+            let u = i as f64 / (n_points - 1) as f64;
+            let t = t0 + (t1 - t0) * u;
+            (u, subs(t))
+        })
         .collect();
-    let knots: Vec<f64> = (0..=n).map(|i| i as f64 / n as f64).collect();
-    let knot_vec = KnotVector::from(
-        std::iter::once(0.0)
-            .chain(knots.iter().copied())
-            .chain(std::iter::once(1.0))
-            .collect::<Vec<_>>(),
-    );
-    let bsp = BsplineCurve::new(knot_vec, pts);
-    NurbsCurve::from(bsp)
+    match BsplineCurve::try_interpolate(knot, param_points) {
+        Ok(bsp) => NurbsCurve::from(bsp),
+        Err(_) => {
+            // Degree-1 fallback.
+            let pts: Vec<Point3> = (0..=n)
+                .map(|i| subs(t0 + (t1 - t0) * (i as f64) / (n as f64)))
+                .collect();
+            let knots: Vec<f64> = (0..=n).map(|i| i as f64 / n as f64).collect();
+            let knot_vec = KnotVector::from(
+                std::iter::once(0.0)
+                    .chain(knots.iter().copied())
+                    .chain(std::iter::once(1.0))
+                    .collect::<Vec<_>>(),
+            );
+            NurbsCurve::from(BsplineCurve::new(knot_vec, pts))
+        }
+    }
 }
 
 #[cfg(test)]
