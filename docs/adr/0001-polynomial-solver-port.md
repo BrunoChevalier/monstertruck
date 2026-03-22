@@ -94,3 +94,7 @@ No changes to the polynomial solver module. Phase 20 expanded the pathological g
 ## Status Update (Phase 21 -- Fillet Edge Identity Fix)
 
 No changes to the polynomial solver module. Phase 21 fixed edge identity preservation in fillet topology surgery (`monstertruck-solid`). The math layer was unaffected.
+
+## Status Update (Phase 22 -- Conversion Fidelity Improvements)
+
+No changes to the polynomial solver module. Phase 22 upgraded curve/surface sampling to cubic interpolation, added exact `RevolutedCurve` conversion, and introduced endpoint snapping in shell conversion. The math layer was unaffected.

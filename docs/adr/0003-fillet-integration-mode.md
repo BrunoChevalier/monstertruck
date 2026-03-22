@@ -86,3 +86,7 @@ No changes to fillet integration mode logic. Phase 20 expanded the pathological 
 ## Status Update (Phase 21 -- Fillet Edge Identity Fix)
 
 No changes to fillet integration mode logic. Phase 21 fixed edge identity preservation in `ensure_cuttable_edge` (see [ADR-0002](0002-fillet-topology-surgery-hardening.md) Phase 21 update) and widened endpoint matching tolerance in `fillet::convert`. The fillet integration mode and continuity annotations from this ADR are unaffected.
+
+## Status Update (Phase 22 -- Conversion Fidelity Improvements)
+
+No changes to fillet integration mode logic. Phase 22 upgraded curve/surface sampling to cubic interpolation, added exact `RevolutedCurve` conversion, and introduced endpoint snapping in shell conversion. The fillet integration mode and continuity annotations from this ADR are unaffected.

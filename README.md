@@ -124,6 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Phase 22 -- Conversion Fidelity Improvements
+
+- **Cubic interpolation for sampling** -- `sample_curve_to_nurbs` and `sample_surface_to_nurbs` upgraded from degree-1 (linear) to degree-3 (cubic) interpolation, producing smoother NURBS approximations. Fillet output paths (`From<ParameterCurveLinear>`, `From<FilletIntersectionCurve>`) also upgraded to degree-3.
+- **Exact RevolutedCurve conversion** -- `RevolutedCurve` to `NurbsSurface` conversion now uses rational circle arc tensor product for exact representation, eliminating the sampling fallback for this surface type.
+- **Endpoint snapping** -- `convert_shell_in` and `convert_shell_out` now snap endpoints to preserve vertex-edge positional coincidence after NURBS conversion.
+
 ### Phase 21 -- Fillet Edge Identity Fix
 
 - **Edge identity preservation** -- `ensure_cuttable_edge` in `monstertruck-solid::fillet::topology` now uses `set_curve()` instead of `Edge::new()` when converting `IntersectionCurve` edges to NURBS approximations. This preserves the `Edge` arc identity through fillet conversion, preventing dangling references in the topology graph.
