@@ -549,6 +549,41 @@ where
     }
 }
 
+/// Cosine coefficients for the 9-point rational circle (4 quarter arcs, degree 2).
+const CIRCLE_COS: [f64; 9] = [1.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0, 1.0, 1.0];
+/// Sine coefficients for the 9-point rational circle.
+const CIRCLE_SIN: [f64; 9] = [0.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0];
+/// Weights for the 9-point rational circle.
+const CIRCLE_W: [f64; 9] = [
+    1.0,
+    std::f64::consts::FRAC_1_SQRT_2,
+    1.0,
+    std::f64::consts::FRAC_1_SQRT_2,
+    1.0,
+    std::f64::consts::FRAC_1_SQRT_2,
+    1.0,
+    std::f64::consts::FRAC_1_SQRT_2,
+    1.0,
+];
+
+/// Builds the degree-2 knot vector for a full 2*PI revolution.
+fn full_revolution_knot_vector() -> KnotVector {
+    KnotVector::from(vec![
+        0.0,
+        0.0,
+        0.0,
+        PI / 2.0,
+        PI / 2.0,
+        PI,
+        PI,
+        3.0 * PI / 2.0,
+        3.0 * PI / 2.0,
+        2.0 * PI,
+        2.0 * PI,
+        2.0 * PI,
+    ])
+}
+
 impl RevolutedCurve<NurbsCurve<Vector4>> {
     /// Converts this revolved surface to an exact [`NurbsSurface`] via rational
     /// circle arc tensor product.
@@ -556,98 +591,56 @@ impl RevolutedCurve<NurbsCurve<Vector4>> {
     /// The profile curve becomes the u-direction and the revolution becomes the
     /// v-direction. A full 2*PI revolution is represented with 9 control points
     /// (degree 2) using the standard rational Bezier circle decomposition.
+    ///
+    /// Handles points at infinity (`w = 0`) correctly by working entirely in
+    /// homogeneous coordinates.
     pub fn to_nurbs_surface(&self) -> NurbsSurface<Vector4> {
-        let inv_sqrt2 = std::f64::consts::FRAC_1_SQRT_2;
-        // Standard rational circle: cos/sin coefficients and weights for 9 control
-        // points spanning 0..2*PI (4 quarter arcs, degree 2).
-        let cos_table: [f64; 9] = [1.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0, 1.0, 1.0];
-        let sin_table: [f64; 9] = [0.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0];
-        let w_circle: [f64; 9] = [
-            1.0, inv_sqrt2, 1.0, inv_sqrt2, 1.0, inv_sqrt2, 1.0, inv_sqrt2, 1.0,
-        ];
-
-        let v_knots = KnotVector::from(vec![
-            0.0,
-            0.0,
-            0.0,
-            PI / 2.0,
-            PI / 2.0,
-            PI,
-            PI,
-            3.0 * PI / 2.0,
-            3.0 * PI / 2.0,
-            2.0 * PI,
-            2.0 * PI,
-            2.0 * PI,
-        ]);
-
-        let origin = self.origin();
+        let origin_vec = self.origin().to_vec();
         let axis = self.axis();
-        let profile_cps = self.curve.control_points();
         let u_knots = self.curve.knot_vec().clone();
 
-        // Work in homogeneous coordinates to handle w=0 (points at infinity)
-        // correctly. For each profile control point (hx, hy, hz, w):
-        //   - Decompose the 3D part into axis-parallel and perpendicular components
-        //   - The axis-parallel part stays fixed; the perpendicular part gets rotated
-        //   - The origin contribution is scaled by w (vanishes for w=0)
-        let origin_vec = origin.to_vec();
-
-        let control_points: Vec<Vec<Vector4>> = profile_cps
+        let control_points: Vec<Vec<Vector4>> = self
+            .curve
+            .control_points()
             .iter()
             .map(|cp_hom| {
+                // Decompose the 3D part of the homogeneous control point into
+                // axis-parallel and perpendicular components relative to the
+                // revolution origin. The origin contribution is scaled by w
+                // (vanishes for w=0 points at infinity).
                 let w_profile = cp_hom.w;
                 let hxyz = Vector3::new(cp_hom.x, cp_hom.y, cp_hom.z);
-
-                // Decompose hxyz relative to the revolution axis.
-                // hxyz = w * origin + w * along_axis * axis + w * radial
-                // where radial is perpendicular to axis.
                 let hxyz_rel = hxyz - w_profile * origin_vec;
                 let along = hxyz_rel.dot(axis);
                 let radial = hxyz_rel - along * axis;
                 let radius = radial.magnitude();
 
-                if radius < 1.0e-14 {
-                    // Point is on the axis (or w=0 direction along axis).
-                    (0..9)
-                        .map(|j| {
-                            let w_total = w_profile * w_circle[j];
-                            // The 3D part is the axis-parallel component + origin * w.
-                            let h = along * axis + w_profile * origin_vec;
-                            Vector4::new(
-                                h.x * w_circle[j],
-                                h.y * w_circle[j],
-                                h.z * w_circle[j],
-                                w_total,
-                            )
-                        })
-                        .collect()
-                } else {
-                    let unit_r = radial / radius;
-                    let unit_t: Vector3 = axis.cross(&unit_r).normalize();
+                // Fixed part: axis-parallel component plus origin contribution.
+                let fixed = w_profile * origin_vec + along * axis;
 
-                    (0..9)
-                        .map(|j| {
-                            // Rotate the radial component.
-                            let rotated_radial =
-                                radius * (cos_table[j] * unit_r + sin_table[j] * unit_t);
-                            // Reconstruct: origin*w + along*axis + rotated_radial.
-                            let h = w_profile * origin_vec + along * axis + rotated_radial;
-                            let w_total = w_profile * w_circle[j];
-                            Vector4::new(
-                                h.x * w_circle[j],
-                                h.y * w_circle[j],
-                                h.z * w_circle[j],
-                                w_total,
-                            )
-                        })
-                        .collect()
-                }
+                // Compute the radial and tangent unit vectors. When the point
+                // lies on the axis (radius ~ 0), the rotated radial is zero
+                // for all 9 circle positions.
+                let (unit_r, unit_t) = if radius < 1.0e-14 {
+                    (Vector3::zero(), Vector3::zero())
+                } else {
+                    (radial / radius, axis.cross(&(radial / radius)).normalize())
+                };
+
+                (0..9)
+                    .map(|j| {
+                        let rotated: Vector3 =
+                            radius * (CIRCLE_COS[j] * unit_r + CIRCLE_SIN[j] * unit_t);
+                        let h = fixed + rotated;
+                        let wc = CIRCLE_W[j];
+                        Vector4::new(h.x * wc, h.y * wc, h.z * wc, w_profile * wc)
+                    })
+                    .collect()
             })
             .collect();
 
         NurbsSurface::new(BsplineSurface::new(
-            (u_knots, v_knots),
+            (u_knots, full_revolution_knot_vector()),
             control_points,
         ))
     }
