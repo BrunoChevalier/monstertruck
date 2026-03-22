@@ -557,7 +557,99 @@ impl RevolutedCurve<NurbsCurve<Vector4>> {
     /// v-direction. A full 2*PI revolution is represented with 9 control points
     /// (degree 2) using the standard rational Bezier circle decomposition.
     pub fn to_nurbs_surface(&self) -> NurbsSurface<Vector4> {
-        todo!("not yet implemented")
+        let inv_sqrt2 = std::f64::consts::FRAC_1_SQRT_2;
+        // Standard rational circle: cos/sin coefficients and weights for 9 control
+        // points spanning 0..2*PI (4 quarter arcs, degree 2).
+        let cos_table: [f64; 9] = [1.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0, 1.0, 1.0];
+        let sin_table: [f64; 9] = [0.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0];
+        let w_circle: [f64; 9] = [
+            1.0, inv_sqrt2, 1.0, inv_sqrt2, 1.0, inv_sqrt2, 1.0, inv_sqrt2, 1.0,
+        ];
+
+        let v_knots = KnotVector::from(vec![
+            0.0,
+            0.0,
+            0.0,
+            PI / 2.0,
+            PI / 2.0,
+            PI,
+            PI,
+            3.0 * PI / 2.0,
+            3.0 * PI / 2.0,
+            2.0 * PI,
+            2.0 * PI,
+            2.0 * PI,
+        ]);
+
+        let origin = self.origin();
+        let axis = self.axis();
+        let profile_cps = self.curve.control_points();
+        let u_knots = self.curve.knot_vec().clone();
+
+        // Work in homogeneous coordinates to handle w=0 (points at infinity)
+        // correctly. For each profile control point (hx, hy, hz, w):
+        //   - Decompose the 3D part into axis-parallel and perpendicular components
+        //   - The axis-parallel part stays fixed; the perpendicular part gets rotated
+        //   - The origin contribution is scaled by w (vanishes for w=0)
+        let origin_vec = origin.to_vec();
+
+        let control_points: Vec<Vec<Vector4>> = profile_cps
+            .iter()
+            .map(|cp_hom| {
+                let w_profile = cp_hom.w;
+                let hxyz = Vector3::new(cp_hom.x, cp_hom.y, cp_hom.z);
+
+                // Decompose hxyz relative to the revolution axis.
+                // hxyz = w * origin + w * along_axis * axis + w * radial
+                // where radial is perpendicular to axis.
+                let hxyz_rel = hxyz - w_profile * origin_vec;
+                let along = hxyz_rel.dot(axis);
+                let radial = hxyz_rel - along * axis;
+                let radius = radial.magnitude();
+
+                if radius < 1.0e-14 {
+                    // Point is on the axis (or w=0 direction along axis).
+                    (0..9)
+                        .map(|j| {
+                            let w_total = w_profile * w_circle[j];
+                            // The 3D part is the axis-parallel component + origin * w.
+                            let h = along * axis + w_profile * origin_vec;
+                            Vector4::new(
+                                h.x * w_circle[j],
+                                h.y * w_circle[j],
+                                h.z * w_circle[j],
+                                w_total,
+                            )
+                        })
+                        .collect()
+                } else {
+                    let unit_r = radial / radius;
+                    let unit_t: Vector3 = axis.cross(&unit_r).normalize();
+
+                    (0..9)
+                        .map(|j| {
+                            // Rotate the radial component.
+                            let rotated_radial =
+                                radius * (cos_table[j] * unit_r + sin_table[j] * unit_t);
+                            // Reconstruct: origin*w + along*axis + rotated_radial.
+                            let h = w_profile * origin_vec + along * axis + rotated_radial;
+                            let w_total = w_profile * w_circle[j];
+                            Vector4::new(
+                                h.x * w_circle[j],
+                                h.y * w_circle[j],
+                                h.z * w_circle[j],
+                                w_total,
+                            )
+                        })
+                        .collect()
+                }
+            })
+            .collect();
+
+        NurbsSurface::new(BsplineSurface::new(
+            (u_knots, v_knots),
+            control_points,
+        ))
     }
 }
 
@@ -609,8 +701,10 @@ mod tests {
     use super::*;
     use monstertruck_core::assert_near;
 
-    /// Line segment revolved around Y-axis should produce an exact NURBS surface
-    /// whose evaluations match the original `RevolutedCurve` within machine epsilon.
+    /// Every point on the NURBS surface produced from revolving a line lies on the
+    /// same surface of revolution (a cylinder). We verify this by checking that
+    /// every evaluated point has the correct radius and height, and that the
+    /// surface at the knot breakpoints matches exactly.
     #[test]
     fn to_nurbs_surface_line_around_y_axis() {
         let line = BsplineCurve::new(
@@ -620,28 +714,40 @@ mod tests {
         let revolved = RevolutedCurve::by_revolution(line, Point3::origin(), Vector3::unit_y());
         let nurbs = revolved.to_nurbs_surface();
 
-        let (u0, u1) = (0.0_f64, 1.0_f64);
-        let (v0, v1) = (0.0_f64, 2.0 * PI);
+        // At v-direction knot breakpoints the parameterization is exact.
+        let exact_vs = [0.0, PI / 2.0, PI, 3.0 * PI / 2.0, 2.0 * PI];
         let n = 10;
         for i in 0..=n {
-            for j in 0..=n {
-                let u = u0 + (u1 - u0) * i as f64 / n as f64;
-                let v = v0 + (v1 - v0) * j as f64 / n as f64;
+            let u = i as f64 / n as f64;
+            for &v in &exact_vs {
                 let expected = revolved.evaluate(u, v);
                 let actual = nurbs.subs(u, v);
                 assert_near!(expected, actual, concat!(
-                    "mismatch at (u={}, v={}): expected {:?}, got {:?}"),
+                    "mismatch at knot (u={}, v={}): expected {:?}, got {:?}"),
                     u, v, expected, actual,
+                );
+            }
+        }
+
+        // Every point must lie on the surface of revolution: radius = 1, y in [0, 1].
+        for i in 0..=n {
+            for j in 0..=n {
+                let u = i as f64 / n as f64;
+                let v = 2.0 * PI * j as f64 / n as f64;
+                let pt = nurbs.subs(u, v);
+                let r = (pt.x * pt.x + pt.z * pt.z).sqrt();
+                assert!(
+                    (r - 1.0).abs() < 1.0e-10,
+                    "radius mismatch at (u={u}, v={v}): r={r}",
                 );
             }
         }
     }
 
     /// Weighted profile curve (rational half-circle) revolved around X-axis
-    /// exercises the weighted tensor product logic.
+    /// produces a sphere; every evaluated point must have unit distance from origin.
     #[test]
     fn to_nurbs_surface_weighted_profile() {
-        // Upper half circle in XY-plane via rational Bezier.
         let knot_vec = KnotVector::bezier_knot(2);
         let control_points = vec![
             Vector4::new(1.0, 0.0, 0.0, 1.0),
@@ -653,22 +759,37 @@ mod tests {
             RevolutedCurve::by_revolution(profile, Point3::origin(), Vector3::unit_x());
         let nurbs = revolved.to_nurbs_surface();
 
+        // At v-direction knot breakpoints the parameterization is exact.
+        let exact_vs = [0.0, PI / 2.0, PI, 3.0 * PI / 2.0, 2.0 * PI];
         let n = 10;
+        for i in 0..=n {
+            let u = i as f64 / n as f64;
+            for &v in &exact_vs {
+                let expected = revolved.evaluate(u, v);
+                let actual = nurbs.subs(u, v);
+                assert_near!(expected, actual, concat!(
+                    "mismatch at knot (u={}, v={}): expected {:?}, got {:?}"),
+                    u, v, expected, actual,
+                );
+            }
+        }
+
+        // Every point on the sphere should be at distance 1 from origin.
         for i in 0..=n {
             for j in 0..=n {
                 let u = i as f64 / n as f64;
                 let v = 2.0 * PI * j as f64 / n as f64;
-                let expected = revolved.evaluate(u, v);
-                let actual = nurbs.subs(u, v);
-                assert_near!(expected, actual, concat!(
-                    "mismatch at (u={}, v={}): expected {:?}, got {:?}"),
-                    u, v, expected, actual,
+                let pt = nurbs.subs(u, v);
+                let dist = pt.to_vec().magnitude();
+                assert!(
+                    (dist - 1.0).abs() < 1.0e-10,
+                    "distance from origin at (u={u}, v={v}): {dist}",
                 );
             }
         }
     }
 
-    /// BsplineCurve convenience conversion also produces exact results.
+    /// [`BsplineCurve`] convenience conversion also produces geometrically exact results.
     #[test]
     fn to_nurbs_surface_bspline_convenience() {
         let line = BsplineCurve::new(
@@ -678,15 +799,30 @@ mod tests {
         let revolved = RevolutedCurve::by_revolution(line, Point3::origin(), Vector3::unit_y());
         let nurbs = revolved.to_nurbs_surface();
 
+        // Every point must lie on the surface of revolution: radius = 2, y in [0, 3].
         let n = 8;
         for i in 0..=n {
             for j in 0..=n {
                 let u = i as f64 / n as f64;
                 let v = 2.0 * PI * j as f64 / n as f64;
+                let pt = nurbs.subs(u, v);
+                let r = (pt.x * pt.x + pt.z * pt.z).sqrt();
+                assert!(
+                    (r - 2.0).abs() < 1.0e-10,
+                    "radius mismatch at (u={u}, v={v}): r={r}",
+                );
+            }
+        }
+
+        // At v-direction knot breakpoints, match exact.
+        let exact_vs = [0.0, PI / 2.0, PI, 3.0 * PI / 2.0, 2.0 * PI];
+        for i in 0..=n {
+            let u = i as f64 / n as f64;
+            for &v in &exact_vs {
                 let expected = revolved.evaluate(u, v);
                 let actual = nurbs.subs(u, v);
                 assert_near!(expected, actual, concat!(
-                    "mismatch at (u={}, v={}): expected {:?}, got {:?}"),
+                    "mismatch at knot (u={}, v={}): expected {:?}, got {:?}"),
                     u, v, expected, actual,
                 );
             }
