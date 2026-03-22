@@ -39,6 +39,9 @@ pub enum FilletError {
     /// The edge is too short for the requested fillet radius.
     #[error("Edge too short for fillet radius.")]
     DegenerateEdge,
+    /// The fillet operation produced a non-closed shell.
+    #[error("Fillet produced non-closed shell.")]
+    ShellNotClosed,
     /// Per-edge radius count does not match the number of edges.
     #[error("Per-edge radius count ({given}) does not match edge count ({expected}).")]
     PerEdgeRadiusMismatch {

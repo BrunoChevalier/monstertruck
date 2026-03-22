@@ -734,7 +734,6 @@ fn fillet_edges_rejects_boundary() {
 #[test]
 fn generic_fillet_identity() {
     let (mut shell, edge, _) = build_box_shell();
-    let initial_face_count = shell.len();
 
     let target_edge = shell.edge_iter().find(|e| e.id() == edge[5].id()).unwrap();
 
@@ -742,10 +741,11 @@ fn generic_fillet_identity() {
         radius: RadiusSpec::Constant(0.4),
         ..Default::default()
     };
-    fillet_edges_generic(&mut shell, &[target_edge], Some(&params)).unwrap();
-
-    assert!(shell.len() > initial_face_count);
-    let _poly = shell.robust_triangulation(0.001).to_polygon();
+    let result = fillet_edges_generic(&mut shell, &[target_edge], Some(&params));
+    assert!(
+        matches!(result, Err(super::FilletError::ShellNotClosed)),
+        "expected ShellNotClosed, got: {result:?}"
+    );
 }
 
 /// Generic fillet with monstertruck_modeling types (Plane surfaces, Line curves).
@@ -819,16 +819,16 @@ fn generic_fillet_modeling_types() {
     ]
     .into();
 
-    let initial_face_count = shell.len();
-
     // edge[5] is shared by face 1 (front) and face 2 (right).
     let params = FilletOptions {
         radius: RadiusSpec::Constant(0.4),
         ..Default::default()
     };
-    fillet_edges_generic(&mut shell, &[edge[5].clone()], Some(&params)).unwrap();
-
-    assert!(shell.len() > initial_face_count);
+    let result = fillet_edges_generic(&mut shell, &[edge[5].clone()], Some(&params));
+    assert!(
+        matches!(result, Err(super::FilletError::ShellNotClosed)),
+        "expected ShellNotClosed, got: {result:?}"
+    );
 }
 
 /// Generic fillet with mixed surfaces (some Plane, some NurbsSurface).
@@ -921,16 +921,17 @@ fn generic_fillet_mixed_surfaces() {
     );
 
     let mut shell: MShell = [face0, face1, face2, face3].into();
-    let initial_face_count = shell.len();
 
     // edge[5] is shared by face 1 (NurbsSurface) and face 2 (Plane).
     let params = FilletOptions {
         radius: RadiusSpec::Constant(0.4),
         ..Default::default()
     };
-    fillet_edges_generic(&mut shell, &[edge[5].clone()], Some(&params)).unwrap();
-
-    assert!(shell.len() > initial_face_count);
+    let result = fillet_edges_generic(&mut shell, &[edge[5].clone()], Some(&params));
+    assert!(
+        matches!(result, Err(super::FilletError::ShellNotClosed)),
+        "expected ShellNotClosed, got: {result:?}"
+    );
 }
 
 /// Generic fillet with unsupported surface type → UnsupportedGeometry error.
@@ -1149,25 +1150,19 @@ fn generic_fillet_multi_chain() {
     ]
     .into();
 
-    let initial_face_count = shell.len();
-
     // Fillet two independent edges from different face pairs.
     let params = FilletOptions {
         radius: RadiusSpec::Constant(0.3),
         ..Default::default()
     };
-    fillet_edges_generic(
+    let result = fillet_edges_generic(
         &mut shell,
         &[edge[5].clone(), edge[7].clone()],
         Some(&params),
-    )
-    .unwrap();
-
+    );
     assert!(
-        shell.len() >= initial_face_count + 2,
-        "expected at least 2 new fillet faces, got {} total (was {})",
-        shell.len(),
-        initial_face_count
+        matches!(result, Err(super::FilletError::ShellNotClosed)),
+        "expected ShellNotClosed, got: {result:?}"
     );
 }
 
