@@ -76,12 +76,36 @@ fn sample_curve_to_nurbs(
     sample_count: usize,
 ) -> NurbsCurve<Vector4> {
     let (t0, t1) = range;
-    let points: Vec<Point3> = (0..=sample_count)
-        .map(|i| t0 + (t1 - t0) * (i as f64) / (sample_count as f64))
-        .map(evaluate)
+    let n_points = sample_count + 1;
+    let knot = KnotVector::uniform_knot(3, n_points - 3);
+    let param_points: Vec<(f64, Point3)> = (0..n_points)
+        .map(|i| {
+            let u = i as f64 / (n_points - 1) as f64;
+            let t = t0 + (t1 - t0) * u;
+            (u, evaluate(t))
+        })
         .collect();
-    let knot_vector = KnotVector::uniform_knot(1, sample_count);
-    NurbsCurve::from(BsplineCurve::new(knot_vector, points))
+    match BsplineCurve::try_interpolate(knot, param_points) {
+        Ok(bsp) => NurbsCurve::from(bsp),
+        Err(_) => {
+            // Degree-1 fallback.
+            let points: Vec<Point3> = (0..=sample_count)
+                .map(|i| t0 + (t1 - t0) * (i as f64) / (sample_count as f64))
+                .map(&evaluate)
+                .collect();
+            let knot_vector = KnotVector::uniform_knot(1, sample_count);
+            NurbsCurve::from(BsplineCurve::new(knot_vector, points))
+        }
+    }
+}
+
+/// Computes the Greville abscissae for a knot vector of given degree.
+/// These are the optimal parameter values for B-spline interpolation.
+fn greville_abscissae(knots: &KnotVector, degree: usize) -> Vec<f64> {
+    let n = knots.len() - degree - 1;
+    (0..n)
+        .map(|i| (1..=degree).map(|j| knots[i + j]).sum::<f64>() / degree as f64)
+        .collect()
 }
 
 fn sample_surface_to_nurbs<S: ParametricSurface<Point = Point3>>(
@@ -90,19 +114,59 @@ fn sample_surface_to_nurbs<S: ParametricSurface<Point = Point3>>(
 ) -> Option<NurbsSurface<Vector4>> {
     let (u_range, v_range) = surface.try_range_tuple();
     let ((u0, u1), (v0, v1)) = u_range.zip(v_range)?;
-    let control_points: Vec<Vec<Point3>> = (0..=sample_count)
-        .map(|iu| {
-            let u = u0 + (u1 - u0) * (iu as f64) / (sample_count as f64);
-            (0..=sample_count)
-                .map(|iv| {
-                    let v = v0 + (v1 - v0) * (iv as f64) / (sample_count as f64);
-                    surface.evaluate(u, v)
-                })
-                .collect()
-        })
+    let n_points = sample_count + 1;
+    let u_knot = KnotVector::uniform_knot(3, n_points - 3);
+    let v_knot = KnotVector::uniform_knot(3, n_points - 3);
+
+    let u_grev = greville_abscissae(&u_knot, 3);
+    let v_grev = greville_abscissae(&v_knot, 3);
+
+    // Map Greville abscissae to surface domain.
+    let u_params: Vec<f64> = u_grev.iter().map(|&g| u0 + (u1 - u0) * g).collect();
+    let v_params: Vec<f64> = v_grev.iter().map(|&g| v0 + (v1 - v0) * g).collect();
+
+    // Sample the surface at the tensor product grid.
+    let surface_points: Vec<Vec<Point3>> = u_params
+        .iter()
+        .map(|&u| v_params.iter().map(|&v| surface.evaluate(u, v)).collect())
         .collect();
-    let u_knot = KnotVector::uniform_knot(1, sample_count);
-    let v_knot = KnotVector::uniform_knot(1, sample_count);
+
+    // First pass -- interpolate each row (v-direction).
+    let row_curves: Vec<BsplineCurve<Point3>> = surface_points
+        .iter()
+        .map(|row| {
+            let params: Vec<(f64, Point3)> =
+                v_grev.iter().copied().zip(row.iter().copied()).collect();
+            BsplineCurve::try_interpolate(v_knot.clone(), params)
+        })
+        .collect::<std::result::Result<_, _>>()
+        .ok()?;
+
+    // Collect intermediate control points (one row per u-sample).
+    let intermediate: Vec<Vec<Point3>> = row_curves
+        .iter()
+        .map(|c| c.control_points().to_vec())
+        .collect();
+
+    // Second pass -- interpolate each column (u-direction).
+    let col_cps: Vec<Vec<Point3>> = (0..n_points)
+        .map(|j| {
+            let params: Vec<(f64, Point3)> = u_grev
+                .iter()
+                .copied()
+                .zip(intermediate.iter().map(|row| row[j]))
+                .collect();
+            BsplineCurve::try_interpolate(u_knot.clone(), params)
+                .map(|c| c.control_points().to_vec())
+        })
+        .collect::<std::result::Result<_, _>>()
+        .ok()?;
+
+    // Transpose from [V][U] to [U][V] for BsplineSurface.
+    let control_points: Vec<Vec<Point3>> = (0..n_points)
+        .map(|i| (0..n_points).map(|j| col_cps[j][i]).collect())
+        .collect();
+
     Some(NurbsSurface::from(BsplineSurface::new(
         (u_knot, v_knot),
         control_points,
