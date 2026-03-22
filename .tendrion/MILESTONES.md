@@ -2,7 +2,11 @@
 
 ## Current Milestone
 
-No active milestone. Run `/td:new-milestone` to start one.
+**Name:** v0.5.2
+**Started:** 2026-03-22
+**Goal:** Fix the generic fillet conversion pipeline to resolve 7 pre-existing test failures caused by geometric fidelity loss during NURBS conversion, edge identity corruption, and overly tight tolerance assertions.
+**Phases:** 21-TBD
+**Status:** In Progress
 
 ## History
 
@@ -43,4 +47,4 @@ No active milestone. Run `/td:new-milestone` to start one.
 **Completed:** 2026-03-16
 
 ---
-*Last updated: 2026-03-20*
+*Last updated: 2026-03-22*

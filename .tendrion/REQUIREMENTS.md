@@ -1,39 +1,27 @@
-# Requirements: monstertruck v0.5.1
+# Requirements: monstertruck v0.5.2
 
-## Tolerance & API Safety
+### Fillet Conversion Fidelity
 
-- [ ] **TOLAPI-01**: Centralize shared tolerance constants in monstertruck-core (SNAP_TOLERANCE, VERTEX_MERGE_TOLERANCE, TESSELLATION_TOLERANCE, PERIODIC_CLOSURE_RATIO, G1_ANGLE_TOLERANCE, G2_CURVATURE_TOLERANCE) with defaults calibrated to preserve existing behavior
-- [ ] **TOLAPI-02**: Add `#[non_exhaustive]` to all surface constructor option structs (GordonOptions, SkinOptions, SweepRailOptions, Birail1Options, Birail2Options) to enable future field additions without breaking changes
-- [ ] **TOLAPI-03**: Refactor deprecated `gordon()` to delegate to `try_gordon()` instead of maintaining independent implementation; apply same pattern to other deprecated surface constructors if applicable
+- [ ] **FCONV-01**: Replace degree-1 piecewise-linear sampling in `sample_curve_to_nurbs` and `sample_surface_to_nurbs` with degree-3 cubic interpolation to preserve geometric fidelity across the fillet conversion pipeline
+- [ ] **FCONV-02**: Add endpoint snapping in `convert_shell_in`/`convert_shell_out` to ensure converted curve endpoints exactly match vertex positions, preventing gap introduction that breaks shell closure
+- [ ] **FCONV-03**: Implement exact `RevolutedCurve` to `NurbsSurface` conversion via rational circle arc tensor product, eliminating the sampling fallback path for this common surface type
 
-## Curve Intersection Engine
+### Edge Identity & Topology
 
-- [ ] **CURVINT-01**: Implement curve-curve intersection module (`curve_intersect.rs`) in monstertruck-geometry as a shared utility using subdivision/refinement approach, reusable for Gordon grid computation, trim intersection, and self-intersection detection
+- [ ] **ETOPO-01**: Fix `ensure_cuttable_edge` in the fillet pipeline to preserve `Edge` arc identity when re-wrapping IntersectionCurve edges as NURBS, preventing `is_same()` failures in boundary replacement
+- [ ] **ETOPO-02**: Widen endpoint matching tolerance in `convert_shell_in` from `TOLERANCE` (1e-6) to `SNAP_TOLERANCE` (1e-5) for edges originating from boolean operations with inherent positional noise
 
-## Gordon Surface Variants
+### Error Reporting & Testing
 
-- [ ] **GORDON-01**: Implement `try_gordon_from_network` that auto-computes intersection grid points via curve-curve intersection engine before compatibility normalization (numerical ordering constraint: intersect on original curves first)
-- [ ] **GORDON-02**: Implement `try_gordon_verified` that validates caller-supplied grid points lie on both curve families within tolerance, with snapping support
-
-## Trim Tessellation Robustness
-
-- [ ] **TRIM-01**: Add fallback boundary projection in `PolyBoundaryPiece::try_new` using UV interpolation from neighbors when parameter search fails, to prevent silent face loss
-- [ ] **TRIM-02**: Replace hardcoded tessellation magic constants (e.g., `1.0e-3` closure threshold) with expressions derived from centralized tolerance constants
-
-## Fixture Corpus
-
-- [ ] **FIXTURE-01**: Expand fixture corpus with problematic rail/section combinations (inflection rails, converging rails, degenerate sections)
-- [ ] **FIXTURE-02**: Expand fixture corpus with near-degenerate NURBS cases (near-zero Jacobian, near-zero weight, collapsed control points)
-- [ ] **FIXTURE-03**: Add Gordon-specific network fixtures (near-miss grid points, nonuniform spacing, high-degree curve families)
-
-## Documentation
-
-- [ ] **DOC-01**: Add migration guidance as doc comments on `try_*` functions and crate-level docs with before/after examples showing manual vs. automatic workflows
+- [ ] **EREP-01**: Replace silent rollback in `fillet_edges_generic` (lines 733-738) with explicit error propagation, returning `Err(FilletError)` instead of silently restoring the original shell
+- [ ] **EREP-02**: Fix `test_unit_circle` proptest assertion to use relative tolerance (magnitude-aware) instead of absolute `prop_assert_near!` for rolling-ball fillet circle radius validation
 
 ## Out of Scope
 
-- Adaptive refinement near trim boundaries (post-CDT pass) — deferred as a future enhancement
+- Full NURBS fitting with least-squares optimization (cubic interpolation is sufficient for this milestone)
+- Adaptive sample count based on curvature analysis (fixed higher count is acceptable)
+- Exact conversion for arbitrary `Processor<T, Matrix4>` surface types beyond `RevolutedCurve`
 
 ## Traceability
 
-This requirements document covers milestone **v0.5.1**, completing the remaining open points from AYAM_PORT_PLAN.md.
+This requirements document covers milestone **v0.5.2**, fixing the generic fillet conversion pipeline to resolve 7 pre-existing test failures.

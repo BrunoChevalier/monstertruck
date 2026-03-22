@@ -7,6 +7,7 @@
 - **v0.4.0** -- Phases 9-12
 - **v0.5.0** -- Phases 13-15
 - **v0.5.1** -- Phases 16-20
+- **v0.5.2** -- Phases 21-23
 
 ## Phases
 
@@ -30,6 +31,9 @@
 - [x] **Phase 18: Gordon Surface Variants** - Auto-intersect and verified-grid Gordon constructors using the curve intersection engine
 - [x] **Phase 19: Trim Tessellation Robustness** - Fallback boundary projection and tolerance-derived tessellation constants
 - [x] **Phase 20: Fixture Corpus and Migration Documentation** - Expand test fixtures across all surface types and add migration guidance docs
+- [ ] **Phase 21: Edge Identity and Topology Repair** - Fix edge identity preservation in ensure_cuttable_edge and widen conversion tolerance for boolean-origin edges
+- [ ] **Phase 22: Conversion Fidelity** - Degree-3 cubic interpolation, endpoint snapping, and exact RevolutedCurve conversion to eliminate geometric loss
+- [ ] **Phase 23: Error Propagation and Test Hardening** - Replace silent fillet rollback with explicit errors and fix proptest tolerance
 
 ## Phase Details
 
@@ -129,9 +133,40 @@
 ### Phase 20: Fixture Corpus and Migration Documentation
 **Plans**: Archived — see `.tendrion/milestones/v0.5.1-ROADMAP.md`
 
+### Phase 21: Edge Identity and Topology Repair
+**Goal**: Edge identity is preserved through the fillet conversion pipeline, and boolean-origin edges match endpoints within appropriate tolerances
+**Depends on**: Phase 20
+**Requirements**: ETOPO-01, ETOPO-02
+**Success Criteria** (what must be TRUE):
+  1. `ensure_cuttable_edge` mutates the existing Edge's curve in-place rather than creating a new Edge, so `edge.is_same()` returns true before and after conversion
+  2. Edges originating from boolean operations with IntersectionCurve geometry pass endpoint matching in `convert_shell_in` without false-negative rejections
+  3. `cut_face_by_bezier` boundary replacement correctly locates and replaces edges that were converted by `ensure_cuttable_edge`, with no stale edges remaining in the boundary
+**Plans**: TBD
+
+### Phase 22: Conversion Fidelity
+**Goal**: The fillet conversion pipeline preserves geometric fidelity through degree-3 cubic interpolation, exact RevolutedCurve conversion, and endpoint snapping
+**Depends on**: Phase 21
+**Requirements**: FCONV-01, FCONV-02, FCONV-03
+**Success Criteria** (what must be TRUE):
+  1. `sample_curve_to_nurbs` and `sample_surface_to_nurbs` produce degree-3 NURBS with C1-continuous normals instead of degree-1 piecewise-linear approximations
+  2. Converted curve endpoints exactly match their source vertex positions (within machine epsilon), preserving `ShellCondition::Closed` through the conversion round-trip
+  3. `RevolutedCurve` surfaces convert to `NurbsSurface` via rational circle arc tensor product without falling back to the sampling path
+  4. Fillet output paths (`From<ParameterCurveLinear>` and `From<FilletIntersectionCurve>`) produce degree-3 curves consistent with the input conversion quality
+**Plans**: TBD
+
+### Phase 23: Error Propagation and Test Hardening
+**Goal**: Fillet failures surface explicit errors instead of silently restoring the original shell, and proptest tolerances match the mathematical properties being validated
+**Depends on**: Phase 22
+**Requirements**: EREP-01, EREP-02
+**Success Criteria** (what must be TRUE):
+  1. `fillet_edges_generic` returns `Err(FilletError)` with a descriptive variant when the shell closure check fails, instead of silently rolling back to the unfilleted shell
+  2. Callers of `fillet_edges_generic` can pattern-match on the error variant to distinguish conversion failures from topology failures
+  3. `test_unit_circle` proptest uses relative tolerance (comparing ratio to 1.0) rather than absolute `prop_assert_near!`, and passes consistently across the property test input space
+**Plans**: TBD
+
 ## Progress
 
-**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20
+**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -155,6 +190,9 @@
 | 18. Gordon Surface Variants | v0.5.1 | 2/2 | ✓ Complete | 2026-03-20 |
 | 19. Trim Tessellation Robustness | v0.5.1 | 2/2 | ✓ Complete | 2026-03-20 |
 | 20. Fixture Corpus and Migration Documentation | v0.5.1 | 3/3 | ✓ Complete | 2026-03-20 |
+| 21. Edge Identity and Topology Repair | v0.5.2 | 0/TBD | Not started | - |
+| 22. Conversion Fidelity | v0.5.2 | 0/TBD | Not started | - |
+| 23. Error Propagation and Test Hardening | v0.5.2 | 0/TBD | Not started | - |
 
 ---
 
@@ -163,3 +201,4 @@
 *Updated: 2026-03-18 (v0.4.0 milestone added)*
 *Updated: 2026-03-19 (v0.5.0 milestone added)*
 *Updated: 2026-03-19 (v0.5.1 milestone added)*
+*Updated: 2026-03-22 (v0.5.2 milestone added)*
