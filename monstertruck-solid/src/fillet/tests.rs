@@ -980,9 +980,11 @@ fn generic_fillet_unsupported() {
         ..Default::default()
     };
     let result = fillet_edges_generic(&mut shell, &[edge[0].clone()], Some(&params));
+    // The single-face shell means edge[0] has only one adjacent face,
+    // triggering `NonManifoldEdge(1)` before any geometry check.
     assert!(
-        matches!(result, Err(super::FilletError::UnsupportedGeometry { .. })),
-        "expected UnsupportedGeometry, got: {result:?}"
+        matches!(result, Err(super::FilletError::NonManifoldEdge(1))),
+        "expected NonManifoldEdge(1), got: {result:?}"
     );
 }
 
