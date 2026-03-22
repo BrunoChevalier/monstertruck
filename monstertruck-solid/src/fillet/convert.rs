@@ -107,8 +107,9 @@ pub(super) fn sample_curve_to_nurbs(
             (u, evaluate(t))
         })
         .collect();
-    let front = evaluate(t0);
-    let back = evaluate(t1);
+    // SAFETY: n_points >= 2 (sample_count >= 1), so first/last exist.
+    let front = param_points.first().unwrap().1;
+    let back = param_points.last().unwrap().1;
     match BsplineCurve::try_interpolate(knot, param_points) {
         Ok(bsp) => {
             let mut nc = NurbsCurve::from(bsp);
@@ -311,9 +312,25 @@ impl TryFrom<Curve> for NurbsCurve<Vector4> {
     }
 }
 
+/// Snaps all NURBS curve endpoints in a shell to their vertex positions.
+///
+/// Uses [`Edge::set_curve`] (which takes `&self` via interior mutability)
+/// so an immutable shell reference is sufficient.
+fn snap_shell_endpoints(shell: &InternalShell) {
+    for edge in shell.edge_iter() {
+        let front = edge.absolute_front().point();
+        let back = edge.absolute_back().point();
+        let mut curve = edge.curve();
+        if let Curve::NurbsCurve(ref mut nc) = curve {
+            snap_curve_endpoints(nc, front, back);
+            edge.set_curve(curve);
+        }
+    }
+}
+
 /// Convert an external shell to internal fillet types.
 ///
-/// Returns the internal shell and the internal `EdgeId`s corresponding to
+/// Returns the internal shell and the internal [`EdgeId`]s corresponding to
 /// the selected external edges (matched by endpoint positions).
 pub(super) fn convert_shell_in<C: FilletableCurve, S: FilletableSurface>(
     shell: &monstertruck_topology::Shell<Point3, C, S>,
@@ -336,17 +353,7 @@ pub(super) fn convert_shell_in<C: FilletableCurve, S: FilletableSurface>(
         })?;
 
     // Snap curve endpoints to vertex positions after conversion.
-    // `Edge::set_curve` takes `&self` (interior mutability via `Arc<RwLock>`),
-    // so immutable `edge_iter()` is sufficient.
-    for edge in internal_shell.edge_iter() {
-        let front = edge.absolute_front().point();
-        let back = edge.absolute_back().point();
-        let mut curve = edge.curve();
-        if let Curve::NurbsCurve(ref mut nc) = curve {
-            snap_curve_endpoints(nc, front, back);
-            edge.set_curve(curve);
-        }
-    }
+    snap_shell_endpoints(&internal_shell);
 
     // Match external edges to internal edges by endpoint positions.
     let internal_edge_ids: Vec<types::EdgeId> = edge_endpoints
@@ -375,17 +382,7 @@ pub(super) fn convert_shell_out<C: FilletableCurve, S: FilletableSurface>(
     shell: &InternalShell,
 ) -> std::result::Result<monstertruck_topology::Shell<Point3, C, S>, FilletError> {
     // Snap internal curves to vertex positions before converting out.
-    // `Edge::set_curve` takes `&self`, so we can mutate through immutable
-    // shell reference.
-    for edge in shell.edge_iter() {
-        let front = edge.absolute_front().point();
-        let back = edge.absolute_back().point();
-        let mut curve = edge.curve();
-        if let Curve::NurbsCurve(ref mut nc) = curve {
-            snap_curve_endpoints(nc, front, back);
-            edge.set_curve(curve);
-        }
-    }
+    snap_shell_endpoints(shell);
     shell
         .try_mapped(
             |p| Some(*p),
