@@ -56,7 +56,6 @@
 None
 
 ## Session
-**Chain:** active
 **Last Command:** /td:verify
 **Next Action:** All phases complete
 **Resume File:** None
