@@ -323,3 +323,12 @@
 ### Doc gate: spawning writer to fix 1 issue(s) - stale documentation freshness
 **Time:** 2026-03-23T05:52:31.411Z
 
+### Corrected plan inaccuracy: plan says revolve is deprecated but actual deprecated function is cone (builder.rs:1533). The review file 32-2-REVIEW-planning.md also noted this. Using correct function name in migration guide.
+**Time:** 2026-03-23T06:10:06.527Z
+
+### Phase: 32 | Started: 2026-03-23T06:08:06Z | Mode: auto | FINAL PHASE
+**Time:** 2026-03-23T06:08:06.401Z
+
+### Doc gate: spawning writer to fix 1 issue(s) - stale documentation freshness (final phase)
+**Time:** 2026-03-23T06:22:18.295Z
+
