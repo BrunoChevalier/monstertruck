@@ -412,18 +412,12 @@ fn test_face_try_add_boundary_errors() {
 
     // Empty wire.
     let mut face = Face::new(vec![wire0.clone()], ());
-    assert_eq!(
-        face.try_add_boundary(Wire::new()),
-        Err(Error::EmptyWire)
-    );
+    assert_eq!(face.try_add_boundary(Wire::new()), Err(Error::EmptyWire));
 
     // Open wire.
     let mut face = Face::new(vec![wire0.clone()], ());
     let open_wire = Wire::from(vec![Edge::new(&v[3], &v[4], ())]);
-    assert_eq!(
-        face.try_add_boundary(open_wire),
-        Err(Error::NotClosedWire)
-    );
+    assert_eq!(face.try_add_boundary(open_wire), Err(Error::NotClosedWire));
 
     // Non-simple wire: figure-8 shape.
     let v2 = Vertex::news([(); 4]);
@@ -522,22 +516,12 @@ fn test_face_cut_by_wire() {
     let v0: Vec<Vertex<()>> = face0.boundaries()[0].vertex_iter().collect();
     assert_eq!(
         v0,
-        vec![
-            v[3].clone(),
-            v[0].clone(),
-            v[1].clone(),
-            v[4].clone()
-        ]
+        vec![v[3].clone(), v[0].clone(), v[1].clone(), v[4].clone()]
     );
     let v1: Vec<Vertex<()>> = face1.boundaries()[0].vertex_iter().collect();
     assert_eq!(
         v1,
-        vec![
-            v[1].clone(),
-            v[2].clone(),
-            v[3].clone(),
-            v[4].clone()
-        ]
+        vec![v[1].clone(), v[2].clone(), v[3].clone(), v[4].clone()]
     );
 }
 
@@ -639,7 +623,10 @@ fn test_face_display_formats() {
     let edge_format = EdgeDisplayFormat::VerticesTuple { vertex_format };
     let wire_format = WireDisplayFormat::EdgesList { edge_format };
 
-    let s = format!("{:?}", face.display(FaceDisplayFormat::Full { wire_format }));
+    let s = format!(
+        "{:?}",
+        face.display(FaceDisplayFormat::Full { wire_format })
+    );
     assert!(!s.is_empty());
     let s = format!(
         "{:?}",
@@ -892,10 +879,7 @@ fn test_shell_is_connected_shared_edge() {
         &shared_edge,
         &Edge::new(&v[2], &v[3], ())
     ];
-    let shell = Shell::from(vec![
-        Face::new(vec![wire0], ()),
-        Face::new(vec![wire1], ()),
-    ]);
+    let shell = Shell::from(vec![Face::new(vec![wire0], ()), Face::new(vec![wire1], ())]);
     assert!(shell.is_connected());
 }
 
@@ -912,10 +896,7 @@ fn test_shell_is_connected_disconnected() {
         Edge::new(&v[4], &v[5], ()),
         Edge::new(&v[5], &v[3], ())
     ];
-    let shell = Shell::from(vec![
-        Face::new(vec![wire0], ()),
-        Face::new(vec![wire1], ()),
-    ]);
+    let shell = Shell::from(vec![Face::new(vec![wire0], ()), Face::new(vec![wire1], ())]);
     assert!(!shell.is_connected());
 }
 
@@ -932,10 +913,7 @@ fn test_shell_connected_components() {
         Edge::new(&v[4], &v[5], ()),
         Edge::new(&v[5], &v[3], ())
     ];
-    let shell = Shell::from(vec![
-        Face::new(vec![wire0], ()),
-        Face::new(vec![wire1], ()),
-    ]);
+    let shell = Shell::from(vec![Face::new(vec![wire0], ()), Face::new(vec![wire1], ())]);
     let components = shell.connected_components();
     assert_eq!(components.len(), 2);
     assert_eq!(components[0].len(), 1);

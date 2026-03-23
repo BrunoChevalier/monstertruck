@@ -33,12 +33,14 @@ fn geometry_curve_bspline_construction() {
 /// variants.
 #[test]
 fn geometry_curve_range() {
-    let line_curve = Curve::Line(Line(
-        Point3::new(0.0, 0.0, 0.0),
-        Point3::new(1.0, 0.0, 0.0),
-    ));
+    let line_curve = Curve::Line(Line(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)));
     let (t0, t1) = line_curve.range_tuple();
-    assert!(t0 < t1, "Line range_tuple must have t0 < t1: ({}, {})", t0, t1);
+    assert!(
+        t0 < t1,
+        "Line range_tuple must have t0 < t1: ({}, {})",
+        t0,
+        t1
+    );
 
     let bsp = BsplineCurve::new(
         KnotVector::bezier_knot(1),
@@ -128,10 +130,7 @@ fn geometry_surface_normal() {
 /// Clone a `Curve::Line` and verify both produce the same `subs` values.
 #[test]
 fn geometry_curve_clone_and_eq() {
-    let curve = Curve::Line(Line(
-        Point3::new(1.0, 0.0, 0.0),
-        Point3::new(0.0, 1.0, 0.0),
-    ));
+    let curve = Curve::Line(Line(Point3::new(1.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0)));
     let cloned = curve.clone();
     for &t in &[0.0, 0.25, 0.5, 0.75, 1.0] {
         assert_near!(curve.subs(t), cloned.subs(t));

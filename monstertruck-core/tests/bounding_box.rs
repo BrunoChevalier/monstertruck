@@ -84,46 +84,31 @@ fn push_all_nan_then_valid() {
 
 #[test]
 fn diagonal_known_box() {
-    let bb = BoundingBox::from_iter(&[
-        Vector2::new(-2.0, -3.0),
-        Vector2::new(6.0, 4.0),
-    ]);
+    let bb = BoundingBox::from_iter(&[Vector2::new(-2.0, -3.0), Vector2::new(6.0, 4.0)]);
     assert_eq!(bb.diagonal(), Vector2::new(8.0, 7.0));
 }
 
 #[test]
 fn diameter_2d() {
-    let bb = BoundingBox::from_iter(&[
-        Vector2::new(-1.0, -3.0),
-        Vector2::new(2.0, 1.0),
-    ]);
+    let bb = BoundingBox::from_iter(&[Vector2::new(-1.0, -3.0), Vector2::new(2.0, 1.0)]);
     assert_eq!(bb.diameter(), 5.0);
 }
 
 #[test]
 fn diameter_3d() {
-    let bb = BoundingBox::from_iter(&[
-        Vector3::new(0.0, 0.0, 0.0),
-        Vector3::new(1.0, 2.0, 2.0),
-    ]);
+    let bb = BoundingBox::from_iter(&[Vector3::new(0.0, 0.0, 0.0), Vector3::new(1.0, 2.0, 2.0)]);
     assert_eq!(bb.diameter(), 3.0);
 }
 
 #[test]
 fn size_3d() {
-    let bb = BoundingBox::from_iter(&[
-        Vector3::new(-1.0, -3.0, 2.0),
-        Vector3::new(2.0, 1.0, 10.0),
-    ]);
+    let bb = BoundingBox::from_iter(&[Vector3::new(-1.0, -3.0, 2.0), Vector3::new(2.0, 1.0, 10.0)]);
     assert_eq!(bb.size(), 8.0);
 }
 
 #[test]
 fn center_known_box() {
-    let bb = BoundingBox::from_iter(&[
-        Vector2::new(-1.0, -3.0),
-        Vector2::new(5.0, 1.0),
-    ]);
+    let bb = BoundingBox::from_iter(&[Vector2::new(-1.0, -3.0), Vector2::new(5.0, 1.0)]);
     assert_eq!(bb.center(), Vector2::new(2.0, -1.0));
 }
 
@@ -139,7 +124,10 @@ fn center_empty_is_nan() {
 #[test]
 fn diagonal_empty_is_neg_infinity() {
     let bb = BoundingBox::<Vector2>::new();
-    assert_eq!(bb.diagonal(), Vector2::new(f64::NEG_INFINITY, f64::NEG_INFINITY));
+    assert_eq!(
+        bb.diagonal(),
+        Vector2::new(f64::NEG_INFINITY, f64::NEG_INFINITY)
+    );
 }
 
 #[test]
@@ -343,9 +331,6 @@ fn point3_bounding_box() {
 
 #[test]
 fn vector3_bounding_box_diameter() {
-    let bb = BoundingBox::from_iter(&[
-        Vector3::new(0.0, 0.0, 0.0),
-        Vector3::new(3.0, 4.0, 0.0),
-    ]);
+    let bb = BoundingBox::from_iter(&[Vector3::new(0.0, 0.0, 0.0), Vector3::new(3.0, 4.0, 0.0)]);
     assert_eq!(bb.diameter(), 5.0);
 }

@@ -178,4 +178,3 @@ fn perspective_view_fitting_all_identical() {
         camera.far_clip
     );
 }
-

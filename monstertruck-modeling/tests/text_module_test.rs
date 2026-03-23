@@ -18,10 +18,7 @@ fn face() -> ttf_parser::Face<'static> {
 fn text_module_options_default() {
     let opts = text::TextOptions::default();
     assert!(opts.y_flip, "default y_flip must be true");
-    assert!(
-        (opts.z - 0.0).abs() < f64::EPSILON,
-        "default z must be 0.0"
-    );
+    assert!((opts.z - 0.0).abs() < f64::EPSILON, "default z must be 0.0");
     assert!(opts.scale.is_none(), "default scale must be None");
     assert!(
         (opts.closure_tolerance - 1e-7).abs() < 1e-15,

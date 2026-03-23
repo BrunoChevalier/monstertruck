@@ -1,6 +1,6 @@
 use monstertruck_core::{cgmath64::*, tolerance::*};
-use monstertruck_topology::*;
 use monstertruck_topology::errors::Error;
+use monstertruck_topology::*;
 use monstertruck_traits::*;
 use std::ops::Bound;
 use std::panic::AssertUnwindSafe;
@@ -213,33 +213,23 @@ fn test_edge_display_formats() {
     let as_curve = format!("{:?}", edge.display(EdgeDisplayFormat::AsCurve));
     let vt = format!(
         "{:?}",
-        edge.display(EdgeDisplayFormat::VerticesTuple {
-            vertex_format: vf,
-        })
+        edge.display(EdgeDisplayFormat::VerticesTuple { vertex_format: vf })
     );
     let vts = format!(
         "{:?}",
-        edge.display(EdgeDisplayFormat::VerticesTupleStruct {
-            vertex_format: vf,
-        })
+        edge.display(EdgeDisplayFormat::VerticesTupleStruct { vertex_format: vf })
     );
     let full = format!(
         "{:?}",
-        edge.display(EdgeDisplayFormat::Full {
-            vertex_format: vf,
-        })
+        edge.display(EdgeDisplayFormat::Full { vertex_format: vf })
     );
     let vt_id = format!(
         "{:?}",
-        edge.display(EdgeDisplayFormat::VerticesTupleAndID {
-            vertex_format: vf,
-        })
+        edge.display(EdgeDisplayFormat::VerticesTupleAndID { vertex_format: vf })
     );
     let vt_curve = format!(
         "{:?}",
-        edge.display(EdgeDisplayFormat::VerticesTupleAndCurve {
-            vertex_format: vf,
-        })
+        edge.display(EdgeDisplayFormat::VerticesTupleAndCurve { vertex_format: vf })
     );
 
     assert!(!as_curve.is_empty());
@@ -384,7 +374,10 @@ fn test_edge_cut_with_parameter() {
     let v_mid = Vertex::new(mid_point);
 
     let result = edge.cut_with_parameter(&v_mid, 0.3);
-    assert!(result.is_some(), "cut_with_parameter should succeed for a valid parameter");
+    assert!(
+        result.is_some(),
+        "cut_with_parameter should succeed for a valid parameter"
+    );
 
     let (e0, e1) = result.unwrap();
 
@@ -402,16 +395,40 @@ fn test_edge_cut_with_parameter() {
     let (t0_start, t0_end) = c0.range_tuple();
     let (t1_start, t1_end) = c1.range_tuple();
 
-    assert!((t0_start - 0.0).abs() < TOLERANCE, "first sub-edge should start at t=0.0");
-    assert!((t0_end - 0.3).abs() < TOLERANCE, "first sub-edge should end at t=0.3");
-    assert!((t1_start - 0.3).abs() < TOLERANCE, "second sub-edge should start at t=0.3");
-    assert!((t1_end - 1.0).abs() < TOLERANCE, "second sub-edge should end at t=1.0");
+    assert!(
+        (t0_start - 0.0).abs() < TOLERANCE,
+        "first sub-edge should start at t=0.0"
+    );
+    assert!(
+        (t0_end - 0.3).abs() < TOLERANCE,
+        "first sub-edge should end at t=0.3"
+    );
+    assert!(
+        (t1_start - 0.3).abs() < TOLERANCE,
+        "second sub-edge should start at t=0.3"
+    );
+    assert!(
+        (t1_end - 1.0).abs() < TOLERANCE,
+        "second sub-edge should end at t=1.0"
+    );
 
     // Evaluate endpoints of the sub-edge curves to verify geometric correctness.
-    assert!(c0.subs(t0_start).near(&p0), "first sub-edge curve start should be p0");
-    assert!(c0.subs(t0_end).near(&mid_point), "first sub-edge curve end should be mid_point");
-    assert!(c1.subs(t1_start).near(&mid_point), "second sub-edge curve start should be mid_point");
-    assert!(c1.subs(t1_end).near(&p1), "second sub-edge curve end should be p1");
+    assert!(
+        c0.subs(t0_start).near(&p0),
+        "first sub-edge curve start should be p0"
+    );
+    assert!(
+        c0.subs(t0_end).near(&mid_point),
+        "first sub-edge curve end should be mid_point"
+    );
+    assert!(
+        c1.subs(t1_start).near(&mid_point),
+        "second sub-edge curve start should be mid_point"
+    );
+    assert!(
+        c1.subs(t1_end).near(&p1),
+        "second sub-edge curve end should be p1"
+    );
 }
 
 #[test]
@@ -428,12 +445,18 @@ fn test_edge_cut_with_parameter_invalid() {
     let wrong_point = Point3::new(5.0, 5.0, 0.0);
     let v_wrong = Vertex::new(wrong_point);
     let result = edge.cut_with_parameter(&v_wrong, 0.5);
-    assert!(result.is_none(), "cut_with_parameter should return None for mismatched point");
+    assert!(
+        result.is_none(),
+        "cut_with_parameter should return None for mismatched point"
+    );
 
     // Parameter at the very start (within tolerance) -- should return None.
     let v_start = Vertex::new(p0);
     let result = edge.cut_with_parameter(&v_start, 0.0);
-    assert!(result.is_none(), "cut_with_parameter should return None for parameter at boundary");
+    assert!(
+        result.is_none(),
+        "cut_with_parameter should return None for parameter at boundary"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -732,9 +755,7 @@ fn test_wire_display_formats() {
     ]);
 
     let vf = VertexDisplayFormat::AsPoint;
-    let ef = EdgeDisplayFormat::VerticesTuple {
-        vertex_format: vf,
-    };
+    let ef = EdgeDisplayFormat::VerticesTuple { vertex_format: vf };
 
     let elt = format!(
         "{:?}",
@@ -746,9 +767,7 @@ fn test_wire_display_formats() {
     );
     let vl = format!(
         "{:?}",
-        wire.display(WireDisplayFormat::VerticesList {
-            vertex_format: vf,
-        })
+        wire.display(WireDisplayFormat::VerticesList { vertex_format: vf })
     );
 
     assert!(!elt.is_empty());

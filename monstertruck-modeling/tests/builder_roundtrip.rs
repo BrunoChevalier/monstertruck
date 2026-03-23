@@ -55,12 +55,10 @@ fn extrude_face_to_solid() {
     let shell = &solid.boundaries()[0];
     assert_eq!(shell.len(), 6);
     // Count unique edges by ID.
-    let unique_edges: std::collections::HashSet<_> =
-        solid.edge_iter().map(|e| e.id()).collect();
+    let unique_edges: std::collections::HashSet<_> = solid.edge_iter().map(|e| e.id()).collect();
     assert_eq!(unique_edges.len(), 12);
     // Count unique vertices by ID.
-    let unique_verts: std::collections::HashSet<_> =
-        solid.vertex_iter().map(|v| v.id()).collect();
+    let unique_verts: std::collections::HashSet<_> = solid.vertex_iter().map(|v| v.id()).collect();
     assert_eq!(unique_verts.len(), 8);
     assert!(solid.is_geometric_consistent());
 }
@@ -68,13 +66,7 @@ fn extrude_face_to_solid() {
 #[test]
 fn revolve_vertex_to_circle() {
     let v = builder::vertex(Point3::new(2.0, 0.0, 0.0));
-    let wire: Wire = builder::revolve(
-        &v,
-        Point3::origin(),
-        Vector3::unit_y(),
-        Rad(2.0 * PI),
-        4,
-    );
+    let wire: Wire = builder::revolve(&v, Point3::origin(), Vector3::unit_y(), Rad(2.0 * PI), 4);
     assert_eq!(wire.len(), 4);
 }
 
@@ -84,13 +76,8 @@ fn revolve_edge_to_face() {
     let v1 = builder::vertex(Point3::new(1.0, 1.0, 0.0));
     let edge: Edge = builder::line(&v0, &v1);
     // Partial revolve (90 degrees, division=1) produces a shell with one face.
-    let shell: Shell = builder::revolve(
-        &edge,
-        Point3::origin(),
-        Vector3::unit_y(),
-        Rad(PI / 2.0),
-        1,
-    );
+    let shell: Shell =
+        builder::revolve(&edge, Point3::origin(), Vector3::unit_y(), Rad(PI / 2.0), 1);
     assert_eq!(shell.len(), 1);
     assert_eq!(shell[0].boundaries()[0].len(), 4);
 }
@@ -100,13 +87,8 @@ fn revolve_face_to_solid() {
     // Rectangle in XZ plane offset from Y axis, revolve 360 degrees.
     let wire = rect_wire_xz(2.0, -0.5, 3.0, 0.5);
     let face: Face = builder::try_attach_plane(vec![wire]).unwrap();
-    let solid: Solid = builder::revolve(
-        &face,
-        Point3::origin(),
-        Vector3::unit_y(),
-        Rad(2.0 * PI),
-        4,
-    );
+    let solid: Solid =
+        builder::revolve(&face, Point3::origin(), Vector3::unit_y(), Rad(2.0 * PI), 4);
     assert!(solid.is_geometric_consistent());
     assert_eq!(
         solid.boundaries()[0].shell_condition(),
@@ -121,13 +103,8 @@ fn revolve_wire_degenerate_axis() {
     let v1 = builder::vertex(Point3::new(0.0, 0.0, 1.0));
     let v2 = builder::vertex(Point3::new(0.0, 0.0, 0.0));
     let wire: Wire = vec![builder::line(&v0, &v1), builder::line(&v1, &v2)].into();
-    let shell: Shell = builder::revolve_wire(
-        &wire,
-        Point3::origin(),
-        Vector3::unit_y(),
-        Rad(2.0 * PI),
-        4,
-    );
+    let shell: Shell =
+        builder::revolve_wire(&wire, Point3::origin(), Vector3::unit_y(), Rad(2.0 * PI), 4);
     // Degenerate edges collapsed: first face has 3 boundary edges, not 4.
     assert_eq!(shell[0].boundaries()[0].len(), 3);
 }
@@ -210,12 +187,7 @@ fn rotated_edge_consistency() {
     let v0 = builder::vertex(Point3::new(1.0, 0.0, 0.0));
     let v1 = builder::vertex(Point3::new(0.0, 0.0, 1.0));
     let edge: Edge = builder::line(&v0, &v1);
-    let rotated: Edge = builder::rotated(
-        &edge,
-        Point3::origin(),
-        Vector3::unit_z(),
-        Rad(PI / 2.0),
-    );
+    let rotated: Edge = builder::rotated(&edge, Point3::origin(), Vector3::unit_z(), Rad(PI / 2.0));
     assert!(rotated.front().point().near(&Point3::new(0.0, 1.0, 0.0)));
     assert!(rotated.back().point().near(&Point3::new(0.0, 0.0, 1.0)));
 }
@@ -224,11 +196,7 @@ fn rotated_edge_consistency() {
 fn scaled_face_bounding_box() {
     let wire = rect_wire(0.0, 0.0, 1.0, 1.0);
     let face: Face = builder::try_attach_plane(vec![wire]).unwrap();
-    let scaled: Face = builder::scaled(
-        &face,
-        Point3::origin(),
-        Vector3::new(2.0, 3.0, 1.0),
-    );
+    let scaled: Face = builder::scaled(&face, Point3::origin(), Vector3::new(2.0, 3.0, 1.0));
     let pts: Vec<_> = scaled.vertex_iter().map(|v| v.point()).collect();
     // After scaling by (2, 3, 1) from origin, unit square corners become
     // (0,0), (2,0), (2,3), (0,3).

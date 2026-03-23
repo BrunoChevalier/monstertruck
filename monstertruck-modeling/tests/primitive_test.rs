@@ -2,17 +2,11 @@ use monstertruck_modeling::*;
 
 #[test]
 fn rect_xy_plane() {
-    let bbox = BoundingBox::from_iter([
-        Point2::new(-1.0, -2.0),
-        Point2::new(2.0, 1.0),
-    ]);
+    let bbox = BoundingBox::from_iter([Point2::new(-1.0, -2.0), Point2::new(2.0, 1.0)]);
     let rect: Wire = primitive::rect(bbox, Plane::xy());
     assert_eq!(rect.len(), 4);
     // Wire is closed: last edge's back vertex equals first edge's front vertex.
-    assert_eq!(
-        rect[3].back().id(),
-        rect[0].front().id(),
-    );
+    assert_eq!(rect[3].back().id(), rect[0].front().id(),);
     // Verify vertex positions match corners mapped through XY plane.
     assert!(rect[0].front().point().near(&Point3::new(-1.0, -2.0, 0.0)));
     assert!(rect[1].front().point().near(&Point3::new(2.0, -2.0, 0.0)));
@@ -22,10 +16,7 @@ fn rect_xy_plane() {
 
 #[test]
 fn rect_zx_plane() {
-    let bbox = BoundingBox::from_iter([
-        Point2::new(-1.0, -2.0),
-        Point2::new(2.0, 1.0),
-    ]);
+    let bbox = BoundingBox::from_iter([Point2::new(-1.0, -2.0), Point2::new(2.0, 1.0)]);
     let rect: Wire = primitive::rect(bbox, Plane::zx());
     assert_eq!(rect.len(), 4);
     // ZX plane maps (u,v) -> (v, 0, u).
@@ -74,11 +65,9 @@ fn cuboid_topology() {
     assert_eq!(solid.boundaries().len(), 1);
     let shell = &solid.boundaries()[0];
     assert_eq!(shell.len(), 6);
-    let unique_edges: std::collections::HashSet<_> =
-        shell.edge_iter().map(|e| e.id()).collect();
+    let unique_edges: std::collections::HashSet<_> = shell.edge_iter().map(|e| e.id()).collect();
     assert_eq!(unique_edges.len(), 12);
-    let unique_verts: std::collections::HashSet<_> =
-        shell.vertex_iter().map(|v| v.id()).collect();
+    let unique_verts: std::collections::HashSet<_> = shell.vertex_iter().map(|v| v.id()).collect();
     assert_eq!(unique_verts.len(), 8);
 }
 
@@ -98,10 +87,7 @@ fn cuboid_vertex_positions() {
 
 #[test]
 fn cuboid_geometric_consistency() {
-    let bbox = BoundingBox::from_iter([
-        Point3::new(0.0, 0.0, 0.0),
-        Point3::new(2.0, 3.0, 4.0),
-    ]);
+    let bbox = BoundingBox::from_iter([Point3::new(0.0, 0.0, 0.0), Point3::new(2.0, 3.0, 4.0)]);
     let solid: Solid = primitive::cuboid(bbox);
     assert!(solid.is_geometric_consistent());
 }

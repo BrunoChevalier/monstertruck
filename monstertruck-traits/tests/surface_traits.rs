@@ -2,10 +2,7 @@
 
 use monstertruck_core::assert_near;
 use monstertruck_core::cgmath64::*;
-use monstertruck_traits::{
-    polynomial::PolynomialSurface,
-    *,
-};
+use monstertruck_traits::{polynomial::PolynomialSurface, *};
 use std::ops::Bound;
 
 // Surface with non-trivial u and v dependence, defined directly.
@@ -28,10 +25,7 @@ fn make_nondegenerate_surface() -> PolynomialSurface<Point3> {
             Vector3::new(1.0, 0.0, 0.0),
             Vector3::new(0.0, 0.0, 1.0),
         ],
-        vec![
-            Vector3::new(1.0, 0.0, 0.0),
-            Vector3::new(0.0, 1.0, 0.0),
-        ],
+        vec![Vector3::new(1.0, 0.0, 0.0), Vector3::new(0.0, 1.0, 0.0)],
         vec![Vector3::new(0.0, 0.0, 1.0)],
     ])
 }

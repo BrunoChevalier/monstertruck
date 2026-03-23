@@ -96,15 +96,9 @@ fn surface_derivatives_new_zeroed() {
 
 #[test]
 fn surface_derivatives_derivative_u() {
-    let sd = SurfaceDerivatives::try_from(
-        [
-            [0.0, 1.0, 2.0].as_slice(),
-            &[3.0, 4.0],
-            &[5.0],
-        ]
-        .as_slice(),
-    )
-    .unwrap();
+    let sd =
+        SurfaceDerivatives::try_from([[0.0, 1.0, 2.0].as_slice(), &[3.0, 4.0], &[5.0]].as_slice())
+            .unwrap();
     let du = sd.derivative_u();
     assert_eq!(du.max_order(), 1);
     assert_eq!(du[0], [3.0_f64, 4.0]);
@@ -113,15 +107,9 @@ fn surface_derivatives_derivative_u() {
 
 #[test]
 fn surface_derivatives_derivative_v() {
-    let sd = SurfaceDerivatives::try_from(
-        [
-            [0.0, 1.0, 2.0].as_slice(),
-            &[3.0, 4.0],
-            &[5.0],
-        ]
-        .as_slice(),
-    )
-    .unwrap();
+    let sd =
+        SurfaceDerivatives::try_from([[0.0, 1.0, 2.0].as_slice(), &[3.0, 4.0], &[5.0]].as_slice())
+            .unwrap();
     let dv = sd.derivative_v();
     assert_eq!(dv.max_order(), 1);
     assert_eq!(dv[0], [1.0_f64, 2.0]);
