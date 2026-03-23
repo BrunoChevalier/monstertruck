@@ -136,10 +136,7 @@ fn robust_split_closed_edges_and_faces_noop_on_cube() {
 fn extract_healed_preserves_face_count() {
     let cshell = make_compressed_cube();
     let result = extract_healed(cshell, TOL);
-    assert!(
-        result.is_ok(),
-        "extract_healed must succeed: {result:?}"
-    );
+    assert!(result.is_ok(), "extract_healed must succeed: {result:?}");
     let shell = result.unwrap();
     assert_eq!(
         shell.face_iter().count(),
@@ -150,10 +147,7 @@ fn extract_healed_preserves_face_count() {
 
 /// Builds a single-face `CompressedShell` from a surface with a small
 /// vertex gap to simulate topology gaps that need healing.
-fn single_face_shell_with_gap(
-    surface: BsplineSurface<Point3>,
-    gap: f64,
-) -> CompressedShell {
+fn single_face_shell_with_gap(surface: BsplineSurface<Point3>, gap: f64) -> CompressedShell {
     let (u_knots, v_knots) = surface.knot_vecs();
     let u0 = u_knots[0];
     let u1 = u_knots[u_knots.len() - 1];
