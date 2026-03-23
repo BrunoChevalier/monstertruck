@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 57 | Approval-needed: 0 | Total: 57
+**Summary:** Auto-fixes: 58 | Approval-needed: 0 | Total: 58
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -394,4 +394,11 @@
 **Category:** bug
 **Description:** bind_group_test assertion failure is pre-existing on llvmpipe software renderer, not caused by this change
 **Files changed:** none
+**Status:** applied
+
+### [2026-03-23T01:31:18.848Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Exempt from TDD RED phase: dependency update (vtkio 0.6->0.7.0-rc2) with existing test coverage. 7 VTK tests already exist and pass. Only code change is Version enum migration in example file (not testable unit).
+**Files changed:** Cargo.toml, monstertruck-step/examples/step-to-mesh.rs
 **Status:** applied
