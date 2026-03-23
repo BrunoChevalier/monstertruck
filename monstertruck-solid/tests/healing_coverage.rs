@@ -1,11 +1,11 @@
 //! Coverage tests for the healing module: `heal_surface_shell`,
-//! `extract_healed`, `SplitClosedEdgesAndFaces`, and
-//! `RobustSplitClosedEdgesAndFaces`.
+//! `extract_healed`, `check_edge_curve_consistency`,
+//! `SplitClosedEdgesAndFaces`, and `RobustSplitClosedEdgesAndFaces`.
 
 use monstertruck_modeling::*;
 use monstertruck_solid::{
-    EdgeCurveDeviation, RobustSplitClosedEdgesAndFaces, SplitClosedEdgesAndFaces,
-    SurfaceHealingError, check_edge_curve_consistency, extract_healed, heal_surface_shell,
+    RobustSplitClosedEdgesAndFaces, SplitClosedEdgesAndFaces, SurfaceHealingError,
+    check_edge_curve_consistency, extract_healed, heal_surface_shell,
 };
 use monstertruck_topology::compress::CompressedEdgeIndex;
 use monstertruck_topology::shell::ShellCondition;
