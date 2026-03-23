@@ -254,3 +254,18 @@
 ### Fixing transposed ortho/perspective matrices in monstertruck-math. These projection functions pass values as if Matrix4::new takes row-major order, but it takes column-major. The fix transposes the arguments. This is needed for the camera proptests to pass and is the root cause of the proptest failures.
 **Time:** 2026-03-23T00:48:53.527Z
 
+### Codex parse_failed for both 24-1 and 24-2 planning round 1. Falling back to Claude self-review.
+**Time:** 2026-03-22T23:34:18.854Z
+
+### Plan 24-1 round 3 B1 (prop_assume guard removal contradicts must-haves, confidence 92) addressed by rewriting Task 3 to keep all existing guards. Not re-reviewed due to max rounds. Plan 24-2 passed round 3 via Claude fallback after Codex transient error.
+**Time:** 2026-03-23T00:32:58.608Z
+
+### Phase: 24 | Started: 2026-03-23T00:34:11Z | Mode: auto
+**Time:** 2026-03-23T00:34:11.654Z
+
+### Wave 1 audit: unowned file monstertruck-math/src/lib.rs modified by plan 24-1 as deviation. Fix was necessary - transposed ortho/perspective/frustum matrices were root cause of camera proptest failures. Proceeding.
+**Time:** 2026-03-23T00:53:51.080Z
+
+### Doc gate: spawning writer to fix 1 issue(s) - stale documentation freshness
+**Time:** 2026-03-23T01:12:17.770Z
+
