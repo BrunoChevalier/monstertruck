@@ -130,3 +130,7 @@ No changes to the polynomial solver module. Phase 29 added 22 tests to `monstert
 ## Status Update (Phase 30 -- New Surface Constructors)
 
 No changes to the polynomial solver module. Phase 30 added ruled surface (`BsplineSurface::try_ruled`) and loft surface (`builder::try_loft`) constructors in `monstertruck-geometry` and `monstertruck-modeling`, plus healing expansion (`check_edge_curve_consistency`, `detect_and_repair_gaps`). The math layer was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 31 -- Deferred Ayam Port Completion)
+
+No changes to the polynomial solver module. Phase 31 fixed a tensor product knot assignment bug in the Gordon surface constructor for asymmetric grids and added robust trim tessellation for degenerate boundaries in `monstertruck-meshing`. The math layer was unaffected. This ADR remains Accepted.

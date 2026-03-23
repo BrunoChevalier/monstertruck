@@ -129,3 +129,7 @@ Phase 29 added 22 tests to `monstertruck-solid` covering boolean operations (8 t
 ## Status Update (Phase 30 -- New Surface Constructors)
 
 No changes to fillet topology surgery. Phase 30 added ruled surface and loft surface constructors in `monstertruck-geometry` and `monstertruck-modeling`, and expanded the healing module with `check_edge_curve_consistency` and `detect_and_repair_gaps` functions. The healing expansion complements this ADR's topology surgery by providing upstream validation of edge-curve consistency before geometry enters the fillet pipeline. The fillet surgery code itself was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 31 -- Deferred Ayam Port Completion)
+
+No changes to fillet topology surgery. Phase 31 fixed a tensor product knot assignment bug in the Gordon surface constructor and added robust trim tessellation for degenerate boundaries in `monstertruck-meshing`. The fillet surgery code was unaffected. This ADR remains Accepted.

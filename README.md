@@ -124,6 +124,11 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Phase 31 -- Deferred Ayam Port Completion
+
+- **Intersection-grid Gordon surface** -- `try_gordon_from_network` now handles curved curve networks via intersection-grid auto-computation. Fixed a tensor product knot assignment bug that caused panics on asymmetric grids (`n_u != n_v`). 4 new geometry tests and 3 B-rep validation tests in `monstertruck-modeling`.
+- **Robust trim tessellation** -- `monstertruck-meshing` tessellation hardened for degenerate trim boundaries: near-zero-area loops (shoelace filter), collapsed edges, self-touching (bowtie) boundaries, and CDT panic recovery via `catch_unwind` fallback. Degenerate wires are skipped per-face rather than aborting the entire shell. 7 new tessellation tests.
+
 ### Phase 30 -- New Surface Constructors
 
 - **Ruled surface constructor** -- `BsplineSurface::try_ruled` and `builder::try_ruled_surface` in `monstertruck-modeling` construct ruled surfaces between two boundary curves.

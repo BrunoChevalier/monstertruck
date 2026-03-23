@@ -122,3 +122,7 @@ No changes to fillet integration mode logic. Phase 29 added 22 tests to `monster
 ## Status Update (Phase 30 -- New Surface Constructors)
 
 No changes to fillet integration mode logic. Phase 30 added ruled surface (`BsplineSurface::try_ruled`) and loft surface (`builder::try_loft`) constructors, and expanded healing with `check_edge_curve_consistency` and `detect_and_repair_gaps`. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 31 -- Deferred Ayam Port Completion)
+
+No changes to fillet integration mode logic. Phase 31 fixed a tensor product knot assignment bug in the Gordon surface constructor and added robust trim tessellation for degenerate boundaries in `monstertruck-meshing`. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
