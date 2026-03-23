@@ -16,9 +16,9 @@ fn d2_dim_equals_2() {
 
 #[test]
 fn hint1d_parameter_round_trips() {
-    let hint = SearchParameterHint1D::Parameter(3.14);
+    let hint = SearchParameterHint1D::Parameter(3.15);
     match hint {
-        SearchParameterHint1D::Parameter(x) => assert!((x - 3.14).abs() < f64::EPSILON),
+        SearchParameterHint1D::Parameter(x) => assert!((x - 3.15).abs() < f64::EPSILON),
         _ => panic!("Expected Parameter variant"),
     }
 }

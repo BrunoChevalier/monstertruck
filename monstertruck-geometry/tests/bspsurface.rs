@@ -544,6 +544,7 @@ fn test_sweep_multi_rail_matches_birail1_for_two_rails() {
     let multi =
         BsplineSurface::sweep_multi_rail(profile.clone(), &[rail1.clone(), rail2.clone()], 5)
             .expect("sweep_multi_rail should succeed with 2 rails");
+    #[allow(deprecated)]
     let birail = BsplineSurface::birail1(profile, &rail1, &rail2, 5);
 
     // Compare evaluation at several sample points.

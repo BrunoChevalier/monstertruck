@@ -301,8 +301,8 @@ fn test_degenerate_surface() {
 
     // All vertices should be at the origin.
     for vert in &result.vertices {
-        for c in 0..3 {
-            assert!(vert[c].abs() < 1e-6, "Degenerate vertex not at origin.");
+        for val in &vert[..3] {
+            assert!(val.abs() < 1e-6, "Degenerate vertex not at origin.");
         }
     }
 }

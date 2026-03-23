@@ -159,6 +159,7 @@ pub fn fixture_sweep_rail_kinked_shell() -> CompressedShell<Point3, Curve, Surfa
             Point3::new(0.0, 1.0, 4.0),
         ],
     );
+    #[allow(deprecated)]
     let surface = BsplineSurface::sweep_rail(profile, &rail, 5);
     single_face_shell_from_surface(surface, 1e-8)
 }
@@ -190,6 +191,7 @@ pub fn fixture_birail_diverging_shell() -> CompressedShell<Point3, Curve, Surfac
             Point3::new(1000.0, 0.0, 3.0),
         ],
     );
+    #[allow(deprecated)]
     let surface = BsplineSurface::birail1(profile, &rail1, &rail2, 5);
     single_face_shell_from_surface(surface, 1e-8)
 }
@@ -237,6 +239,7 @@ pub fn fixture_gordon_degenerate_shell() -> CompressedShell<Point3, Curve, Surfa
         ],
     ];
 
+    #[allow(deprecated)]
     let surface = BsplineSurface::gordon(vec![u0, u1], vec![v0, v1], &points);
 
     // Build a 2-face shell by splitting the surface at u=0.5.

@@ -168,6 +168,7 @@ fn heal_glyph_sweep() {
         vec![Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 3.0)],
     );
 
+    #[allow(deprecated)]
     let surface = BsplineSurface::sweep_rail(profile, &rail, 5);
 
     // Build a single-face shell from the swept surface using the same helper

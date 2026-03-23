@@ -111,7 +111,7 @@ fn concurrent_mixed_vertex_access() {
 fn concurrent_edge_oriented_curve_reads() {
     use rayon::prelude::*;
 
-    let vertices: Vec<Vertex<usize>> = (0..20).map(|i| Vertex::new(i)).collect();
+    let vertices: Vec<Vertex<usize>> = (0..20).map(Vertex::new).collect();
     let edges: Vec<Edge<usize, (usize, usize)>> = (0..20)
         .map(|i| {
             let j = (i + 1) % 20;

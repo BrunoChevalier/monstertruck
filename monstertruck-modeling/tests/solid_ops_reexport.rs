@@ -66,5 +66,5 @@ fn shell_offset_names_importable() {
     // The use-imports at the top of this file are the actual verification.
     // If the re-exports are missing, this file won't compile.
     // Here we just assert true to have a named test.
-    assert!(true, "shell_solid and offset_shell are importable");
+    // If the re-exports are missing, this file won't compile — that is the test.
 }

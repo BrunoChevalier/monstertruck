@@ -791,7 +791,7 @@ mod tests {
     #[test]
     fn gordon_near_miss_grid_perturbation_within_snap_tolerance() {
         use monstertruck_core::tolerance_constants::SNAP_TOLERANCE;
-        let (u_curves, v_curves, grid_points) = fixture_gordon_near_miss_grid();
+        let (_u_curves, _v_curves, grid_points) = fixture_gordon_near_miss_grid();
         // Each grid point should be offset from the exact intersection by less than SNAP_TOLERANCE.
         let y_values = [0.0, 0.5, 1.0];
         let x_values = [0.0, 0.5, 1.0];

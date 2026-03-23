@@ -4,6 +4,7 @@ use monstertruck_derive::{DisplayByStep, StepCurve, StepLength, StepSurface};
 use serde::{Deserialize, Serialize};
 
 /// re-export structs in `monstertruck-geometry` and `monstertruck-mesh`.
+#[allow(ambiguous_glob_reexports)]
 pub mod re_exports {
     pub use monstertruck_geometry::prelude::*;
     pub use monstertruck_mesh::*;

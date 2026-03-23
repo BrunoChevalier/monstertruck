@@ -326,7 +326,7 @@ fn exec_b_spline_curve_with_knots(
         .zip(knot_incrs)
         .flat_map(|(m, x)| {
             s += x;
-            std::iter::repeat(s).take(*m)
+            std::iter::repeat_n(s, *m)
         })
         .collect::<Vec<f64>>();
     let knots = KnotVector::from(vec);
@@ -507,7 +507,7 @@ fn exec_nurbs_curve_b_spline_with_knots(
         .zip(knot_incrs)
         .flat_map(|(m, x)| {
             s += x;
-            std::iter::repeat(s).take(*m)
+            std::iter::repeat_n(s, *m)
         })
         .collect::<Vec<f64>>();
     let knots = KnotVector::from(vec);
@@ -1271,7 +1271,7 @@ fn exec_b_spline_surface_with_knots(
         .zip(uknot_incrs)
         .flat_map(|(m, x)| {
             s += x;
-            std::iter::repeat(s).take(*m)
+            std::iter::repeat_n(s, *m)
         })
         .collect::<Vec<f64>>();
     let uknots = KnotVector::from(uvec);
@@ -1282,7 +1282,7 @@ fn exec_b_spline_surface_with_knots(
         .zip(vknot_incrs)
         .flat_map(|(m, x)| {
             s += x;
-            std::iter::repeat(s).take(*m)
+            std::iter::repeat_n(s, *m)
         })
         .collect::<Vec<f64>>();
     let vknots = KnotVector::from(vvec);
@@ -1468,7 +1468,7 @@ fn exec_nurbs_surface_b_spline_surface_with_knots(
         .zip(uknot_incrs)
         .flat_map(|(m, x)| {
             s += x;
-            std::iter::repeat(s).take(*m)
+            std::iter::repeat_n(s, *m)
         })
         .collect::<Vec<f64>>();
     let uknots = KnotVector::from(uvec);
@@ -1479,7 +1479,7 @@ fn exec_nurbs_surface_b_spline_surface_with_knots(
         .zip(vknot_incrs)
         .flat_map(|(m, x)| {
             s += x;
-            std::iter::repeat(s).take(*m)
+            std::iter::repeat_n(s, *m)
         })
         .collect::<Vec<f64>>();
     let vknots = KnotVector::from(vvec);

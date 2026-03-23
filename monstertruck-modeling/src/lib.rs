@@ -3,6 +3,7 @@
 //! There are some examples in `monstertruck-modeling/examples`.
 
 #![cfg_attr(not(debug_assertions), deny(warnings))]
+#![allow(ambiguous_glob_reexports)]
 #![deny(clippy::all, rust_2018_idioms)]
 #![warn(
     missing_docs,
