@@ -102,3 +102,7 @@ No changes to the polynomial solver module. Phase 22 upgraded curve/surface samp
 ## Status Update (Phase 23 -- Error Propagation & Test Hardening, v0.5.2 Final)
 
 No changes to the polynomial solver module. Phase 23 added `FilletError::ShellNotClosed` for explicit error propagation in `fillet_edges_generic` and hardened fillet test expectations. The math layer was unaffected. This ADR remains Accepted. Milestone v0.5.2 is complete.
+
+## Status Update (Phase 24 -- GPU Test Reliability, v0.5.3)
+
+Phase 24 fixed transposed projection matrices (`ortho`, `perspective`, `frustum`) in `monstertruck-math` and added epsilon guards for degenerate point clouds in camera fitting functions. The polynomial solver module was unaffected. This ADR remains Accepted.

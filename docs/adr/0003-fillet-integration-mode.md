@@ -94,3 +94,7 @@ No changes to fillet integration mode logic. Phase 22 upgraded curve/surface sam
 ## Status Update (Phase 23 -- Error Propagation & Test Hardening, v0.5.2 Final)
 
 No changes to fillet integration mode logic. Phase 23 replaced silent rollback in `fillet_edges_generic` with explicit `Err(FilletError::ShellNotClosed)` error propagation and hardened fillet test expectations. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted. Milestone v0.5.2 is complete.
+
+## Status Update (Phase 24 -- GPU Test Reliability, v0.5.3)
+
+No changes to fillet integration mode logic. Phase 24 fixed transposed projection matrices in `monstertruck-math` and added graceful GPU test degradation in `monstertruck-gpu`. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.

@@ -101,3 +101,7 @@ Phase 22 improved the fidelity of NURBS conversions that feed into fillet topolo
 ## Status Update (Phase 23 -- Error Propagation & Test Hardening, v0.5.2 Final)
 
 Phase 23 directly improved the error handling in `fillet_edges_generic`, which is the top-level entry point for the topology surgery pipeline described by this ADR. Previously, when the post-fillet shell failed the `ShellCondition::Closed` check, the function silently rolled back to the original shell (via a pre-operation clone) and returned `Ok(())` -- masking topology failures. Phase 23 replaced this with `return Err(FilletError::ShellNotClosed)`, a new error variant, removing the clone and making failures explicit. Four fillet tests (`generic_fillet_identity`, `generic_fillet_modeling_types`, `generic_fillet_mixed_surfaces`, `generic_fillet_multi_chain`) were updated to expect `Err(ShellNotClosed)` instead of silently succeeding. The `generic_fillet_unsupported` test was corrected to expect `NonManifoldEdge(1)`, reflecting that the manifold adjacency check fires before geometry conversion on single-face shells. This ADR remains Accepted. Milestone v0.5.2 is complete.
+
+## Status Update (Phase 24 -- GPU Test Reliability, v0.5.3)
+
+No changes to fillet topology surgery. Phase 24 fixed transposed projection matrices in `monstertruck-math` and added graceful GPU test degradation in `monstertruck-gpu`. The fillet surgery code was unaffected. This ADR remains Accepted.

@@ -124,6 +124,11 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Milestone v0.5.3 Summary (Phase 24) -- GPU Test Reliability
+
+- **Projection matrix fixes (Phase 24)** -- Fixed transposed projection matrices (`ortho`, `perspective`, `frustum`) in `monstertruck-math`. Added epsilon guards for degenerate point clouds in camera fitting functions (`monstertruck-gpu`). 4 new unit tests.
+- **GPU test graceful degradation (Phase 24)** -- `monstertruck-gpu` render tests (`bindgroup`, `msaa`, `wgsl-utils`) now skip gracefully when no GPU device is available via `try_init_device` and `os_alt_try_exec_test` helpers.
+
 ### Milestone v0.5.2 Summary (Phases 21--23) -- Fillet Conversion Pipeline Fix
 
 Milestone v0.5.2 hardened the fillet conversion pipeline end-to-end: preserving edge identity through NURBS conversion (Phase 21), improving conversion fidelity with cubic interpolation and exact revolved surface support (Phase 22), and replacing silent error swallowing with explicit error propagation (Phase 23).
