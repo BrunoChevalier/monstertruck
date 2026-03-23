@@ -100,7 +100,10 @@ fn obj_export_vertex_format_valid() {
         let coords: Vec<f64> = line
             .split_whitespace()
             .skip(1)
-            .map(|s| s.parse::<f64>().expect("vertex coordinate should be a float"))
+            .map(|s| {
+                s.parse::<f64>()
+                    .expect("vertex coordinate should be a float")
+            })
             .collect();
         assert_eq!(
             coords.len(),
@@ -175,7 +178,10 @@ fn obj_export_with_normals_format() {
         let coords: Vec<f64> = line
             .split_whitespace()
             .skip(1)
-            .map(|s| s.parse::<f64>().expect("normal coordinate should be a float"))
+            .map(|s| {
+                s.parse::<f64>()
+                    .expect("normal coordinate should be a float")
+            })
             .collect();
         assert_eq!(
             coords.len(),
