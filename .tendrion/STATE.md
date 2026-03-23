@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 27 of 32 (Topology Coverage)
-**Plan:** 0 of 2
+**Plan:** 1 of 2
 **Progress:**
 
 
