@@ -36,7 +36,7 @@
 - [x] **Phase 22: Conversion Fidelity** - Degree-3 cubic interpolation, endpoint snapping, and exact RevolutedCurve conversion to eliminate geometric loss
 - [x] **Phase 23: Error Propagation and Test Hardening** - Replace silent fillet rollback with explicit errors and fix proptest tolerance
 - [x] **Phase 24: GPU Test Reliability** - Fix proptest camera failures and add graceful GPU hardware skip
-- [ ] **Phase 25: Clippy and Dependency Hygiene** - Eliminate clippy warnings in monstertruck-step and update deprecated nom/quick-xml
+- [x] **Phase 25: Clippy and Dependency Hygiene** - Eliminate clippy warnings in monstertruck-step and update deprecated nom/quick-xml
 - [ ] **Phase 26: Core and Traits Coverage** - Add tests for monstertruck-core tolerance infrastructure and monstertruck-traits curve/surface impls
 - [ ] **Phase 27: Topology Coverage** - Add edge, wire, face, and shell operation tests to reach 50%+ coverage
 - [ ] **Phase 28: Modeling Coverage** - Add builder, profile, and text module tests to reach 45%+ coverage
@@ -273,7 +273,7 @@
 | 22. Conversion Fidelity | v0.5.2 | 3/3 | ✓ Complete | 2026-03-22 |
 | 23. Error Propagation and Test Hardening | v0.5.2 | 1/1 | ✓ Complete | 2026-03-22 |
 | 24. GPU Test Reliability | v0.5.3 | 2/2 | ✓ Complete | 2026-03-23 |
-| 25. Clippy and Dependency Hygiene | v0.5.3 | 0/TBD | Not started | - |
+| 25. Clippy and Dependency Hygiene | v0.5.3 | 2/2 | ✓ Complete | 2026-03-23 |
 | 26. Core and Traits Coverage | v0.5.3 | 0/TBD | Not started | - |
 | 27. Topology Coverage | v0.5.3 | 0/TBD | Not started | - |
 | 28. Modeling Coverage | v0.5.3 | 0/TBD | Not started | - |
