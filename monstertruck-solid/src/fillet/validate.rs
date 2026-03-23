@@ -29,6 +29,7 @@ fn count_vef(shell: &Shell) -> (usize, usize, usize) {
 }
 
 /// Computes the Euler characteristic (V - E + F) for a shell.
+#[cfg(test)]
 fn euler_characteristic(shell: &Shell) -> isize {
     let (v, e, f) = count_vef(shell);
     v as isize - e as isize + f as isize
@@ -40,6 +41,7 @@ fn euler_characteristic(shell: &Shell) -> isize {
 /// For non-closed shells (open, oriented, regular, irregular): returns `true`
 /// unconditionally because the Euler-Poincare formula only applies to closed
 /// 2-manifolds.
+#[cfg(test)]
 pub(crate) fn euler_poincare_check(shell: &Shell) -> bool {
     if shell.shell_condition() != ShellCondition::Closed {
         return true;
@@ -51,6 +53,7 @@ pub(crate) fn euler_poincare_check(shell: &Shell) -> bool {
 ///
 /// Returns `true` if [`shell_condition()`] is [`ShellCondition::Oriented`] or
 /// [`ShellCondition::Closed`].
+#[cfg(test)]
 pub(crate) fn is_oriented_check(shell: &Shell) -> bool {
     matches!(
         shell.shell_condition(),

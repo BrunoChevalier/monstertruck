@@ -236,7 +236,7 @@ impl Iterator for PolygonMeshStlFaceIterator<'_> {
         self.faces.next().map(|face| {
             let p = array![i => self.positions[face[i].pos]; 3];
             let cross = (p[1] - p[0]).cross(&(p[2] - p[0]));
-            let n: monstertruck_core::cgmath64::Vector3 = cross.normalize();
+            let n: Vector3 = cross.normalize();
             // SAFETY: cast from f64 to f32 only fails for NaN, which valid geometry never produces.
             let normal = [n[0] as f32, n[1] as f32, n[2] as f32];
             // SAFETY: cast from f64 to f32 only fails for NaN, which valid geometry never produces.
