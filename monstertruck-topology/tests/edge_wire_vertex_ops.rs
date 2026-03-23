@@ -1,5 +1,8 @@
+use monstertruck_core::{cgmath64::*, tolerance::*};
 use monstertruck_topology::*;
 use monstertruck_topology::errors::Error;
+use monstertruck_traits::*;
+use std::ops::Bound;
 use std::panic::AssertUnwindSafe;
 
 // ---------------------------------------------------------------------------
@@ -275,6 +278,162 @@ fn test_edge_ends() {
     let inv = edge.inverse();
     assert_eq!(inv.ends(), (&v[1], &v[0]));
     assert_eq!(inv.absolute_ends(), (&v[0], &v[1]));
+}
+
+// ---------------------------------------------------------------------------
+// Segment helper for geometry-based edge tests
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Segment {
+    ends: (Point3, Point3),
+    range: (f64, f64),
+}
+
+impl Segment {
+    fn new(p: Point3, q: Point3) -> Segment {
+        Segment {
+            ends: (p, q),
+            range: (0.0, 1.0),
+        }
+    }
+}
+
+impl ParametricCurve for Segment {
+    type Point = Point3;
+    type Vector = Vector3;
+    fn derivative_n(&self, n: usize, t: f64) -> Self::Vector {
+        match n {
+            0 => self.evaluate(t).to_vec(),
+            1 => self.derivative(t),
+            _ => Vector3::zero(),
+        }
+    }
+    #[inline(always)]
+    fn evaluate(&self, t: f64) -> Point3 {
+        self.ends.0
+            + (self.ends.1 - self.ends.0) * (t - self.range.0) / (self.range.1 - self.range.0)
+    }
+    #[inline(always)]
+    fn derivative(&self, _: f64) -> Vector3 {
+        (self.ends.1 - self.ends.0) / (self.range.1 - self.range.0)
+    }
+    #[inline(always)]
+    fn derivative_2(&self, _: f64) -> Vector3 {
+        Vector3::zero()
+    }
+    #[inline(always)]
+    fn parameter_range(&self) -> ParameterRange {
+        (Bound::Included(self.range.0), Bound::Included(self.range.1))
+    }
+}
+
+impl BoundedCurve for Segment {}
+
+impl ParameterTransform for Segment {
+    #[inline(always)]
+    fn parameter_transform(&mut self, scalar: f64, r#move: f64) -> &mut Self {
+        self.range.0 = self.range.0 * scalar + r#move;
+        self.range.1 = self.range.1 * scalar + r#move;
+        self
+    }
+}
+
+impl Cut for Segment {
+    #[inline(always)]
+    fn cut(&mut self, t: f64) -> Self {
+        let p = self.subs(t);
+        let res = Segment {
+            ends: (p, self.ends.1),
+            range: (t, self.range.1),
+        };
+        *self = Segment {
+            ends: (self.ends.0, p),
+            range: (self.range.0, t),
+        };
+        res
+    }
+}
+
+impl Invertible for Segment {
+    #[inline(always)]
+    fn invert(&mut self) {
+        *self = Segment {
+            ends: (self.ends.1, self.ends.0),
+            range: self.range,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Edge splitting via cut_with_parameter
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_edge_cut_with_parameter() {
+    let p0 = Point3::new(0.0, 0.0, 0.0);
+    let p1 = Point3::new(10.0, 0.0, 0.0);
+    let v0 = Vertex::new(p0);
+    let v1 = Vertex::new(p1);
+
+    let seg = Segment::new(p0, p1);
+    let edge = Edge::new(&v0, &v1, seg);
+
+    // Cut at t = 0.3 -- the point on the segment is (3, 0, 0).
+    let mid_point = Point3::new(3.0, 0.0, 0.0);
+    let v_mid = Vertex::new(mid_point);
+
+    let result = edge.cut_with_parameter(&v_mid, 0.3);
+    assert!(result.is_some(), "cut_with_parameter should succeed for a valid parameter");
+
+    let (e0, e1) = result.unwrap();
+
+    // Sub-edge 0 goes from v0 to v_mid.
+    assert_eq!(e0.front(), &v0);
+    assert_eq!(e0.back(), &v_mid);
+
+    // Sub-edge 1 goes from v_mid to v1.
+    assert_eq!(e1.front(), &v_mid);
+    assert_eq!(e1.back(), &v1);
+
+    // The curves of the sub-edges should have correct parameter ranges.
+    let c0 = e0.curve();
+    let c1 = e1.curve();
+    let (t0_start, t0_end) = c0.range_tuple();
+    let (t1_start, t1_end) = c1.range_tuple();
+
+    assert!((t0_start - 0.0).abs() < TOLERANCE, "first sub-edge should start at t=0.0");
+    assert!((t0_end - 0.3).abs() < TOLERANCE, "first sub-edge should end at t=0.3");
+    assert!((t1_start - 0.3).abs() < TOLERANCE, "second sub-edge should start at t=0.3");
+    assert!((t1_end - 1.0).abs() < TOLERANCE, "second sub-edge should end at t=1.0");
+
+    // Evaluate endpoints of the sub-edge curves to verify geometric correctness.
+    assert!(c0.subs(t0_start).near(&p0), "first sub-edge curve start should be p0");
+    assert!(c0.subs(t0_end).near(&mid_point), "first sub-edge curve end should be mid_point");
+    assert!(c1.subs(t1_start).near(&mid_point), "second sub-edge curve start should be mid_point");
+    assert!(c1.subs(t1_end).near(&p1), "second sub-edge curve end should be p1");
+}
+
+#[test]
+fn test_edge_cut_with_parameter_invalid() {
+    let p0 = Point3::new(0.0, 0.0, 0.0);
+    let p1 = Point3::new(10.0, 0.0, 0.0);
+    let v0 = Vertex::new(p0);
+    let v1 = Vertex::new(p1);
+
+    let seg = Segment::new(p0, p1);
+    let edge = Edge::new(&v0, &v1, seg);
+
+    // Vertex point does not lie on the curve at the given parameter.
+    let wrong_point = Point3::new(5.0, 5.0, 0.0);
+    let v_wrong = Vertex::new(wrong_point);
+    let result = edge.cut_with_parameter(&v_wrong, 0.5);
+    assert!(result.is_none(), "cut_with_parameter should return None for mismatched point");
+
+    // Parameter at the very start (within tolerance) -- should return None.
+    let v_start = Vertex::new(p0);
+    let result = edge.cut_with_parameter(&v_start, 0.0);
+    assert!(result.is_none(), "cut_with_parameter should return None for parameter at boundary");
 }
 
 // ---------------------------------------------------------------------------
