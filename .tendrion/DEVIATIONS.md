@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 59 | Approval-needed: 0 | Total: 59
+**Summary:** Auto-fixes: 61 | Approval-needed: 0 | Total: 61
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -407,5 +407,17 @@
 **Type:** auto-fix
 **Category:** dependency
 **Description:** TDD exemption for Task 1: clippy lint fixes (unnecessary qualification, dead_code) are pure refactoring with no behavioral change. Existing tests in validate.rs already cover euler_poincare_check and is_oriented_check. The stl.rs change is a type alias substitution.
+**Files changed:** none
+**Status:** applied
+### [2026-03-23T02:03:13.983Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Coverage-expansion task: tests for existing production code pass immediately (expected for tolerance_traits.rs)
+**Files changed:** none
+**Status:** applied
+### [2026-03-23T02:04:08.285Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Tests pass immediately in RED phase because they cover existing trait implementations (not new code). This is inherent when adding coverage tests for existing APIs.
 **Files changed:** none
 **Status:** applied
