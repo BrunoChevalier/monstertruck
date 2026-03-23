@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 56 | Approval-needed: 0 | Total: 56
+**Summary:** Auto-fixes: 57 | Approval-needed: 0 | Total: 57
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -387,5 +387,11 @@
 **Type:** auto-fix
 **Category:** bug
 **Description:** The ortho() and perspective() functions in monstertruck-math produce transposed projection matrices. Matrix4::new uses column-major order (c0r0..c0r3, c1r0..c1r3, ...) but these functions pass values as if it were row-major. This causes the projection() method to produce incorrect normalized volume coordinates, breaking both parallel and perspective proptests even for non-degenerate inputs.
+**Files changed:** none
+**Status:** applied
+### [2026-03-23T00:37:08.262Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** bind_group_test assertion failure is pre-existing on llvmpipe software renderer, not caused by this change
 **Files changed:** none
 **Status:** applied
