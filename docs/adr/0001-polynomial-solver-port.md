@@ -110,3 +110,7 @@ Phase 24 fixed transposed projection matrices (`ortho`, `perspective`, `frustum`
 ## Status Update (Phase 25 -- Clippy & Dependency Hygiene)
 
 No changes to the polynomial solver module. Phase 25 upgraded `vtkio` from 0.6 to 0.7.0-rc2 and resolved 4 clippy warnings across the workspace. The math layer was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 26 -- Core and Traits Coverage)
+
+No changes to the polynomial solver module. Phase 26 added 96 unit tests to `monstertruck-core` and 80 unit tests to `monstertruck-traits`, improving coverage of tolerance traits, bounding box, collections, derivatives, cgmath extensions, and geometric trait contracts. The math layer was unaffected. This ADR remains Accepted.

@@ -124,6 +124,11 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Phase 26 -- Core and Traits Coverage
+
+- **monstertruck-core unit tests** -- Added 96 unit tests covering tolerance traits (`Tolerance`, `OperationTolerance`), bounding box operations, `Id` and `EntryMap` collections, derivative utilities, and `cgmath` extension methods. Coverage increased from ~40% toward 55%+.
+- **monstertruck-traits unit tests** -- Added 80 unit tests covering `ParametricCurve`, `ParametricSurface`, `BoundedCurve`, `BoundedSurface`, `Invertible`, `Transformed`, and `SearchParameter` trait implementations. Coverage grew from 0% to meaningful levels.
+
 ### Phase 25 -- Clippy & Dependency Hygiene
 
 - **vtkio upgrade** -- Updated `vtkio` from 0.6 to 0.7.0-rc2, eliminating deprecated `nom` v3.2.1 and `quick-xml` v0.22.0 transitive dependencies.

@@ -102,3 +102,7 @@ No changes to fillet integration mode logic. Phase 24 fixed transposed projectio
 ## Status Update (Phase 25 -- Clippy & Dependency Hygiene)
 
 No changes to fillet integration mode logic. Phase 25 upgraded `vtkio` from 0.6 to 0.7.0-rc2 and resolved 4 clippy warnings across the workspace. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 26 -- Core and Traits Coverage)
+
+No changes to fillet integration mode logic. Phase 26 added 96 unit tests to `monstertruck-core` and 80 unit tests to `monstertruck-traits`, improving coverage of tolerance traits, bounding box, collections, derivatives, and geometric trait contracts. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
