@@ -426,3 +426,165 @@ fn ruled_surface_single_point_no_panic() {
     // Either succeeds (degenerate surface) or returns Err -- must not panic.
     let _result = builder::try_ruled_surface(&c0, &c_single, &RuledSurfaceOptions::default());
 }
+
+// --- Loft surface tests ---
+
+/// Three parallel linear curves at y=0, y=1, y=2 produce a loft surface.
+/// The surface interpolates the section curves at v=0, v=0.5, v=1.
+#[test]
+fn loft_three_linear_curves() {
+    use monstertruck_modeling::SkinOptions;
+
+    let c0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let c1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+    );
+    let c2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 2.0, 0.0), Point3::new(1.0, 2.0, 0.0)],
+    );
+    let face = builder::try_loft(vec![c0, c1, c2], &SkinOptions::default()).unwrap();
+
+    // 4-edge boundary wire.
+    assert_eq!(face.boundaries().len(), 1);
+    assert_eq!(face.boundaries()[0].len(), 4);
+
+    // Surface interpolates at section v-parameters.
+    let surface = face.surface();
+    assert_near!(surface.subs(0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
+    assert_near!(surface.subs(1.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    assert_near!(surface.subs(0.0, 0.5), Point3::new(0.0, 1.0, 0.0));
+    assert_near!(surface.subs(1.0, 0.5), Point3::new(1.0, 1.0, 0.0));
+    assert_near!(surface.subs(0.0, 1.0), Point3::new(0.0, 2.0, 0.0));
+    assert_near!(surface.subs(1.0, 1.0), Point3::new(1.0, 2.0, 0.0));
+}
+
+/// Four section curves at different heights with v_degree=3.
+#[test]
+fn loft_four_curves_v_degree_3() {
+    use monstertruck_modeling::SkinOptions;
+
+    let c0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let c1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 1.0, 0.5), Point3::new(1.0, 1.0, 0.5)],
+    );
+    let c2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 2.0, 0.0), Point3::new(1.0, 2.0, 0.0)],
+    );
+    let c3 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 3.0, 0.0), Point3::new(1.0, 3.0, 0.0)],
+    );
+    let mut opts = SkinOptions::default();
+    opts.v_degree = 3;
+    let face = builder::try_loft(vec![c0, c1, c2, c3], &opts).unwrap();
+
+    // 4-edge boundary wire.
+    assert_eq!(face.boundaries().len(), 1);
+    assert_eq!(face.boundaries()[0].len(), 4);
+
+    // Surface interpolates section curves at their v-parameters.
+    let surface = face.surface();
+    assert_near!(surface.subs(0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
+    assert_near!(surface.subs(1.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    assert_near!(surface.subs(0.0, 1.0), Point3::new(0.0, 3.0, 0.0));
+    assert_near!(surface.subs(1.0, 1.0), Point3::new(1.0, 3.0, 0.0));
+}
+
+/// Loft with exactly 2 curves matches ruled surface behavior.
+#[test]
+fn loft_two_curves() {
+    use monstertruck_modeling::SkinOptions;
+
+    let c0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let c1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+    );
+    let face = builder::try_loft(vec![c0, c1], &SkinOptions::default()).unwrap();
+
+    // 4-edge boundary wire.
+    assert_eq!(face.boundaries().len(), 1);
+    assert_eq!(face.boundaries()[0].len(), 4);
+
+    // Midpoint interpolation at v=0.5.
+    let surface = face.surface();
+    assert_near!(surface.subs(0.5, 0.5), Point3::new(0.5, 0.5, 0.0));
+}
+
+/// Passing 1 curve returns `InsufficientSections` error.
+#[test]
+fn loft_one_curve_error() {
+    use monstertruck_modeling::SkinOptions;
+
+    let c0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let result = builder::try_loft(vec![c0], &SkinOptions::default());
+    assert_eq!(
+        result.unwrap_err(),
+        Error::InsufficientSections {
+            required: 2,
+            got: 1,
+        },
+    );
+}
+
+/// Passing an empty vec returns `InsufficientSections` error (not panic).
+#[test]
+fn loft_empty_vec_error() {
+    use monstertruck_modeling::SkinOptions;
+
+    let result = builder::try_loft(vec![], &SkinOptions::default());
+    assert_eq!(
+        result.unwrap_err(),
+        Error::InsufficientSections {
+            required: 2,
+            got: 0,
+        },
+    );
+}
+
+/// Mix of linear and quadratic section curves: compatibility normalization handles degree differences.
+#[test]
+fn loft_different_degree_sections() {
+    use monstertruck_modeling::SkinOptions;
+
+    // Linear (degree 1).
+    let c0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    // Quadratic (degree 2).
+    let c1 = BsplineCurve::new(
+        KnotVector::bezier_knot(2),
+        vec![
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(0.5, 2.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+        ],
+    );
+    // Linear (degree 1).
+    let c2 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 3.0, 0.0), Point3::new(1.0, 3.0, 0.0)],
+    );
+    let face = builder::try_loft(vec![c0, c1, c2], &SkinOptions::default()).unwrap();
+
+    // 4-edge boundary wire.
+    assert_eq!(face.boundaries().len(), 1);
+    assert_eq!(face.boundaries()[0].len(), 4);
+}
