@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 28 of 32 (Modeling Coverage)
-**Plan:** 1 of 2
+**Plan:** 2 of 2
 **Progress:**
 
 
