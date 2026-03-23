@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 61 | Approval-needed: 0 | Total: 61
+**Summary:** Auto-fixes: 63 | Approval-needed: 0 | Total: 63
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -419,5 +419,18 @@
 **Type:** auto-fix
 **Category:** dependency
 **Description:** Tests pass immediately in RED phase because they cover existing trait implementations (not new code). This is inherent when adding coverage tests for existing APIs.
+**Files changed:** none
+**Status:** applied
+### [2026-03-23T02:37:43.629Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** TDD RED/GREEN cycle not applicable: plan adds tests for existing public API. Tests pass immediately against existing implementation. No new implementation code is written.
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-23T02:40:48.064Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing compile error in untracked file face_shell_ops.rs (from parallel agent). Does not affect our test file.
 **Files changed:** none
 **Status:** applied
