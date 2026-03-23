@@ -229,11 +229,28 @@ where
                 PolyBoundaryPiece::try_new(surface, wire_iter, &sp)
             }
         };
-        let preboundary: Option<Vec<_>> = boundaries.iter().map(create_boundary).collect();
-        let polygon: Option<PolygonMesh> = preboundary.map(|preboundary| {
-            let boundary = PolyBoundary::new(preboundary, &surface, tolerance);
-            trimming_tessellation(&surface, &boundary, tolerance, quad_config)
-        });
+        let polygon: Option<PolygonMesh> = if allow_fallback {
+            // When fallback is enabled, skip degenerate wires instead of
+            // aborting the entire face.
+            let preboundary: Vec<_> = boundaries.iter().filter_map(create_boundary).collect();
+            if preboundary.is_empty() {
+                None
+            } else {
+                let boundary = PolyBoundary::new(preboundary, surface, tolerance);
+                Some(trimming_tessellation(
+                    surface,
+                    &boundary,
+                    tolerance,
+                    quad_config,
+                ))
+            }
+        } else {
+            let preboundary: Option<Vec<_>> = boundaries.iter().map(create_boundary).collect();
+            preboundary.map(|preboundary| {
+                let boundary = PolyBoundary::new(preboundary, surface, tolerance);
+                trimming_tessellation(surface, &boundary, tolerance, quad_config)
+            })
+        };
         CompressedFace {
             boundaries,
             orientation: face.orientation,
@@ -274,21 +291,46 @@ fn shell_create_polygon<S: PreMeshableSurface>(
             None
         }
     } else {
-        let preboundary = wires
-            .iter()
-            .map(|wire: &Wire<_, _>| {
-                let wire_iter = wire.iter().map(Edge::oriented_curve);
-                if allow_fallback {
+        let preboundary: Vec<_> = if allow_fallback {
+            // When fallback is enabled, skip degenerate wires that return
+            // `None` instead of aborting the entire face.
+            wires
+                .iter()
+                .filter_map(|wire: &Wire<_, _>| {
+                    let wire_iter = wire.iter().map(Edge::oriented_curve);
                     PolyBoundaryPiece::try_new_with_fallback(surface, wire_iter, &sp)
-                } else {
+                })
+                .collect()
+        } else {
+            match wires
+                .iter()
+                .map(|wire: &Wire<_, _>| {
+                    let wire_iter = wire.iter().map(Edge::oriented_curve);
                     PolyBoundaryPiece::try_new(surface, wire_iter, &sp)
+                })
+                .collect::<Option<Vec<_>>>()
+            {
+                Some(v) => v,
+                None => {
+                    let mut new_face = Face::debug_new(wires, None);
+                    if !orientation {
+                        new_face.invert();
+                    }
+                    return new_face;
                 }
-            })
-            .collect::<Option<Vec<_>>>();
-        preboundary.map(|preboundary| {
+            }
+        };
+        if preboundary.is_empty() {
+            None
+        } else {
             let boundary = PolyBoundary::new(preboundary, &surface, tolerance);
-            trimming_tessellation(surface, &boundary, tolerance, quad_config)
-        })
+            Some(trimming_tessellation(
+                surface,
+                &boundary,
+                tolerance,
+                quad_config,
+            ))
+        }
     };
     let mut new_face = Face::debug_new(wires, polygon);
     if !orientation {
@@ -345,6 +387,11 @@ impl PolyBoundaryPiece {
                 poly_edge.into_iter().take(n)
             })
             .collect();
+        // Filter consecutive duplicate points (collapsed edges) within tolerance.
+        remove_collapsed_edges(&mut bdry3d, TOLERANCE);
+        if bdry3d.len() < 3 {
+            return None;
+        }
         bdry3d.push(bdry3d[0]);
 
         // Pass 1: attempt parameter search for each boundary point.
@@ -450,6 +497,30 @@ impl PolyBoundaryPiece {
         }
         Some(Self(vec))
     }
+}
+
+/// Removes consecutive duplicate points from a boundary loop.
+///
+/// A collapsed edge manifests as two consecutive vertices at the same 3D
+/// position. These zero-length segments can cause degenerate CDT constraint
+/// edges. This function deduplicates them in-place, preserving the loop
+/// winding order.
+fn remove_collapsed_edges(points: &mut Vec<Point3>, tolerance: f64) {
+    let tol2 = tolerance * tolerance;
+    points.dedup_by(|a, b| (*a - *b).magnitude2() < tol2);
+}
+
+/// Returns `true` if a UV-space loop has near-zero signed area.
+///
+/// Uses the shoelace formula to compute the absolute signed area of the
+/// loop. If the area is below `UV_CLOSURE_TOLERANCE` squared, the loop
+/// is considered degenerate and should be skipped before CDT insertion.
+fn is_degenerate_loop(curve: &[SurfacePoint]) -> bool {
+    let area: f64 = curve
+        .iter()
+        .circular_tuple_windows()
+        .fold(0.0, |sum, (p, q)| sum + (q.x + p.x) * (q.y - p.y));
+    f64::abs(area) < UV_CLOSURE_TOLERANCE * UV_CLOSURE_TOLERANCE
 }
 
 /// Interpolates UV coordinates for a failed boundary point at index `i`
@@ -568,6 +639,10 @@ impl PolyBoundary {
     ) -> Self {
         let (mut closed, mut open) = (Vec::new(), Vec::new());
         pieces.into_iter().for_each(|PolyBoundaryPiece(mut vec)| {
+            // Skip empty pieces (collapsed degenerate wires).
+            if vec.is_empty() {
+                return;
+            }
             match vec[0].uv.distance(vec[vec.len() - 1].uv) < UV_CLOSURE_TOLERANCE {
                 true => {
                     vec.pop();
@@ -576,6 +651,13 @@ impl PolyBoundary {
                 false => open.push(vec),
             }
         });
+        // Filter out near-zero-area loops before CDT insertion.
+        let pre_filter_count = closed.len();
+        closed.retain(|loop_pts| !is_degenerate_loop(loop_pts));
+        let removed = pre_filter_count - closed.len();
+        if removed > 0 {
+            log::warn!("PolyBoundary: skipped {removed} degenerate loop(s) with near-zero UV area");
+        }
         fn connect_edges<P>(vecs: impl IntoIterator<Item = Vec<P>>) -> Vec<P> {
             let closure = |vec: Vec<P>| {
                 let len = vec.len();
@@ -757,6 +839,11 @@ impl PolyBoundary {
     }
 
     /// Inserts points and adds constraint into triangulation.
+    /// Inserts boundary points into the CDT and adds constraint edges.
+    ///
+    /// Self-touching boundaries (where two logical boundary points map to the
+    /// same CDT vertex via [`spade_round`]) are handled by skipping zero-length
+    /// constraints. Near-coincident points are merged to the same vertex handle.
     fn insert_to(
         &self,
         triangulation: &mut Cdt,
@@ -791,12 +878,20 @@ impl PolyBoundary {
                 let Some(vj) = poly2tri[j] else { return };
                 if let Some(p) = prev {
                     let Some(v) = poly2tri[p] else { return };
+                    // Skip zero-length constraints (self-touching boundaries).
+                    if v == vj {
+                        return;
+                    }
                     if triangulation.can_add_constraint(v, vj) {
                         triangulation.add_constraint(v, vj);
                         prev = None;
                     }
                 } else {
                     let Some(vi) = poly2tri[i] else { return };
+                    // Skip zero-length constraints (self-touching boundaries).
+                    if vi == vj {
+                        return;
+                    }
                     if triangulation.can_add_constraint(vi, vj) {
                         triangulation.add_constraint(vi, vj);
                     } else {
@@ -882,6 +977,11 @@ where
 }
 
 /// Tessellates one surface trimmed by polyline.
+///
+/// Wraps CDT tessellation in [`std::panic::catch_unwind`] as a last resort
+/// for pathological boundary geometries that slip past earlier guards.
+/// If the CDT panics, a simple 2-triangle quad covering the UV bounding box
+/// is returned instead.
 fn trimming_tessellation<S>(
     surface: &S,
     polyboundary: &PolyBoundary,
@@ -891,21 +991,60 @@ fn trimming_tessellation<S>(
 where
     S: PreMeshableSurface,
 {
-    if quad_config.mode == QuadMode::IsoQuads {
-        if let Some(mut mesh) = iso_quad_trimmed_tessellation(surface, polyboundary, tolerance) {
-            mesh.make_face_compatible_to_normal();
-            mesh
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        if quad_config.mode == QuadMode::IsoQuads {
+            if let Some(mut mesh) = iso_quad_trimmed_tessellation(surface, polyboundary, tolerance)
+            {
+                mesh.make_face_compatible_to_normal();
+                mesh
+            } else {
+                let mut mesh = cdt_trimming_tessellation(surface, polyboundary, tolerance);
+                mesh.make_face_compatible_to_normal();
+                mesh
+            }
         } else {
             let mut mesh = cdt_trimming_tessellation(surface, polyboundary, tolerance);
             mesh.make_face_compatible_to_normal();
+            apply_quad_mode(&mut mesh, quad_config);
             mesh
         }
-    } else {
-        let mut mesh = cdt_trimming_tessellation(surface, polyboundary, tolerance);
-        mesh.make_face_compatible_to_normal();
-        apply_quad_mode(&mut mesh, quad_config);
-        mesh
+    }));
+    match result {
+        Ok(mesh) => mesh,
+        Err(_) => {
+            log::warn!("trimming_tessellation: CDT panicked, falling back to UV bounding-box quad");
+            fallback_uv_quad(surface, polyboundary)
+        }
     }
+}
+
+/// Produces a simple 2-triangle mesh covering the UV bounding box as a
+/// fallback when CDT tessellation panics on degenerate boundaries.
+fn fallback_uv_quad<S: PreMeshableSurface>(
+    surface: &S,
+    polyboundary: &PolyBoundary,
+) -> PolygonMesh {
+    let (u0, v0) = (polyboundary.uv_min.x, polyboundary.uv_min.y);
+    let (u1, v1) = (polyboundary.uv_max.x, polyboundary.uv_max.y);
+    let corners = [(u0, v0), (u1, v0), (u1, v1), (u0, v1)];
+    let positions: Vec<Point3> = corners.iter().map(|(u, v)| surface.subs(*u, *v)).collect();
+    let uv_coords: Vec<Vector2> = corners.iter().map(|(u, v)| Vector2::new(*u, *v)).collect();
+    let normals: Vec<Vector3> = corners
+        .iter()
+        .map(|(u, v)| surface.normal(*u, *v))
+        .collect();
+    let sv = |k: usize| -> StandardVertex { [k, k, k].into() };
+    let tri_faces = vec![[sv(0), sv(1), sv(2)], [sv(0), sv(2), sv(3)]];
+    let mut mesh = PolygonMesh::debug_new(
+        StandardAttributes {
+            positions,
+            uv_coords,
+            normals,
+        },
+        Faces::from_tri_and_quad_faces(tri_faces, Vec::new()),
+    );
+    mesh.make_face_compatible_to_normal();
+    mesh
 }
 
 fn cdt_trimming_tessellation<S>(
@@ -916,6 +1055,23 @@ fn cdt_trimming_tessellation<S>(
 where
     S: PreMeshableSurface,
 {
+    // If all boundary loops were filtered as degenerate, fall back to
+    // untrimmed tessellation using the surface's full domain.
+    if polyboundary.loops.is_empty() {
+        if let (Some(urange), Some(vrange)) = surface.try_range_tuple() {
+            log::warn!(
+                "cdt_trimming_tessellation: no boundary loops, falling back to untrimmed tessellation"
+            );
+            return untrimmed_tessellation(
+                surface,
+                (urange, vrange),
+                tolerance,
+                QuadMode::Triangles,
+            );
+        }
+        // No domain information available; return empty mesh.
+        return PolygonMesh::default();
+    }
     let mut triangulation = Cdt::new();
     let mut boundary_map = HashMap::<FixedVertexHandle, Point3>::default();
     polyboundary.insert_to(&mut triangulation, &mut boundary_map);
