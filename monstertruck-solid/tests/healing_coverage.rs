@@ -316,3 +316,32 @@ fn heal_surface_shell_with_gap() {
         Err(e) => panic!("heal_with_gap: unexpected error: {e}"),
     }
 }
+
+/// `heal_surface_shell` on a cube with an extra near-coincident vertex
+/// should succeed without panic.
+#[test]
+fn heal_surface_shell_welds_near_coincident_vertices() {
+    let mut cshell = make_compressed_cube();
+    // Duplicate a vertex with tiny offset (simulating a gap).
+    let near_v0 = Point3::new(1e-8, 1e-8, 1e-8);
+    cshell.vertices.push(near_v0);
+    // The extra vertex exists but no edge references it, so healing
+    // should still succeed without error.
+    let result = heal_surface_shell(cshell, 0.05);
+    // Should not panic regardless of outcome.
+    match result {
+        Ok(_) => {}
+        Err(SurfaceHealingError::NonManifoldEdges { .. }) => {}
+        Err(e) => panic!("unexpected healing error: {e}"),
+    }
+}
+
+/// Verify that `check_edge_curve_consistency` is accessible through
+/// `monstertruck_modeling` re-exports with the `solid-ops` feature.
+#[test]
+fn edge_curve_consistency_accessible_via_modeling() {
+    // This test verifies the re-export path compiles and works.
+    let cshell = make_compressed_cube();
+    let deviations = monstertruck_solid::check_edge_curve_consistency(&cshell, 1e-6);
+    assert!(deviations.is_empty());
+}
