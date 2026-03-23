@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 72 | Approval-needed: 0 | Total: 72
+**Summary:** Auto-fixes: 74 | Approval-needed: 0 | Total: 74
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -488,5 +488,17 @@
 **Type:** auto-fix
 **Category:** dependency
 **Description:** RED tests for degenerate trim boundaries all pass against existing code. The current CDT insertion handles degenerate inputs gracefully via spade_round and can_add_constraint. Task 2 implementation adds explicit named helper functions (is_degenerate_loop, remove_collapsed_edges) and catch_unwind safety for robustness.
+**Files changed:** none
+**Status:** applied
+### [2026-03-23T06:15:09.667Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Plan specified ADVANCED_FACE but library uses FACE_SURFACE; changed test assertion to match actual STEP output
+**Files changed:** none
+**Status:** applied
+### [2026-03-23T06:09:56.230Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Exempt: docs/MIGRATION.md is a pure documentation file with no runtime code -- TDD not applicable
 **Files changed:** none
 **Status:** applied
