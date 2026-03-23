@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 31 of 32 (Deferred Ayam Port Completion)
-**Plan:** 0 of 2
+**Plan:** 1 of 2
 **Progress:**
 
 
