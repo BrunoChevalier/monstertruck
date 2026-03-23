@@ -4,8 +4,8 @@
 
 use monstertruck_modeling::*;
 use monstertruck_solid::{
-    RobustSplitClosedEdgesAndFaces, SplitClosedEdgesAndFaces, SurfaceHealingError,
-    extract_healed, heal_surface_shell,
+    EdgeCurveDeviation, RobustSplitClosedEdgesAndFaces, SplitClosedEdgesAndFaces,
+    SurfaceHealingError, check_edge_curve_consistency, extract_healed, heal_surface_shell,
 };
 use monstertruck_topology::compress::CompressedEdgeIndex;
 use monstertruck_topology::shell::ShellCondition;
@@ -242,6 +242,49 @@ fn heal_surface_shell_cylinder() {
         }
         Err(e) => panic!("heal_surface_shell_cylinder unexpected error: {e}"),
     }
+}
+
+// -----------------------------------------------------------------------
+// Edge-curve consistency tests
+// -----------------------------------------------------------------------
+
+/// Well-formed cube: no edge-curve deviations expected.
+#[test]
+fn edge_curve_consistency_well_formed_cube() {
+    let cshell = make_compressed_cube();
+    let deviations = check_edge_curve_consistency(&cshell, 1e-6);
+    assert!(
+        deviations.is_empty(),
+        "well-formed cube should have no edge-curve deviations, got {} deviations",
+        deviations.len()
+    );
+}
+
+/// Perturbed vertex: at least one deviation should be detected.
+#[test]
+fn edge_curve_consistency_detects_perturbation() {
+    let mut cshell = make_compressed_cube();
+    // Perturb vertex 0 by 0.1 in x.
+    cshell.vertices[0].x += 0.1;
+    let deviations = check_edge_curve_consistency(&cshell, 0.01);
+    assert!(
+        !deviations.is_empty(),
+        "perturbed cube should have edge-curve deviations"
+    );
+    // At least one deviation should be near 0.1.
+    let has_expected = deviations
+        .iter()
+        .any(|d| d.front_deviation > 0.05 || d.back_deviation > 0.05);
+    assert!(has_expected, "expected deviation ~0.1, got: {deviations:?}");
+}
+
+/// Very tight tolerance on well-formed geometry: should not panic.
+#[test]
+fn edge_curve_consistency_tight_tolerance_good_geometry() {
+    let cshell = make_compressed_cube();
+    // Even with very tight tolerance, the function must not panic.
+    let deviations = check_edge_curve_consistency(&cshell, 1e-12);
+    let _ = deviations;
 }
 
 /// `heal_surface_shell` on a single-face open shell with a small vertex
