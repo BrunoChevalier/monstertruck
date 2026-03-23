@@ -210,6 +210,40 @@ fn single_face_shell_with_gap(
     }
 }
 
+/// `heal_surface_shell` on a cylinder built by revolving a line edge.
+/// The open cylinder shell triggers `NonManifoldEdges` (boundary edges are
+/// non-manifold). We accept both Ok and NonManifoldEdges as valid outcomes.
+#[test]
+fn heal_surface_shell_cylinder() {
+    use std::f64::consts::PI;
+    // Build a vertical line offset from the Y axis and revolve it to form
+    // a cylindrical lateral surface (open shell -- no caps).
+    let v0 = builder::vertex(Point3::new(1.0, 0.0, 0.0));
+    let v1 = builder::vertex(Point3::new(1.0, 1.0, 0.0));
+    let line_edge: Edge = builder::line(&v0, &v1);
+    let wire: Wire = vec![line_edge].into();
+    let shell: Shell =
+        builder::revolve_wire(&wire, Point3::origin(), Vector3::unit_y(), Rad(2.0 * PI), 4);
+    let cshell = shell.compress();
+    let result = heal_surface_shell(cshell, TOL);
+    match result {
+        Ok(healed) => {
+            let condition = healed.shell_condition();
+            eprintln!("[heal_cylinder] healed Ok, condition = {condition:?}");
+            // A valid healed cylinder should have a reasonable topology.
+            assert!(
+                healed.face_iter().count() >= 4,
+                "Healed cylinder must have at least 4 faces (4 revolution divisions)."
+            );
+        }
+        Err(SurfaceHealingError::NonManifoldEdges { .. }) => {
+            // Open cylinder has boundary edges; non-manifold is expected.
+            eprintln!("[heal_cylinder] NonManifoldEdges (expected for open cylinder)");
+        }
+        Err(e) => panic!("heal_surface_shell_cylinder unexpected error: {e}"),
+    }
+}
+
 /// `heal_surface_shell` on a single-face open shell with a small vertex
 /// gap (~1e-8) should heal without panic. `NonManifoldEdges` is expected
 /// for a single-face open shell.
