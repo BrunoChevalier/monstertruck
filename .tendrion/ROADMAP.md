@@ -39,7 +39,7 @@
 - [x] **Phase 25: Clippy and Dependency Hygiene** - Eliminate clippy warnings in monstertruck-step and update deprecated nom/quick-xml
 - [x] **Phase 26: Core and Traits Coverage** - Add tests for monstertruck-core tolerance infrastructure and monstertruck-traits curve/surface impls
 - [x] **Phase 27: Topology Coverage** - Add edge, wire, face, and shell operation tests to reach 50%+ coverage
-- [ ] **Phase 28: Modeling Coverage** - Add builder, profile, and text module tests to reach 45%+ coverage
+- [x] **Phase 28: Modeling Coverage** - Add builder, profile, and text module tests to reach 45%+ coverage
 - [ ] **Phase 29: Solid and STEP Coverage** - Add boolean/fillet/healing tests and STEP round-trip tests for zero-coverage crates
 - [ ] **Phase 30: New Surface Constructors** - Implement ruled surface, loft surface, and expanded geometry healing
 - [ ] **Phase 31: Deferred Ayam Port Completion** - Intersection-grid Gordon variants and trim tessellation robustness improvements
@@ -276,7 +276,7 @@
 | 25. Clippy and Dependency Hygiene | v0.5.3 | 2/2 | ✓ Complete | 2026-03-23 |
 | 26. Core and Traits Coverage | v0.5.3 | 2/2 | ✓ Complete | 2026-03-23 |
 | 27. Topology Coverage | v0.5.3 | 2/2 | ✓ Complete | 2026-03-23 |
-| 28. Modeling Coverage | v0.5.3 | 0/TBD | Not started | - |
+| 28. Modeling Coverage | v0.5.3 | 2/2 | ✓ Complete | 2026-03-23 |
 | 29. Solid and STEP Coverage | v0.5.3 | 0/TBD | Not started | - |
 | 30. New Surface Constructors | v0.5.3 | 0/TBD | Not started | - |
 | 31. Deferred Ayam Port Completion | v0.5.3 | 0/TBD | Not started | - |
