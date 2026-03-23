@@ -134,3 +134,7 @@ No changes to the polynomial solver module. Phase 30 added ruled surface (`Bspli
 ## Status Update (Phase 31 -- Deferred Ayam Port Completion)
 
 No changes to the polynomial solver module. Phase 31 fixed a tensor product knot assignment bug in the Gordon surface constructor for asymmetric grids and added robust trim tessellation for degenerate boundaries in `monstertruck-meshing`. The math layer was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 32 -- I/O Validation and Migration Docs, v0.5.3 Final)
+
+No changes to the polynomial solver module. Phase 32 added 13 I/O export validation tests (STEP, OBJ, STL) and created `docs/MIGRATION.md` covering 33 deprecated items. The math layer was unaffected. This ADR remains Accepted. Milestone v0.5.3 is complete.

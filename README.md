@@ -124,6 +124,13 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Phase 32 -- I/O Validation and Migration Docs (v0.5.3 Final)
+
+- **I/O export validation tests** -- Added 13 export round-trip tests across three formats: 4 STEP tests, 5 OBJ tests, and 4 STL tests, validating geometry fidelity through export/re-import cycles.
+- **Migration guide** -- Created `docs/MIGRATION.md` (320 lines) covering all 33 deprecated items in v0.5.x, with before/after code examples and step-by-step upgrade instructions.
+
+Milestone v0.5.3 is complete. See `docs/MIGRATION.md` for upgrade guidance.
+
 ### Phase 31 -- Deferred Ayam Port Completion
 
 - **Intersection-grid Gordon surface** -- `try_gordon_from_network` now handles curved curve networks via intersection-grid auto-computation. Fixed a tensor product knot assignment bug that caused panics on asymmetric grids (`n_u != n_v`). 4 new geometry tests and 3 B-rep validation tests in `monstertruck-modeling`.
@@ -163,7 +170,7 @@ The `monstertruck-meshing` crate includes boundary-aware vertex stitching during
 - **vtkio upgrade** -- Updated `vtkio` from 0.6 to 0.7.0-rc2, eliminating deprecated `nom` v3.2.1 and `quick-xml` v0.22.0 transitive dependencies.
 - **Clippy clean** -- Fixed 4 clippy warnings (unnecessary qualification in `stl.rs`, dead code in `validate.rs`). `cargo clippy --workspace -- -D warnings` now exits 0.
 
-### Milestone v0.5.3 Summary (Phase 24) -- GPU Test Reliability
+### Milestone v0.5.3 Summary (Phases 24--32) -- GPU Reliability, Coverage, Surface Constructors, I/O Validation
 
 - **Projection matrix fixes (Phase 24)** -- Fixed transposed projection matrices (`ortho`, `perspective`, `frustum`) in `monstertruck-math`. Added epsilon guards for degenerate point clouds in camera fitting functions (`monstertruck-gpu`). 4 new unit tests.
 - **GPU test graceful degradation (Phase 24)** -- `monstertruck-gpu` render tests (`bindgroup`, `msaa`, `wgsl-utils`) now skip gracefully when no GPU device is available via `try_init_device` and `os_alt_try_exec_test` helpers.

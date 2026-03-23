@@ -133,3 +133,7 @@ No changes to fillet topology surgery. Phase 30 added ruled surface and loft sur
 ## Status Update (Phase 31 -- Deferred Ayam Port Completion)
 
 No changes to fillet topology surgery. Phase 31 fixed a tensor product knot assignment bug in the Gordon surface constructor and added robust trim tessellation for degenerate boundaries in `monstertruck-meshing`. The fillet surgery code was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 32 -- I/O Validation and Migration Docs, v0.5.3 Final)
+
+No changes to fillet topology surgery. Phase 32 added 13 I/O export validation tests (STEP, OBJ, STL) and created `docs/MIGRATION.md` covering 33 deprecated items. The fillet surgery code was unaffected. This ADR remains Accepted. Milestone v0.5.3 is complete.

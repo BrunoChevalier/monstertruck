@@ -126,3 +126,7 @@ No changes to fillet integration mode logic. Phase 30 added ruled surface (`Bspl
 ## Status Update (Phase 31 -- Deferred Ayam Port Completion)
 
 No changes to fillet integration mode logic. Phase 31 fixed a tensor product knot assignment bug in the Gordon surface constructor and added robust trim tessellation for degenerate boundaries in `monstertruck-meshing`. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 32 -- I/O Validation and Migration Docs, v0.5.3 Final)
+
+No changes to fillet integration mode logic. Phase 32 added 13 I/O export validation tests (STEP, OBJ, STL) and created `docs/MIGRATION.md` covering 33 deprecated items. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted. Milestone v0.5.3 is complete.
