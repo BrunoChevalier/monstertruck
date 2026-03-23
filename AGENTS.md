@@ -116,6 +116,16 @@ Reports are written to `profiling_data/`, including per-package HTML reports in 
 - For each part of the docs, every first reference to a type, keyword, symbol etc. that is NOT the item itself being described MUST be linked: [`Foo`].
 - En-dashes are expressed as two dashes: `--`. En-dashes are not used for connecting words, e.g. "compile-time".
 
+## Developer Setup
+
+After cloning, enable the pre-commit hook that runs clippy on Rust file changes:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The hook (`.githooks/pre-commit`) checks if any `.rs` or `.toml` files are staged and only runs `cargo clippy --workspace --tests --all-features -- -D warnings` if so. Non-Rust commits are unaffected.
+
 ## Commit & Pull Request Guidelines
 
 - Use conventional commit prefixes: `feat:`, `fix:`, `chore:`.
