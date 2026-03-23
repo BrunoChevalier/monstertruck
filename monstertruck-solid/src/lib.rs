@@ -25,8 +25,8 @@
 
 mod healing;
 pub use healing::{
-    RobustSplitClosedEdgesAndFaces, SplitClosedEdgesAndFaces, SurfaceHealingError, extract_healed,
-    heal_surface_shell,
+    EdgeCurveDeviation, RobustSplitClosedEdgesAndFaces, SplitClosedEdgesAndFaces,
+    SurfaceHealingError, check_edge_curve_consistency, extract_healed, heal_surface_shell,
 };
 pub mod shell_ops;
 pub use shell_ops::{OffsetCurve, OffsetSurface, offset_shell, shell_solid};

@@ -18,6 +18,9 @@ use split_closed_edges::split_closed_edges;
 mod split_closed_faces;
 use split_closed_faces::split_closed_faces;
 
+mod edge_curve_consistency;
+pub use edge_curve_consistency::{EdgeCurveDeviation, check_edge_curve_consistency};
+
 mod surface_healing;
 pub use surface_healing::{SurfaceHealingError, heal_surface_shell};
 
