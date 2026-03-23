@@ -321,3 +321,108 @@ fn gordon_verified_error_propagates() {
         result,
     );
 }
+
+// --- Ruled surface tests ---
+
+/// Two parallel linear curves produce a planar ruled surface with a 4-edge boundary wire.
+/// Evaluating the surface at v=0 and v=1 reproduces the input curves.
+/// Evaluating at v=0.5 produces the midpoint between the curves.
+#[test]
+fn ruled_surface_happy_path() {
+    use monstertruck_modeling::RuledSurfaceOptions;
+
+    let c0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let c1 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+    );
+    let face = builder::try_ruled_surface(&c0, &c1, &RuledSurfaceOptions::default()).unwrap();
+
+    // 4-edge boundary wire.
+    assert_eq!(face.boundaries().len(), 1);
+    assert_eq!(face.boundaries()[0].len(), 4);
+
+    // Surface at v=0 matches curve0.
+    let surface = face.surface();
+    assert_near!(surface.subs(0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
+    assert_near!(surface.subs(0.5, 0.0), Point3::new(0.5, 0.0, 0.0));
+    assert_near!(surface.subs(1.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+
+    // Surface at v=1 matches curve1.
+    assert_near!(surface.subs(0.0, 1.0), Point3::new(0.0, 1.0, 0.0));
+    assert_near!(surface.subs(0.5, 1.0), Point3::new(0.5, 1.0, 0.0));
+    assert_near!(surface.subs(1.0, 1.0), Point3::new(1.0, 1.0, 0.0));
+
+    // Surface at v=0.5 is the midpoint.
+    assert_near!(surface.subs(0.0, 0.5), Point3::new(0.0, 0.5, 0.0));
+    assert_near!(surface.subs(0.5, 0.5), Point3::new(0.5, 0.5, 0.0));
+    assert_near!(surface.subs(1.0, 0.5), Point3::new(1.0, 0.5, 0.0));
+}
+
+/// One linear and one quadratic curve: syncro_degree normalizes them before construction.
+#[test]
+fn ruled_surface_different_degrees() {
+    use monstertruck_modeling::RuledSurfaceOptions;
+
+    // Linear (degree 1).
+    let c0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    // Quadratic (degree 2).
+    let c1 = BsplineCurve::new(
+        KnotVector::bezier_knot(2),
+        vec![
+            Point3::new(0.0, 1.0, 0.0),
+            Point3::new(0.5, 2.0, 0.0),
+            Point3::new(1.0, 1.0, 0.0),
+        ],
+    );
+    let face = builder::try_ruled_surface(&c0, &c1, &RuledSurfaceOptions::default()).unwrap();
+
+    // 4-edge boundary wire.
+    assert_eq!(face.boundaries().len(), 1);
+    assert_eq!(face.boundaries()[0].len(), 4);
+
+    // Boundary interpolation correct at endpoints.
+    let surface = face.surface();
+    assert_near!(surface.subs(0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
+    assert_near!(surface.subs(1.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+    assert_near!(surface.subs(0.0, 1.0), Point3::new(0.0, 1.0, 0.0));
+    assert_near!(surface.subs(1.0, 1.0), Point3::new(1.0, 1.0, 0.0));
+}
+
+/// Passing a curve with empty control points returns an error, not a panic.
+#[test]
+fn ruled_surface_empty_curve_error() {
+    use monstertruck_modeling::RuledSurfaceOptions;
+
+    let c0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let c_empty: BsplineCurve<Point3> = BsplineCurve::new(KnotVector::from(vec![]), vec![]);
+    let result = builder::try_ruled_surface(&c0, &c_empty, &RuledSurfaceOptions::default());
+    assert!(
+        matches!(result, Err(Error::FromGeometry(_))),
+        "Expected FromGeometry error for empty curve, got {:?}",
+        result,
+    );
+}
+
+/// A single-point degenerate curve (degree 0) does not panic.
+#[test]
+fn ruled_surface_single_point_no_panic() {
+    use monstertruck_modeling::RuledSurfaceOptions;
+
+    let c0 = BsplineCurve::new(
+        KnotVector::bezier_knot(1),
+        vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+    );
+    let c_single = BsplineCurve::new(KnotVector::bezier_knot(0), vec![Point3::new(0.5, 0.5, 0.0)]);
+    // Either succeeds (degenerate surface) or returns Err -- must not panic.
+    let _result = builder::try_ruled_surface(&c0, &c_single, &RuledSurfaceOptions::default());
+}
