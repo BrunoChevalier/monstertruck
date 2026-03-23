@@ -114,3 +114,7 @@ No changes to fillet integration mode logic. Phase 27 added 107 unit tests to `m
 ## Status Update (Phase 28 -- Modeling Coverage)
 
 No changes to fillet integration mode logic. Phase 28 added 40 unit tests to `monstertruck-modeling` covering builder round-trip operations (extrude, revolve, sweep_rail, homotopy, transformations, primitives) and text/geometry enum APIs. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 29 -- Solid and STEP Coverage)
+
+No changes to fillet integration mode logic. Phase 29 added 22 tests to `monstertruck-solid` (boolean ops, fillet pipeline, healing module) and 9 STEP round-trip tests to `monstertruck-step`. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.

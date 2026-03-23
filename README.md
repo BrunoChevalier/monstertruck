@@ -124,6 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Phase 29 -- Solid and STEP Coverage
+
+- **monstertruck-solid tests** -- Added 22 tests covering boolean operations (8 tests: union, intersection, difference on cuboid pairs), fillet pipeline (7 tests: edge selection, radius application, error paths), and healing module (7 tests: shell healing, surface repair, degenerate input handling). Coverage from 0% to meaningful.
+- **monstertruck-step tests** -- Added 9 STEP round-trip tests covering cuboid, cylinder, revolved solid, and boolean-result shape export/import. Coverage from 0% to meaningful.
+- **Total:** 31 new tests across solid and STEP crates.
+
 ### Phase 28 -- Modeling Coverage
 
 - **monstertruck-modeling builder round-trip tests** -- Added 23 tests covering extrude, revolve, sweep_rail, homotopy, and transformation builder APIs, plus primitive construction tests (rect, circle, cuboid).
