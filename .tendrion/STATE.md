@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 26 of 32 (Core and Traits Coverage)
-**Plan:** 1 of 2
+**Plan:** 2 of 2
 **Progress:**
 
 
