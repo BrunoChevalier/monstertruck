@@ -3,6 +3,7 @@ use monstertruck_modeling::*;
 use monstertruck_step::load::*;
 use monstertruck_step::save::*;
 use monstertruck_topology::shell::ShellCondition;
+use std::f64::consts::PI;
 
 // Use fully-qualified types for step-geometry-typed compressed shells to avoid
 // ambiguity with the modeling type aliases.
@@ -27,19 +28,6 @@ fn roundtrip_shell(shell: &CompressedShell) -> StepShell {
     let table = Table::from_step(&step_string).unwrap();
     let step_shell = table.shell.values().next().unwrap().clone();
     table.to_compressed_shell(&step_shell).unwrap()
-}
-
-/// Round-trips a compressed solid through STEP export/import, returning all shells.
-fn roundtrip_solid(solid: &Solid) -> Vec<StepShell> {
-    let compressed = solid.compress();
-    let step_string =
-        CompleteStepDisplay::new(StepModel::from(&compressed), Default::default()).to_string();
-    let table = Table::from_step(&step_string).unwrap();
-    table
-        .shell
-        .values()
-        .map(|step_shell| table.to_compressed_shell(step_shell).unwrap())
-        .collect()
 }
 
 /// Checks that bounding boxes of original and reimported shells match within tolerance.
@@ -270,5 +258,61 @@ fn roundtrip_from_resource_file() {
     assert!(
         bounding_box_matches(shell, &reimported_shell, 0.1),
         "Bounding box from resource cube should match"
+    );
+}
+
+#[test]
+fn roundtrip_cylinder() {
+    // Build a cylinder by revolving a rectangular face around the Y axis.
+    // Rectangle in XY plane: x from 0 to 1 (radius), y from 0 to 2 (height).
+    let v0 = builder::vertex(Point3::new(0.0, 0.0, 0.0));
+    let v1 = builder::vertex(Point3::new(1.0, 0.0, 0.0));
+    let v2 = builder::vertex(Point3::new(1.0, 2.0, 0.0));
+    let v3 = builder::vertex(Point3::new(0.0, 2.0, 0.0));
+    let wire: Wire = vec![
+        builder::line(&v0, &v1),
+        builder::line(&v1, &v2),
+        builder::line(&v2, &v3),
+        builder::line(&v3, &v0),
+    ]
+    .into();
+    let face: Face = builder::try_attach_plane(vec![wire]).unwrap();
+    let cylinder: Solid =
+        builder::revolve(&face, Point3::origin(), Vector3::unit_y(), Rad(2.0 * PI), 4);
+
+    let compressed = cylinder.compress();
+
+    // Export as solid to STEP and verify it contains a closed shell.
+    let step_string =
+        CompleteStepDisplay::new(StepModel::from(&compressed), Default::default()).to_string();
+    assert!(
+        step_string.contains("CLOSED_SHELL"),
+        "Cylinder STEP output should contain CLOSED_SHELL"
+    );
+
+    // Round-trip the full solid through STEP and verify geometry preservation.
+    let table = Table::from_step(&step_string).unwrap();
+    let reimported: Vec<StepShell> = table
+        .shell
+        .values()
+        .map(|step_shell| table.to_compressed_shell(step_shell).unwrap())
+        .collect();
+    assert!(
+        !reimported.is_empty(),
+        "Cylinder should produce at least one shell on reimport"
+    );
+
+    // Verify bounding box preservation on the first shell.
+    let shell = &compressed.boundaries[0];
+    assert!(
+        bounding_box_matches(shell, &reimported[0], 0.15),
+        "Cylinder bounding boxes should match within tolerance"
+    );
+
+    // Verify the reimported face count is non-trivial (cylinder has lateral + cap faces).
+    let reimported_face_count: usize = reimported.iter().map(|s| s.faces.len()).sum();
+    assert!(
+        reimported_face_count >= 4,
+        "Cylinder should have at least 4 faces, got {reimported_face_count}"
     );
 }
