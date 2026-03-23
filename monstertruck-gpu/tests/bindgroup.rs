@@ -42,7 +42,7 @@ fn save_buffer<P: AsRef<std::path::Path>>(path: P, vec: &[u8]) {
     .unwrap();
 }
 
-fn exec_bind_group_test(backend: Backends, out_dir: &str) {
+fn exec_bind_group_test(handler: DeviceHandler, out_dir: &str) {
     let out_dir = String::from(out_dir);
     std::fs::create_dir_all(&out_dir).unwrap();
     let camera = Camera {
@@ -70,7 +70,6 @@ fn exec_bind_group_test(backend: Backends, out_dir: &str) {
         },
         ..Default::default()
     };
-    let handler = common::init_device(backend);
     let mut scene = Scene::new(handler, &desc);
     let plane = new_plane!("shaders/unicolor.wgsl", "vs_main", "fs_main");
     let buffer0 = common::render_one(&mut scene, &plane);
@@ -87,5 +86,5 @@ fn exec_bind_group_test(backend: Backends, out_dir: &str) {
 
 #[test]
 fn bind_group_test() {
-    common::os_alt_exec_test(exec_bind_group_test);
+    common::os_alt_try_exec_test("bind_group_test", exec_bind_group_test);
 }

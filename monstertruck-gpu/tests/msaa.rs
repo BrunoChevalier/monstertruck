@@ -17,10 +17,9 @@ fn save_buffer<P: AsRef<std::path::Path>>(path: P, vec: &[u8]) {
     .unwrap();
 }
 
-fn exec_msaa_test(backend: Backends, out_dir: &str) {
+fn exec_msaa_test(handler: DeviceHandler, out_dir: &str) {
     let out_dir = String::from(out_dir);
     std::fs::create_dir_all(&out_dir).unwrap();
-    let handler = common::init_device(backend);
     let mut scene = Scene::new(
         handler,
         &SceneDescriptor {
@@ -46,5 +45,5 @@ fn exec_msaa_test(backend: Backends, out_dir: &str) {
 
 #[test]
 fn msaa_test() {
-    common::os_alt_exec_test(exec_msaa_test);
+    common::os_alt_try_exec_test("msaa_test", exec_msaa_test);
 }

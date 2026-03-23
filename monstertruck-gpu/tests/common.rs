@@ -151,6 +151,36 @@ pub fn init_device(backends: Backends) -> DeviceHandler {
     })
 }
 
+pub fn try_init_device(backends: Backends) -> Option<DeviceHandler> {
+    pollster::block_on(async {
+        let instance = Instance::new(&InstanceDescriptor {
+            backends,
+            ..Default::default()
+        });
+        let adapter = instance
+            .request_adapter(&RequestAdapterOptions {
+                power_preference: PowerPreference::HighPerformance,
+                compatible_surface: None,
+                force_fallback_adapter: false,
+            })
+            .await
+            .ok()?;
+        writeln!(&mut std::io::stderr(), "{:?}", adapter.get_info()).unwrap();
+        let (device, queue) = adapter
+            .request_device(&DeviceDescriptor {
+                required_features: Default::default(),
+                required_limits: Default::default(),
+                memory_hints: Default::default(),
+                experimental_features: ExperimentalFeatures::disabled(),
+                trace: Default::default(),
+                label: None,
+            })
+            .await
+            .ok()?;
+        Some(DeviceHandler::new(adapter, device, queue))
+    })
+}
+
 pub fn render_one<R: Rendered>(scene: &mut Scene, object: &R) -> Vec<u8> {
     scene.add_object(object);
     let res = pollster::block_on(scene.render_to_buffer());
@@ -173,5 +203,23 @@ pub fn os_alt_exec_test<F: Fn(Backends, &str)>(test: F) {
         test(Backends::METAL, "output/");
     } else {
         test(Backends::VULKAN, "output/");
+    }
+}
+
+pub fn os_alt_try_exec_test<F: Fn(DeviceHandler, &str)>(test_name: &str, test: F) {
+    let _ = env_logger::try_init();
+    let try_run = |backends: Backends, out_dir: &str| match try_init_device(backends) {
+        Some(handler) => test(handler, out_dir),
+        None => {
+            eprintln!("Skipping {test_name}: no GPU adapter available for {backends:?}.");
+        }
+    };
+    if cfg!(target_os = "windows") {
+        try_run(Backends::VULKAN, "output/vulkan/");
+        try_run(Backends::DX12, "output/dx12/");
+    } else if cfg!(target_os = "macos") {
+        try_run(Backends::METAL, "output/");
+    } else {
+        try_run(Backends::VULKAN, "output/");
     }
 }

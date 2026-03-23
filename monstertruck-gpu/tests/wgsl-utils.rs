@@ -17,7 +17,7 @@ fn save_buffer<P: AsRef<std::path::Path>>(path: P, vec: &[u8]) {
     .unwrap();
 }
 
-fn exec_math_util_test(backend: Backends, out_dir: &str) {
+fn exec_math_util_test(handler: DeviceHandler, out_dir: &str) {
     let out_dir = String::from(out_dir);
     std::fs::create_dir_all(&out_dir).unwrap();
     let desc = SceneDescriptor {
@@ -27,7 +27,7 @@ fn exec_math_util_test(backend: Backends, out_dir: &str) {
         },
         ..Default::default()
     };
-    let mut scene = Scene::new(common::init_device(backend), &desc);
+    let mut scene = Scene::new(handler, &desc);
     let plane = new_plane!("shaders/unicolor.wgsl", "vs_main", "fs_main");
     let buffer0 = common::render_one(&mut scene, &plane);
     let shader = include_str!("../wgsl-utils/math.wgsl").to_string()
@@ -55,5 +55,5 @@ fn exec_math_util_test(backend: Backends, out_dir: &str) {
 
 #[test]
 fn math_util_test() {
-    common::os_alt_exec_test(exec_math_util_test);
+    common::os_alt_try_exec_test("math_util_test", exec_math_util_test);
 }
