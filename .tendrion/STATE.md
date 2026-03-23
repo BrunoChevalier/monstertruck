@@ -6,7 +6,7 @@
 ## Current Position
 **Mode:** auto
 **Phase:** 24 of 32 (GPU Test Reliability)
-**Plan:** 0 of 2
+**Plan:** 1 of 2
 **Progress:**
 
 
