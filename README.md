@@ -124,6 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Phase 28 -- Modeling Coverage
+
+- **monstertruck-modeling builder round-trip tests** -- Added 23 tests covering extrude, revolve, sweep_rail, homotopy, and transformation builder APIs, plus primitive construction tests (rect, circle, cuboid).
+- **monstertruck-modeling text and geometry enum tests** -- Added 17 tests covering TextOptions configuration, edge cases, and Curve/Surface enum variant construction.
+- **Total:** 40 new modeling tests, coverage target 45%+.
+
 ### Phase 27 -- Topology Coverage
 
 - **monstertruck-topology vertex/edge/wire tests** -- Added 39 unit tests covering edge creation, splitting via `cut_with_parameter`, wire construction, and concatenation.

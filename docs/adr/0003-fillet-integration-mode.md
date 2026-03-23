@@ -110,3 +110,7 @@ No changes to fillet integration mode logic. Phase 26 added 96 unit tests to `mo
 ## Status Update (Phase 27 -- Topology Coverage)
 
 No changes to fillet integration mode logic. Phase 27 added 107 unit tests to `monstertruck-topology` covering vertex/edge/wire and face/shell/solid operations. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 28 -- Modeling Coverage)
+
+No changes to fillet integration mode logic. Phase 28 added 40 unit tests to `monstertruck-modeling` covering builder round-trip operations (extrude, revolve, sweep_rail, homotopy, transformations, primitives) and text/geometry enum APIs. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.

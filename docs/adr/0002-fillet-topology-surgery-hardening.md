@@ -117,3 +117,7 @@ No changes to fillet topology surgery. Phase 26 added 96 unit tests to `monstert
 ## Status Update (Phase 27 -- Topology Coverage)
 
 No changes to fillet topology surgery. Phase 27 added 107 unit tests to `monstertruck-topology` covering vertex/edge/wire operations and face/shell/solid operations (boundary traversal, connectivity, orientation validation, solid construction). While these tests exercise topology data structures that underpin fillet surgery, the fillet surgery code itself was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 28 -- Modeling Coverage)
+
+No changes to fillet topology surgery. Phase 28 added 40 unit tests to `monstertruck-modeling` covering builder round-trip operations (extrude, revolve, sweep_rail, homotopy, transformations, primitives) and text/geometry enum APIs. The fillet surgery code was unaffected. This ADR remains Accepted.
