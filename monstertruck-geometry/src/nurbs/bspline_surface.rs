@@ -2854,11 +2854,14 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
 
         let knot_u = KnotVector::from(u_knots);
         let knot_v = KnotVector::from(v_knots);
-        // Control points: rows indexed by u-column (matching skin layout).
+        // Control points: n_v rows of n_u columns. Knots are (knot_v, knot_u) so
+        // that the row count (n_v) matches the first knot vector and the column
+        // count (n_u) matches the second. This layout aligns with the skin surfaces
+        // after `make_surfaces_compatible` merges knot vectors.
         let t_cp: Vec<Vec<P>> = (0..n_v)
             .map(|j| (0..n_u).map(|i| points[i][j]).collect())
             .collect();
-        let tensor = BsplineSurface::new_unchecked((knot_u, knot_v), t_cp);
+        let tensor = BsplineSurface::new_unchecked((knot_v, knot_u), t_cp);
 
         // Make all three surfaces compatible.
         let mut surfaces = vec![s_u, s_v, tensor];
