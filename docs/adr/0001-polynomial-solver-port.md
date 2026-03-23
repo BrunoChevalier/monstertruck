@@ -114,3 +114,7 @@ No changes to the polynomial solver module. Phase 25 upgraded `vtkio` from 0.6 t
 ## Status Update (Phase 26 -- Core and Traits Coverage)
 
 No changes to the polynomial solver module. Phase 26 added 96 unit tests to `monstertruck-core` and 80 unit tests to `monstertruck-traits`, improving coverage of tolerance traits, bounding box, collections, derivatives, cgmath extensions, and geometric trait contracts. The math layer was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 27 -- Topology Coverage)
+
+No changes to the polynomial solver module. Phase 27 added 107 unit tests to `monstertruck-topology` covering vertex/edge/wire operations (edge creation, splitting, wire construction, concatenation) and face/shell/solid operations (boundary traversal, shell connectivity, orientation validation, solid construction). The math layer was unaffected. This ADR remains Accepted.

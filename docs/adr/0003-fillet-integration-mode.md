@@ -106,3 +106,7 @@ No changes to fillet integration mode logic. Phase 25 upgraded `vtkio` from 0.6 
 ## Status Update (Phase 26 -- Core and Traits Coverage)
 
 No changes to fillet integration mode logic. Phase 26 added 96 unit tests to `monstertruck-core` and 80 unit tests to `monstertruck-traits`, improving coverage of tolerance traits, bounding box, collections, derivatives, and geometric trait contracts. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 27 -- Topology Coverage)
+
+No changes to fillet integration mode logic. Phase 27 added 107 unit tests to `monstertruck-topology` covering vertex/edge/wire and face/shell/solid operations. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.

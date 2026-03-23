@@ -113,3 +113,7 @@ No changes to fillet topology surgery. Phase 25 upgraded `vtkio` from 0.6 to 0.7
 ## Status Update (Phase 26 -- Core and Traits Coverage)
 
 No changes to fillet topology surgery. Phase 26 added 96 unit tests to `monstertruck-core` and 80 unit tests to `monstertruck-traits`, improving coverage of tolerance traits, bounding box, collections, derivatives, and geometric trait contracts. The fillet surgery code was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 27 -- Topology Coverage)
+
+No changes to fillet topology surgery. Phase 27 added 107 unit tests to `monstertruck-topology` covering vertex/edge/wire operations and face/shell/solid operations (boundary traversal, connectivity, orientation validation, solid construction). While these tests exercise topology data structures that underpin fillet surgery, the fillet surgery code itself was unaffected. This ADR remains Accepted.
