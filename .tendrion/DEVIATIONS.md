@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 54 | Approval-needed: 0 | Total: 54
+**Summary:** Auto-fixes: 56 | Approval-needed: 0 | Total: 56
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -375,4 +375,17 @@
 **Category:** bug
 **Description:** generic_fillet_unsupported test expects UnsupportedGeometry but gets NonManifoldEdge(1) -- the single-face shell has edge with only 1 adjacent face, so NonManifoldEdge fires first. Fixing test to match actual behavior.
 **Files changed:** monstertruck-solid/src/fillet/tests.rs
+**Status:** applied
+### [2026-03-23T00:36:12.876Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** Pre-existing compilation errors in monstertruck-gpu/tests/msaa.rs and monstertruck-gpu/tests/bindgroup.rs prevent running full package tests. Using --test camera to isolate camera tests.
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-23T00:48:50.830Z] [AUTO-FIX] Category: bug
+**Type:** auto-fix
+**Category:** bug
+**Description:** The ortho() and perspective() functions in monstertruck-math produce transposed projection matrices. Matrix4::new uses column-major order (c0r0..c0r3, c1r0..c1r3, ...) but these functions pass values as if it were row-major. This causes the projection() method to produce incorrect normalized volume coordinates, breaking both parallel and perspective proptests even for non-degenerate inputs.
+**Files changed:** none
 **Status:** applied

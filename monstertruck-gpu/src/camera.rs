@@ -370,13 +370,21 @@ impl Camera {
             .map(|p| inv_dir.transform_point(*p))
             .collect::<BoundingBox<_>>();
         let (center, diag) = (bbox.center(), bbox.diagonal());
-        let screen_size = f64::max(diag[0] / aspect, diag[1]);
-        let position = Vector3::new(center[0], center[1], center[2] + diag[2] / 2.0 + near_clip);
+        // Guard against degenerate point clouds where bbox has zero span.
+        // Use a small fraction of the cloud's distance from origin as epsilon,
+        // falling back to 1.0 when the cloud is at the origin.
+        let scale = center.to_vec().magnitude().max(1.0);
+        let eps = scale * 1e-10;
+        let dx = diag[0].max(eps);
+        let dy = diag[1].max(eps);
+        let dz = diag[2].max(eps);
+        let screen_size = f64::max(dx / aspect, dy);
+        let position = Vector3::new(center[0], center[1], center[2] + dz / 2.0 + near_clip);
         Self {
             matrix: Matrix4::from(direction) * Matrix4::from_translation(position),
             method: ProjectionMethod::Parallel { screen_size },
             near_clip,
-            far_clip: near_clip + diag[2],
+            far_clip: near_clip + dz,
         }
     }
 
@@ -459,12 +467,32 @@ impl Camera {
 
         let z_x = (x_max - x_min) / (2.0 * tan) / aspect;
         let z_y = (y_max - y_min) / (2.0 * tan);
-        let position = Vector3::new((x_min + x_max) / 2.0, (y_min + y_max) / 2.0, z_x.max(z_y));
+        let mut cam_z = z_x.max(z_y);
+
+        // Guard against degenerate point clouds where all points project to
+        // the same x/y/z in camera space. Ensure the camera is placed behind
+        // the cloud with a minimum separation so near_clip > 0 and
+        // near_clip < far_clip.
+        let scale = z_max.abs().max(z_min.abs()).max(1.0);
+        let min_separation = scale * 1e-10;
+        if cam_z <= z_max + min_separation {
+            cam_z = z_max + min_separation;
+        }
+        let near_clip = cam_z - z_max;
+        let far_clip_raw = cam_z - z_min;
+        // Ensure far_clip > near_clip even when z_span == 0.
+        let far_clip = if far_clip_raw <= near_clip {
+            near_clip + min_separation
+        } else {
+            far_clip_raw
+        };
+
+        let position = Vector3::new((x_min + x_max) / 2.0, (y_min + y_max) / 2.0, cam_z);
         Camera {
             matrix: Matrix4::from(direction) * Matrix4::from_translation(position),
             method: ProjectionMethod::Perspective { fov },
-            near_clip: position[2] - z_max,
-            far_clip: position[2] - z_min,
+            near_clip,
+            far_clip,
         }
     }
 }

@@ -71,6 +71,7 @@ pub mod prelude {
 pub fn perspective<S: BaseFloat>(fovy: Rad<S>, aspect: S, near: S, far: S) -> Matrix4<S> {
     let two = S::one() + S::one();
     let f = S::one() / num_traits::Float::tan(fovy.0 / two);
+    // Column-major: each group of 4 is one column.
     Matrix4::new(
         f / aspect,
         S::zero(),
@@ -83,10 +84,10 @@ pub fn perspective<S: BaseFloat>(fovy: Rad<S>, aspect: S, near: S, far: S) -> Ma
         S::zero(),
         S::zero(),
         (far + near) / (near - far),
-        (two * far * near) / (near - far),
-        S::zero(),
-        S::zero(),
         -S::one(),
+        S::zero(),
+        S::zero(),
+        (two * far * near) / (near - far),
         S::zero(),
     )
 }
@@ -99,22 +100,23 @@ pub fn ortho<S: BaseFloat>(left: S, right: S, bottom: S, top: S, near: S, far: S
     let rl = right - left;
     let tb = top - bottom;
     let f_n = far - near;
+    // Column-major: each group of 4 is one column.
     Matrix4::new(
         two / rl,
         zero,
         zero,
-        -(right + left) / rl,
+        zero,
         zero,
         two / tb,
         zero,
-        -(top + bottom) / tb,
+        zero,
         zero,
         zero,
         -two / f_n,
+        zero,
+        -(right + left) / rl,
+        -(top + bottom) / tb,
         -(far + near) / f_n,
-        zero,
-        zero,
-        zero,
         one,
     )
 }
@@ -126,22 +128,23 @@ pub fn frustum<S: BaseFloat>(left: S, right: S, bottom: S, top: S, near: S, far:
     let rl = right - left;
     let tb = top - bottom;
     let f_n = far - near;
+    // Column-major: each group of 4 is one column.
     Matrix4::new(
         two * near / rl,
         zero,
-        (right + left) / rl,
+        zero,
         zero,
         zero,
         two * near / tb,
+        zero,
+        zero,
+        (right + left) / rl,
         (top + bottom) / tb,
-        zero,
-        zero,
-        zero,
         -(far + near) / f_n,
-        -(two * far * near) / f_n,
-        zero,
-        zero,
         -S::one(),
+        zero,
+        zero,
+        -(two * far * near) / f_n,
         zero,
     )
 }

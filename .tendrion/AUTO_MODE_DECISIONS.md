@@ -251,3 +251,6 @@
 ### Doc gate: spawning writer to fix 1 issue(s)
 **Time:** 2026-03-22T21:18:23.633Z
 
+### Fixing transposed ortho/perspective matrices in monstertruck-math. These projection functions pass values as if Matrix4::new takes row-major order, but it takes column-major. The fix transposes the arguments. This is needed for the camera proptests to pass and is the root cause of the proptest failures.
+**Time:** 2026-03-23T00:48:53.527Z
+

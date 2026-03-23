@@ -76,3 +76,106 @@ proptest! {
         prop_assert_near!(max.z, 1.0);
     }
 }
+
+#[test]
+fn parallel_view_fitting_all_zeros() {
+    let rot = Matrix3::identity();
+    let aspect = 1.0;
+    let near_clip = 0.1;
+    let points: Vec<Point3> = (0..32).map(|_| Point3::origin()).collect();
+    let camera = Camera::parallel_view_fitting(rot, aspect, near_clip, &points);
+
+    // Camera must have finite, non-NaN values.
+    assert!(camera.near_clip.is_finite(), "near_clip must be finite");
+    assert!(camera.far_clip.is_finite(), "far_clip must be finite");
+    assert!(
+        camera.near_clip < camera.far_clip,
+        "near_clip ({}) must be < far_clip ({})",
+        camera.near_clip,
+        camera.far_clip
+    );
+
+    // screen_size must be strictly positive for a valid ortho projection.
+    match camera.method {
+        ProjectionMethod::Parallel { screen_size } => {
+            assert!(
+                screen_size > 0.0,
+                "screen_size must be positive, got {}",
+                screen_size
+            );
+        }
+        _ => panic!("Expected Parallel projection method"),
+    }
+}
+
+#[test]
+fn parallel_view_fitting_all_identical() {
+    let rot = Matrix3::identity();
+    let aspect = 16.0 / 9.0;
+    let near_clip = 0.5;
+    let pt = Point3::new(5.0, 3.0, -2.0);
+    let points: Vec<Point3> = (0..32).map(|_| pt).collect();
+    let camera = Camera::parallel_view_fitting(rot, aspect, near_clip, &points);
+
+    assert!(camera.near_clip.is_finite());
+    assert!(camera.far_clip.is_finite());
+    assert!(camera.near_clip < camera.far_clip);
+    match camera.method {
+        ProjectionMethod::Parallel { screen_size } => {
+            assert!(
+                screen_size > 0.0,
+                "screen_size must be positive, got {}",
+                screen_size
+            );
+        }
+        _ => panic!("Expected Parallel projection method"),
+    }
+}
+
+#[test]
+fn perspective_view_fitting_all_zeros() {
+    let rot = Matrix3::identity();
+    let aspect = 1.0;
+    let fov = Rad(PI / 4.0);
+    let points: Vec<Point3> = (0..32).map(|_| Point3::origin()).collect();
+    let camera = Camera::perspective_view_fitting(rot, aspect, fov, &points);
+
+    assert!(camera.near_clip.is_finite(), "near_clip must be finite");
+    assert!(camera.far_clip.is_finite(), "far_clip must be finite");
+    assert!(
+        camera.near_clip > 0.0,
+        "near_clip ({}) must be > 0",
+        camera.near_clip
+    );
+    assert!(
+        camera.near_clip < camera.far_clip,
+        "near_clip ({}) must be < far_clip ({})",
+        camera.near_clip,
+        camera.far_clip
+    );
+}
+
+#[test]
+fn perspective_view_fitting_all_identical() {
+    let rot = Matrix3::identity();
+    let aspect = 16.0 / 9.0;
+    let fov = Rad(PI / 4.0);
+    let pt = Point3::new(5.0, 3.0, -2.0);
+    let points: Vec<Point3> = (0..32).map(|_| pt).collect();
+    let camera = Camera::perspective_view_fitting(rot, aspect, fov, &points);
+
+    assert!(camera.near_clip.is_finite(), "near_clip must be finite");
+    assert!(camera.far_clip.is_finite(), "far_clip must be finite");
+    assert!(
+        camera.near_clip > 0.0,
+        "near_clip ({}) must be > 0",
+        camera.near_clip
+    );
+    assert!(
+        camera.near_clip < camera.far_clip,
+        "near_clip ({}) must be < far_clip ({})",
+        camera.near_clip,
+        camera.far_clip
+    );
+}
+
