@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 64 | Approval-needed: 0 | Total: 64
+**Summary:** Auto-fixes: 67 | Approval-needed: 0 | Total: 67
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -438,5 +438,24 @@
 **Type:** auto-fix
 **Category:** dependency
 **Description:** Tests exercise existing public API -- tests pass immediately (feature already exists). TDD RED phase produces immediate GREEN.
+**Files changed:** none
+**Status:** applied
+### [2026-03-23T03:19:56.707Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Tests for existing builder API pass immediately (round-trip verification tests, not new features)
+**Files changed:** none
+**Status:** applied
+### [2026-03-23T03:18:10.718Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Text module tests pass immediately because they test existing public API (TextOptions, glyph_profile, text_profile). This is a coverage-expansion task, not a new feature.
+**Files changed:** none
+**Status:** applied
+
+### [2026-03-23T03:19:14.621Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Geometry module tests pass immediately because they test existing Curve/Surface enum variants and trait implementations. This is a coverage-expansion task.
 **Files changed:** none
 **Status:** applied
