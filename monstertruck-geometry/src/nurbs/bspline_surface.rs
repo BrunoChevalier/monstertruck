@@ -2,7 +2,8 @@ use super::*;
 use crate::errors::Error;
 use crate::nurbs::surface_diagnostics::CurveNetworkDiagnostic;
 use crate::nurbs::surface_options::{
-    Birail1Options, Birail2Options, GordonOptions, SkinOptions, SweepRailOptions,
+    Birail1Options, Birail2Options, GordonOptions, RuledSurfaceOptions, SkinOptions,
+    SweepRailOptions,
 };
 use algo::surface::{SearchNearestParameterVector, SearchParameterVector};
 use std::iter::FusedIterator;
@@ -1532,6 +1533,40 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
             .map(|i| vec![*bspcurve0.control_point(i), *bspcurve1.control_point(i)])
             .collect();
         BsplineSurface::new_unchecked((knot_vector_u, knot_vector_v), control_points)
+    }
+
+    /// Fallible ruled surface construction between two boundary curves.
+    ///
+    /// Creates a linearly-interpolated surface where v=0 matches `curve0`
+    /// and v=1 matches `curve1`. The two curves are degree-synchronized
+    /// and knot-synchronized before interpolation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::EmptyControlPoints`] if either curve has no control points.
+    #[allow(unused_variables)]
+    pub fn try_ruled(
+        mut curve0: BsplineCurve<P>,
+        mut curve1: BsplineCurve<P>,
+        options: &RuledSurfaceOptions,
+    ) -> Result<BsplineSurface<P>> {
+        // Input validation BEFORE syncro calls to prevent panics.
+        if curve0.control_points().is_empty() || curve1.control_points().is_empty() {
+            return Err(Error::EmptyControlPoints);
+        }
+        // syncro_degree and syncro_knots are infallible once curves have control points.
+        curve0.syncro_degree(&mut curve1);
+        curve0.syncro_knots(&mut curve1);
+
+        let knot_vector_u = curve0.knot_vec().clone();
+        let knot_vector_v = KnotVector::from(vec![0.0, 0.0, 1.0, 1.0]);
+        let control_points: Vec<Vec<_>> = (0..curve0.control_points().len())
+            .map(|i| vec![*curve0.control_point(i), *curve1.control_point(i)])
+            .collect();
+        Ok(BsplineSurface::new_unchecked(
+            (knot_vector_u, knot_vector_v),
+            control_points,
+        ))
     }
 
     /// Creates a skinned (lofted) surface through N section curves.

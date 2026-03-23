@@ -100,7 +100,7 @@ pub type Result<T> = std::result::Result<T, errors::Error>;
 
 /// Re-export surface option structs from the geometry layer for convenience.
 pub use monstertruck_geometry::nurbs::surface_options::{
-    Birail1Options, Birail2Options, GordonOptions, SweepRailOptions,
+    Birail1Options, Birail2Options, GordonOptions, RuledSurfaceOptions, SweepRailOptions,
 };
 
 /// the building model utility API

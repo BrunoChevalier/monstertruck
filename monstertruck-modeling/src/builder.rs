@@ -5,7 +5,7 @@ use crate::{
     topo_traits::*,
 };
 use monstertruck_geometry::nurbs::surface_options::{
-    Birail1Options, Birail2Options, GordonOptions, SweepRailOptions,
+    Birail1Options, Birail2Options, GordonOptions, RuledSurfaceOptions, SweepRailOptions,
 };
 use monstertruck_geometry::prelude::*;
 use monstertruck_topology::*;
@@ -852,6 +852,39 @@ pub fn try_gordon_verified(
     options: &GordonOptions,
 ) -> Result<Face<Curve, Surface>> {
     let surface = BsplineSurface::try_gordon_verified(u_curves, v_curves, points, options)?;
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Constructs a ruled (linearly-interpolated) surface between two boundary curves.
+///
+/// The resulting face has a 4-edge boundary wire: the two input curves plus
+/// two linear edges connecting their endpoints.
+///
+/// Returns [`Error::FromGeometry`] if the curves are empty or incompatible.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+/// use monstertruck_modeling::RuledSurfaceOptions;
+///
+/// let c0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let c1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+/// );
+/// let face = builder::try_ruled_surface(&c0, &c1, &RuledSurfaceOptions::default()).unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_ruled_surface(
+    curve0: &BsplineCurve<Point3>,
+    curve1: &BsplineCurve<Point3>,
+    options: &RuledSurfaceOptions,
+) -> Result<Face<Curve, Surface>> {
+    let surface = BsplineSurface::try_ruled(curve0.clone(), curve1.clone(), options)?;
     Ok(face_from_bspline_surface(surface))
 }
 

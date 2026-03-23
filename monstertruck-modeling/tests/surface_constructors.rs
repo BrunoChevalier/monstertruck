@@ -404,7 +404,7 @@ fn ruled_surface_empty_curve_error() {
         KnotVector::bezier_knot(1),
         vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
     );
-    let c_empty: BsplineCurve<Point3> = BsplineCurve::new(KnotVector::from(vec![]), vec![]);
+    let c_empty: BsplineCurve<Point3> = BsplineCurve::new_unchecked(KnotVector::from(vec![]), vec![]);
     let result = builder::try_ruled_surface(&c0, &c_empty, &RuledSurfaceOptions::default());
     assert!(
         matches!(result, Err(Error::FromGeometry(_))),

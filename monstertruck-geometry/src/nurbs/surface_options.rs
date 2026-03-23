@@ -119,3 +119,18 @@ impl Default for GordonOptions {
 #[derive(Debug, Clone, Default)]
 #[non_exhaustive]
 pub struct SkinOptions {}
+
+/// Options for ruled surface construction between two boundary curves.
+///
+/// Currently a marker struct. Future versions may add fields to control
+/// v-direction parameterization.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_geometry::nurbs::surface_options::RuledSurfaceOptions;
+/// let opts = RuledSurfaceOptions::default();
+/// ```
+#[derive(Debug, Clone, Default)]
+#[non_exhaustive]
+pub struct RuledSurfaceOptions {}
