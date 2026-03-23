@@ -118,3 +118,7 @@ No changes to fillet integration mode logic. Phase 28 added 40 unit tests to `mo
 ## Status Update (Phase 29 -- Solid and STEP Coverage)
 
 No changes to fillet integration mode logic. Phase 29 added 22 tests to `monstertruck-solid` (boolean ops, fillet pipeline, healing module) and 9 STEP round-trip tests to `monstertruck-step`. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 30 -- New Surface Constructors)
+
+No changes to fillet integration mode logic. Phase 30 added ruled surface (`BsplineSurface::try_ruled`) and loft surface (`builder::try_loft`) constructors, and expanded healing with `check_edge_curve_consistency` and `detect_and_repair_gaps`. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.

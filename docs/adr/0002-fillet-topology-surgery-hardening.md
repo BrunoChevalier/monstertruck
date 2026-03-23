@@ -125,3 +125,7 @@ No changes to fillet topology surgery. Phase 28 added 40 unit tests to `monstert
 ## Status Update (Phase 29 -- Solid and STEP Coverage)
 
 Phase 29 added 22 tests to `monstertruck-solid` covering boolean operations (8 tests), fillet pipeline (7 tests), and healing module (7 tests), bringing the crate from 0% to meaningful test coverage. The fillet pipeline tests exercise edge selection, radius application, and error paths established by this ADR's topology surgery hardening. Additionally, 9 STEP round-trip tests were added to `monstertruck-step`. The fillet surgery code itself was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 30 -- New Surface Constructors)
+
+No changes to fillet topology surgery. Phase 30 added ruled surface and loft surface constructors in `monstertruck-geometry` and `monstertruck-modeling`, and expanded the healing module with `check_edge_curve_consistency` and `detect_and_repair_gaps` functions. The healing expansion complements this ADR's topology surgery by providing upstream validation of edge-curve consistency before geometry enters the fillet pipeline. The fillet surgery code itself was unaffected. This ADR remains Accepted.

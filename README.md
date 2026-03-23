@@ -124,6 +124,12 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Phase 30 -- New Surface Constructors
+
+- **Ruled surface constructor** -- `BsplineSurface::try_ruled` and `builder::try_ruled_surface` in `monstertruck-modeling` construct ruled surfaces between two boundary curves.
+- **Loft surface constructor** -- `SkinOptions` gained a `v_degree` field for cross-curve degree control. `builder::try_loft` in `monstertruck-modeling` provides topology-aware loft surface construction.
+- **Healing expansion** -- New `check_edge_curve_consistency` and `detect_and_repair_gaps` functions in the healing module for edge-curve validation and gap repair.
+
 ### Phase 29 -- Solid and STEP Coverage
 
 - **monstertruck-solid tests** -- Added 22 tests covering boolean operations (8 tests: union, intersection, difference on cuboid pairs), fillet pipeline (7 tests: edge selection, radius application, error paths), and healing module (7 tests: shell healing, surface repair, degenerate input handling). Coverage from 0% to meaningful.
