@@ -98,3 +98,7 @@ No changes to fillet integration mode logic. Phase 23 replaced silent rollback i
 ## Status Update (Phase 24 -- GPU Test Reliability, v0.5.3)
 
 No changes to fillet integration mode logic. Phase 24 fixed transposed projection matrices in `monstertruck-math` and added graceful GPU test degradation in `monstertruck-gpu`. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 25 -- Clippy & Dependency Hygiene)
+
+No changes to fillet integration mode logic. Phase 25 upgraded `vtkio` from 0.6 to 0.7.0-rc2 and resolved 4 clippy warnings across the workspace. The fillet integration mode and continuity annotations from this ADR are unaffected. This ADR remains Accepted.

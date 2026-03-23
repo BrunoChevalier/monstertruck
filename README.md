@@ -124,6 +124,11 @@ The `monstertruck-core` crate provides:
 
 The `monstertruck-meshing` crate includes boundary-aware vertex stitching during tessellation to eliminate seams between adjacent trimmed faces.
 
+### Phase 25 -- Clippy & Dependency Hygiene
+
+- **vtkio upgrade** -- Updated `vtkio` from 0.6 to 0.7.0-rc2, eliminating deprecated `nom` v3.2.1 and `quick-xml` v0.22.0 transitive dependencies.
+- **Clippy clean** -- Fixed 4 clippy warnings (unnecessary qualification in `stl.rs`, dead code in `validate.rs`). `cargo clippy --workspace -- -D warnings` now exits 0.
+
 ### Milestone v0.5.3 Summary (Phase 24) -- GPU Test Reliability
 
 - **Projection matrix fixes (Phase 24)** -- Fixed transposed projection matrices (`ortho`, `perspective`, `frustum`) in `monstertruck-math`. Added epsilon guards for degenerate point clouds in camera fitting functions (`monstertruck-gpu`). 4 new unit tests.

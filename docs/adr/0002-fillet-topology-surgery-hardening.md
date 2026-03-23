@@ -105,3 +105,7 @@ Phase 23 directly improved the error handling in `fillet_edges_generic`, which i
 ## Status Update (Phase 24 -- GPU Test Reliability, v0.5.3)
 
 No changes to fillet topology surgery. Phase 24 fixed transposed projection matrices in `monstertruck-math` and added graceful GPU test degradation in `monstertruck-gpu`. The fillet surgery code was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 25 -- Clippy & Dependency Hygiene)
+
+No changes to fillet topology surgery. Phase 25 upgraded `vtkio` from 0.6 to 0.7.0-rc2 and resolved 4 clippy warnings (including dead code removal in `validate.rs` within the fillet module). The topology surgery logic itself was unaffected. This ADR remains Accepted.

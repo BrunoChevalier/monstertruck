@@ -106,3 +106,7 @@ No changes to the polynomial solver module. Phase 23 added `FilletError::ShellNo
 ## Status Update (Phase 24 -- GPU Test Reliability, v0.5.3)
 
 Phase 24 fixed transposed projection matrices (`ortho`, `perspective`, `frustum`) in `monstertruck-math` and added epsilon guards for degenerate point clouds in camera fitting functions. The polynomial solver module was unaffected. This ADR remains Accepted.
+
+## Status Update (Phase 25 -- Clippy & Dependency Hygiene)
+
+No changes to the polynomial solver module. Phase 25 upgraded `vtkio` from 0.6 to 0.7.0-rc2 and resolved 4 clippy warnings across the workspace. The math layer was unaffected. This ADR remains Accepted.
