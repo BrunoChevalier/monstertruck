@@ -2,13 +2,17 @@
 
 ## Current Milestone
 
+No active milestone. Run `/td:new-milestone` to start one.
+
+## History
+
+### v0.5.3
 **Name:** v0.5.3
 **Started:** 2026-03-23
 **Goal:** Improve project quality across all dimensions: fix remaining test failures, dramatically increase code coverage for under-tested crates, complete deferred Ayam port items, add new CAD surface constructors, validate I/O pipelines, and update deprecated dependencies.
 **Phases:** 24-TBD
-**Status:** In Progress
-
-## History
+**Status:** Complete
+**Completed:** 2026-03-23
 
 ### v0.5.2
 **Name:** v0.5.2
