@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 58 | Approval-needed: 0 | Total: 58
+**Summary:** Auto-fixes: 59 | Approval-needed: 0 | Total: 59
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -401,4 +401,11 @@
 **Category:** dependency
 **Description:** Exempt from TDD RED phase: dependency update (vtkio 0.6->0.7.0-rc2) with existing test coverage. 7 VTK tests already exist and pass. Only code change is Version enum migration in example file (not testable unit).
 **Files changed:** Cargo.toml, monstertruck-step/examples/step-to-mesh.rs
+**Status:** applied
+
+### [2026-03-23T01:41:22.912Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** TDD exemption for Task 1: clippy lint fixes (unnecessary qualification, dead_code) are pure refactoring with no behavioral change. Existing tests in validate.rs already cover euler_poincare_check and is_oriented_check. The stl.rs change is a type alias substitution.
+**Files changed:** none
 **Status:** applied
