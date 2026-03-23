@@ -1,6 +1,6 @@
 # Deviations Log
 
-**Summary:** Auto-fixes: 63 | Approval-needed: 0 | Total: 63
+**Summary:** Auto-fixes: 64 | Approval-needed: 0 | Total: 64
 
 ---
 ### [2026-03-08T22:36:30.656Z] [AUTO-FIX] Category: bug
@@ -432,5 +432,11 @@
 **Type:** auto-fix
 **Category:** bug
 **Description:** Pre-existing compile error in untracked file face_shell_ops.rs (from parallel agent). Does not affect our test file.
+**Files changed:** none
+**Status:** applied
+### [2026-03-23T02:41:35.853Z] [AUTO-FIX] Category: dependency
+**Type:** auto-fix
+**Category:** dependency
+**Description:** Tests exercise existing public API -- tests pass immediately (feature already exists). TDD RED phase produces immediate GREEN.
 **Files changed:** none
 **Status:** applied
