@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Pre-commit hook: run clippy only when Rust files are staged
+
+# Check if any staged files are Rust-relevant
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE '\.(rs|toml)$'; then
+    echo "Rust files staged — running clippy..."
+    cargo clippy --workspace --tests --all-features -- -D warnings 2>&1
+    exit $?
+fi
