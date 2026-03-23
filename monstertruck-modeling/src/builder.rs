@@ -5,7 +5,8 @@ use crate::{
     topo_traits::*,
 };
 use monstertruck_geometry::nurbs::surface_options::{
-    Birail1Options, Birail2Options, GordonOptions, RuledSurfaceOptions, SweepRailOptions,
+    Birail1Options, Birail2Options, GordonOptions, RuledSurfaceOptions, SkinOptions,
+    SweepRailOptions,
 };
 use monstertruck_geometry::prelude::*;
 use monstertruck_topology::*;
@@ -885,6 +886,54 @@ pub fn try_ruled_surface(
     options: &RuledSurfaceOptions,
 ) -> Result<Face<Curve, Surface>> {
     let surface = BsplineSurface::try_ruled(curve0.clone(), curve1.clone(), options)?;
+    Ok(face_from_bspline_surface(surface))
+}
+
+/// Constructs a loft (skinned) surface through multiple cross-section curves.
+///
+/// Requires at least 2 section curves. For exactly 2 curves, the result is
+/// identical to a ruled surface. For 3+ curves, interpolation is controlled
+/// by the [`SkinOptions::v_degree`] field.
+///
+/// # Errors
+///
+/// Returns [`Error::InsufficientSections`] if fewer than 2 curves are provided.
+/// Returns [`Error::FromGeometry`] if compatibility normalization fails.
+///
+/// # Examples
+///
+/// ```
+/// use monstertruck_modeling::*;
+///
+/// let c0 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)],
+/// );
+/// let c1 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 1.0, 0.0), Point3::new(1.0, 1.0, 0.0)],
+/// );
+/// let c2 = BsplineCurve::new(
+///     KnotVector::bezier_knot(1),
+///     vec![Point3::new(0.0, 2.0, 0.5), Point3::new(1.0, 2.0, 0.5)],
+/// );
+/// let face = builder::try_loft(
+///     vec![c0, c1, c2],
+///     &SkinOptions::default(),
+/// ).unwrap();
+/// assert_eq!(face.boundaries()[0].len(), 4);
+/// ```
+pub fn try_loft(
+    curves: Vec<BsplineCurve<Point3>>,
+    options: &SkinOptions,
+) -> Result<Face<Curve, Surface>> {
+    if curves.len() < 2 {
+        return Err(Error::InsufficientSections {
+            required: 2,
+            got: curves.len(),
+        });
+    }
+    let surface = BsplineSurface::try_skin(curves, options)?;
     Ok(face_from_bspline_surface(surface))
 }
 

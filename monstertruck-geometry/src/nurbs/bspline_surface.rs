@@ -1641,10 +1641,10 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
     /// }
     /// ```
     ///
-    /// [`SkinOptions`] currently acts as a placeholder for future
-    /// customization (e.g. degree control).  Pass `&SkinOptions::default()`
-    /// for behavior identical to the deprecated [`skin`](Self::skin).
-    #[allow(unused_variables)]
+    /// [`SkinOptions::v_degree`] controls the polynomial degree in the
+    /// v-direction. The default (`1`) gives linear interpolation identical to
+    /// the deprecated [`skin`](Self::skin). Higher values produce smoother
+    /// loft surfaces.
     pub fn try_skin(
         mut curves: Vec<BsplineCurve<P>>,
         options: &SkinOptions,
@@ -1683,13 +1683,10 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
 
         let n = curves.len();
         let m = curves[0].control_points().len();
+        let eff_v_degree = options.v_degree.min(n - 1).max(1);
 
-        // Build the v-direction knot vector (degree 1, clamped, uniform).
-        let mut v_knots = Vec::with_capacity(n + 2);
-        v_knots.push(0.0);
-        (0..n).for_each(|i| v_knots.push(i as f64 / (n - 1) as f64));
-        v_knots.push(1.0);
-        let knot_vector_v = KnotVector::from(v_knots);
+        // Build the v-direction knot vector (clamped, uniform).
+        let knot_vector_v = Self::clamped_uniform_knot_vector(eff_v_degree, n);
 
         let knot_vector_u = curves[0].knot_vec().clone();
         let control_points: Vec<Vec<P>> = (0..m)
@@ -1699,6 +1696,27 @@ impl<P: ControlPoint<f64> + Tolerance> BsplineSurface<P> {
             (knot_vector_u, knot_vector_v),
             control_points,
         ))
+    }
+
+    /// Builds a clamped uniform knot vector of given `degree` for `n` data points.
+    ///
+    /// The resulting vector has `n + degree + 1` entries: `degree + 1` zeros at the
+    /// start, `n - degree - 1` uniformly spaced interior knots, and `degree + 1` ones
+    /// at the end.
+    fn clamped_uniform_knot_vector(degree: usize, n: usize) -> KnotVector {
+        let total = n + degree + 1;
+        let knots: Vec<f64> = (0..total)
+            .map(|i| {
+                if i <= degree {
+                    0.0
+                } else if i >= n {
+                    1.0
+                } else {
+                    (i - degree) as f64 / (n - degree) as f64
+                }
+            })
+            .collect();
+        KnotVector::from(knots)
     }
 }
 

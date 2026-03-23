@@ -105,20 +105,32 @@ impl Default for GordonOptions {
     }
 }
 
-/// Options for skin surface construction.
-///
-/// Currently a marker struct. Future versions may add fields to control
-/// v-direction degree or parameterization strategy.
+/// Options for skin (loft) surface construction.
 ///
 /// # Examples
 ///
 /// ```
 /// use monstertruck_geometry::nurbs::surface_options::SkinOptions;
-/// let opts = SkinOptions::default();
+/// let mut opts = SkinOptions::default();
+/// opts.v_degree = 3;
 /// ```
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
-pub struct SkinOptions {}
+pub struct SkinOptions {
+    /// Polynomial degree in the v-direction (loft direction).
+    ///
+    /// - `1` (default): linear interpolation between sections (degree-1 v-knot vector).
+    /// - `2` or `3`: higher-order B-spline interpolation through the section curves.
+    ///
+    /// Clamped to `1..=min(n-1, requested)` where `n` = number of sections.
+    pub v_degree: usize,
+}
+
+impl Default for SkinOptions {
+    fn default() -> Self {
+        Self { v_degree: 1 }
+    }
+}
 
 /// Options for ruled surface construction between two boundary curves.
 ///
